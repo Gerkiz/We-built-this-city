@@ -47,7 +47,7 @@ local function anarchy_gui(player)
 
 	if player.gui.center["anarchy_group_frame"] then player.gui.center["anarchy_group_frame"].destroy() end
 
-	local frame = player.gui.center.add({type = "frame", name = "anarchy_group_frame", direction = "vertical", caption = "Alignment", style = "changelog_subheader_frame"})
+	local frame = player.gui.center.add({type = "frame", name = "anarchy_group_frame", direction = "vertical", caption = "Alignment"})
 	frame.style.minimal_height = total_height
 
 	local tbl = frame.add{type = 'scroll-pane', direction = 'vertical', vertical_scroll_policy = 'always', horizontal_scroll_policy = 'never'}

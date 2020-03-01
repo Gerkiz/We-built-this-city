@@ -268,11 +268,11 @@ local function draw_player_warp_only(player, p, table, sub_table, name, warp ,e)
     go_to_warp_flow.style.height = 20
     go_to_warp_flow.style.width = 20
     if bottom_warp_flow.name ~= "Spawn" then
-        local remove_warp_flow = bottom_warp_flow.add{type = "sprite-button", name = remove_warp_button_name, tooltip = "Removes warp: " .. bottom_warp_flow.name, sprite='utility/remove'}
+        local remove_warp_flow = bottom_warp_flow.add{type = "sprite-button", name = remove_warp_button_name, tooltip = "Removes warp: " .. bottom_warp_flow.name, sprite='utility/trash'}
         remove_warp_flow.style.height = 20
         remove_warp_flow.style.width = 20
     else
-        local remove_warp_flow = bottom_warp_flow.add{type = "sprite-button", name = remove_warp_button_name, enabled = "false", tooltip = "Default spawn can't be removed.", sprite='utility/remove'}
+        local remove_warp_flow = bottom_warp_flow.add{type = "sprite-button", name = remove_warp_button_name, enabled = "false", tooltip = "Default spawn can't be removed.", sprite='utility/trash'}
         remove_warp_flow.style.height = 20
         remove_warp_flow.style.width = 20
     end
@@ -294,7 +294,7 @@ local function draw_main_frame(player, left, are_you_sure)
     local e = are_you_sure
     local p = player_table[player.index]
     local trusted = Session.get_trusted_table()
-    local frame = left.add{type = "frame", name = main_frame_name, caption = "Warps", direction = "vertical", style = "changelog_subheader_frame"}
+    local frame = left.add{type = "frame", name = main_frame_name, caption = "Warps", direction = "vertical"}
     --frame.style.padding = 5
     frame.style.horizontally_stretchable = true
     frame.style.maximal_height = 500

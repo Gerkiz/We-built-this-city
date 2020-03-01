@@ -330,7 +330,7 @@ end
 
 local function draw_main_frame(left, player)
     local trusted = session.get_trusted_table()
-    local frame = left.add {type = 'frame', name = main_frame_name, caption = 'Polls', direction = 'vertical', style = "changelog_subheader_frame"}
+    local frame = left.add {type = 'frame', name = main_frame_name, caption = 'Polls', direction = 'vertical'}
     --frame.style.maximal_width = 640
 
     local poll_viewer_top_flow = frame.add {type = 'table', column_count = 5}
@@ -585,7 +585,7 @@ local function draw_create_poll_frame(parent, player, previous_data)
     end
 
     local frame =
-        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical', style = "changelog_subheader_frame"}
+        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical', style = "changelog_frame"}
     frame.style.maximal_width = 320
 
     local scroll_pane = frame.add {type = 'scroll-pane', vertical_scroll_policy = 'always'}

@@ -196,7 +196,7 @@ local function draw_gui(player)
 
 	Tabs.panel_clear_left_gui(player)
 
-	local frame = left.add{type = "frame", name = "rpg", direction = "vertical", caption = "RPG", style = "changelog_subheader_frame"}
+	local frame = left.add{type = "frame", name = "rpg", direction = "vertical", caption = "RPG"}
 
 	local scroll_pane = frame.add{type = 'scroll-pane', direction = 'vertical', vertical_scroll_policy = 'always', horizontal_scroll_policy = 'never'}
 	--scroll_pane.style.maximal_height = 600

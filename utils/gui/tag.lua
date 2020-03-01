@@ -214,7 +214,7 @@ local function draw_main_frame(player)
     local trusted = Session.get_trusted_table()
     local left = player.gui.left
     local main_frame =
-        left.add {type = 'frame', name = main_frame_name, caption = 'Choose your tag', direction = 'vertical', style = "changelog_subheader_frame"}
+        left.add {type = 'frame', name = main_frame_name, caption = 'Choose your tag', direction = 'vertical'}
 
     main_frame.style.maximal_height = 500
     main_frame.style.maximal_width = 500

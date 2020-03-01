@@ -324,7 +324,7 @@ local function main_frame(player)
 	frame.style.padding = 5
 	shuffle(icons)
     local inside_frame = frame.add{type = "frame", name = "next", style = "inside_deep_frame", direction = "vertical"}
-    local subhead = inside_frame.add{type = "frame", name = "sub_header", style = "changelog_subheader_frame"}
+    local subhead = inside_frame.add{type = "frame", name = "sub_header"}
 
     Public.AddLabel(subhead, "scen_info", "We built this city ", "subheader_caption_label")
     for i = 1, 14, 1 do
