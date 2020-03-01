@@ -515,7 +515,7 @@ local function redraw_create_poll_content(data)
                 delete_flow.add {
                 type = 'sprite-button',
                 name = create_poll_delete_answer_name,
-                sprite = 'utility/remove',
+                sprite = 'utility/trash',
                 tooltip = 'Delete answer field.'
             }
             delete_button.style.height = 26
@@ -585,7 +585,7 @@ local function draw_create_poll_frame(parent, player, previous_data)
     end
 
     local frame =
-        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical', style = "changelog_frame"}
+        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical'}
     frame.style.maximal_width = 320
 
     local scroll_pane = frame.add {type = 'scroll-pane', vertical_scroll_policy = 'always'}

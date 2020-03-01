@@ -157,7 +157,7 @@ function gui_open_frame(player)
   rename_button.style.minimal_width = 24
   rename_button.style.maximal_height = 24
   rename_button.style.minimal_height = 24
-  local remove_button = storage_flow.add{type="sprite-button", name = "upgrade_planner_storage_delete", sprite = "utility/remove", tooltip = {"upgrade-planner.delete-storage-button-tooltip"} }
+  local remove_button = storage_flow.add{type="sprite-button", name = "upgrade_planner_storage_delete", sprite = "utility/trash", tooltip = {"upgrade-planner.delete-storage-button-tooltip"} }
   remove_button.style = "red_slot_button"
   remove_button.style.maximal_width = 24
   remove_button.style.minimal_width = 24
@@ -248,7 +248,7 @@ function gui_open_frame(player)
       type = "sprite-button",
       name = "upgrade_planner_clear_" .. i,
       style = "red_slot_button",
-      sprite = "utility/remove",
+      sprite = "utility/trash",
       tooltip = {"upgrade-planner.config-clear", ""}
     }
   end
