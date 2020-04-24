@@ -7,7 +7,12 @@ local this = {
   inf_mode = {},
   inf_gui = {},
   storage = {},
-  stop = false
+  chest = {
+    ["infinity-chest"] = "infinity-chest"--,
+    --["steel-chest"] = "steel-chest"
+  },
+  stop = false,
+  editor = false
 }
 
 local format = string.format
@@ -58,7 +63,7 @@ end
 local function built_entity(event)
   local entity =  event.created_entity
   if not entity.valid then return end
-  if entity.name ~= "compilatron-chest" then return end
+  if entity.name ~= this.chest[entity.name] then return end
   if event.player_index then
     local player = game.get_player(event.player_index)
     if this.storage[player.index] then
@@ -85,7 +90,7 @@ end
 local function built_entity_robot(event)
   local entity =  event.created_entity
   if not entity.valid then return end
-  if entity.name ~= "compilatron-chest" then return end
+  if entity.name ~= this.chest[entity.name] then return end
   entity.destroy()
 end
 
@@ -101,6 +106,8 @@ local function item(item_name, item_count, inv, unit_number)
 
     local mode = this.inf_mode[unit_number]
     if mode == 2 then
+      diff = 2^31
+    elseif mode == 3 then
       diff = 2^31
     end
     if diff > 0 then
@@ -150,7 +157,7 @@ end
 local function on_entity_died(event)
   local entity = event.entity
   if not entity then return end
-  if entity.name ~= "compilatron-chest" then return end
+  if entity.name ~= this.chest[entity.name] then return end
   local number = entity.unit_number
     this.inf_mode[number] = nil
     this.inf_chests[number]  = nil
@@ -166,7 +173,7 @@ local function on_pre_player_mined_item(event)
     this.storage[player.index] = {}
   end
 
-  if entity.name ~= "compilatron-chest" then return end
+  if entity.name ~= this.chest[entity.name] then return end
     is_chest_empty(entity, player.index)
   local data = this.inf_gui[player.name]
   if not data then return end
@@ -213,9 +220,9 @@ local function gui_opened(event)
   if not event.gui_type == defines.gui_type.entity then return end
   local entity = event.entity
   if not entity then return end
-  if not entity.valid or entity.name ~= 'compilatron-chest' then return end
+  if not entity.valid or entity.name ~= this.chest[entity.name] then return end
   local player = game.players[event.player_index]
-  local frame = player.gui.center.add{ type = "frame", caption = "Compilatron Chest", direction = "vertical", name = entity.unit_number}
+  local frame = player.gui.center.add{ type = "frame", caption = "Unlimited Chest", direction = "vertical", name = entity.unit_number}
   local controls = frame.add{ type = "flow", direction = "horizontal"}
   local items = frame.add{ type = "flow", direction = "vertical"}
 
@@ -233,7 +240,12 @@ local function gui_opened(event)
   local tbl_2 = tbl.add{ type = "table", column_count = 2}
 
   tbl_2.add{ type = "label", caption = "Mode: " }
-  local drop_down = tbl_2.add{ type = "drop-down", items = {"Enabled", "Disabled"}, selected_index = selected, name = entity.unit_number }
+  local drop_down
+  if player.admin and this.editor == true then
+    drop_down = tbl_2.add{ type = "drop-down", items = {"Enabled", "Disabled", "Editor"}, selected_index = selected, name = entity.unit_number }
+  else
+    drop_down = tbl_2.add{ type = "drop-down", items = {"Enabled", "Disabled"}, selected_index = selected, name = entity.unit_number }
+  end
   this.inf_mode[entity.unit_number] = drop_down.selected_index
   player.opened = frame
   this.inf_gui[player.name] = {
@@ -254,10 +266,11 @@ local function update_gui()
     if not frame then goto continue end
     if not entity or not entity.valid then goto continue end
     local mode = this.inf_mode[entity.unit_number]
+    if mode == 3 and this.inf_gui[player.name].updated then goto continue end
     if mode == 2 and this.inf_gui[player.name].updated then goto continue end
     frame.clear()
 
-    local tbl = frame.add{ type = "table", column_count = 10, name = "compilatron_chest_inventory" }
+    local tbl = frame.add{ type = "table", column_count = 10, name = "infinity_chest_inventory" }
     local total = 0
     local items = {}
 
@@ -285,10 +298,13 @@ local function update_gui()
     local btn
     for item_name, item_count in pairs(items) do
       if mode == 1 then
-      btn = tbl.add{ type = "sprite-button", sprite = "item/"..item_name ,style = "slot_button", number = item_count, name = item_name, tooltip = "Withdrawal is possible when state is disabled!"}
+      btn = tbl.add{ type = "sprite-button", sprite = "item/"..item_name, style = "slot_button", number = item_count, name = item_name, tooltip = "Withdrawal is possible when state is disabled!"}
       btn.enabled = false
     elseif mode == 2 then
-      btn = tbl.add{ type = "sprite-button", sprite = "item/"..item_name ,style = "slot_button", number = item_count, name = item_name}
+      btn = tbl.add{ type = "sprite-button", sprite = "item/"..item_name, style = "slot_button", number = item_count, name = item_name}
+      btn.enabled = true
+    elseif mode == 3 then
+      btn = tbl.add{ type = "sprite-button", sprite = "item/"..item_name, style = "slot_button", number = item_count, name = item_name}
       btn.enabled = true
     end
     end
@@ -333,6 +349,12 @@ local function state_changed(event)
     local player = game.players[event.player_index]
     if not validate_player(player) then return end
     this.inf_gui[player.name].updated = false
+    return
+  elseif mode == 3 then
+    local player = game.players[event.player_index]
+    if not validate_player(player) then return end
+    this.inf_gui[player.name].updated = false
+    return
   end
 end
 
@@ -343,17 +365,32 @@ local function gui_click(event)
   if not element.valid then return end
   local parent = element.parent
   if not parent then return end
-  if parent.name ~= "compilatron_chest_inventory" then return end
+  if parent.name ~= "infinity_chest_inventory" then return end
   local unit_number = tonumber(parent.parent.parent.name)
   if tonumber(element.name) == unit_number then return end
-
 
   local shift = event.shift
   local ctrl = event.control
   local name = element.name
   local storage = this.inf_storage[unit_number]
+  local mode = this.inf_mode[unit_number]
 
-  if this.inf_mode[unit_number] == 1 then return end
+  if player.admin then
+    if mode == 3 then
+      if ctrl then
+        storage[name] = storage[name] + 5000000
+        goto update
+      elseif shift then
+        storage[name] = storage[name] - 5000000
+        if storage[name] <= 0 then
+          storage[name] = nil
+        end
+        goto update
+      end
+    end
+  end
+
+  if mode == 1 then return end
 
   if ctrl then
     local count = storage[name]
@@ -361,9 +398,9 @@ local function gui_click(event)
     local inserted = player.insert{ name = name, count = count}
     if not inserted then return end
     if inserted == count then
-      this.inf_storage[unit_number][name] = nil
+      storage[name] = nil
     else
-      this.inf_storage[unit_number][name] = this.inf_storage[unit_number][name] - inserted
+      storage[name] = storage[name] - inserted
     end
   elseif shift then
     local count = storage[name]
@@ -372,19 +409,21 @@ local function gui_click(event)
     if not stack then return end
     if count > stack then
       local inserted = player.insert{ name = name, count = stack}
-      this.inf_storage[unit_number][name] = this.inf_storage[unit_number][name] - inserted
+      storage[name] = storage[name] - inserted
     else
       player.insert{ name = name, count = count}
-      this.inf_storage[unit_number][name] = nil
+      storage[name] = nil
     end
   else
-    if not this.inf_storage[unit_number][name] then return end
-    this.inf_storage[unit_number][name] = this.inf_storage[unit_number][name] - 1
+    if not storage[name] then return end
+    storage[name] = storage[name] - 1
     player.insert{ name = name, count = 1 }
-    if this.inf_storage[unit_number][name] <= 0 then
-      this.inf_storage[unit_number][name] = nil
+    if storage[name] <= 0 then
+      storage[name] = nil
     end
   end
+
+  ::update::
 
 
   for _, p in pairs(game.connected_players) do

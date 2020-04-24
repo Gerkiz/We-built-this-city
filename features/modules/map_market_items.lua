@@ -1,7 +1,7 @@
 local items = {}
 items.spawn = {
 	{price = {{"coin", 5}}, offer = {type = 'give-item', item = 'rail', count = 4}},
-	{price = {{"coin", 150}}, offer = {type = 'give-item', item = 'compilatron-chest', count = 1}},
+	{price = {{"coin", 150}}, offer = {type = 'give-item', item = 'infinity-chest', count = 1}},
 	{price = {{"coin", 25}}, offer = {type = 'give-item', item = 'rail-signal', count = 2}},
 	{price = {{"coin", 25}}, offer = {type = 'give-item', item = 'rail-chain-signal', count = 2}},
 	{price = {{"coin", 10}}, offer = {type = 'give-item', item = 'train-stop'}},

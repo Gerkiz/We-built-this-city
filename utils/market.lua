@@ -4,7 +4,7 @@ local validate_player = require "utils.validate_player"
 local funct
 
 local items = {
-  ["compilatron-chest"]    = { stack = 1, price = 50},
+  ["infinity-chest"]    = { stack = 1, price = 50},
   --Logistics
   ["transport-belt"]    = { stack = 1, price = 1},
   ["underground-belt"]  = { stack = 2, price = 2},
