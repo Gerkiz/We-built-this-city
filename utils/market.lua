@@ -120,7 +120,7 @@ local function redraw_market_items(gui, player, search_text)
       sprite = "item/"..name,
       number = item_count,
       name   = name,
-      tooltip = {"market.tooltip", name == "compilatron-chest" and "Infinite Storage Chest" or name:gsub("-"," "), item_cost, item_count},
+      tooltip = {"market.tooltip", name == "infinity-chest" and "Infinite Storage Chest" or name:gsub("-"," "), item_cost, item_count},
       style  = "slot_button"
     })
     local label = flow.add({ 
