@@ -3,8 +3,7 @@ local market_items = require "features.modules.map_market_items"
 local Tabs = require 'utils.gui.main'
 local RPG = require 'features.modules.rpg'
 local Fish = require 'features.modules.launch_fish_to_win'
-
---require 'features.modules.scramble'
+local Ores = require 'features.modules.scramble'
 require 'features.modules.spawn_ent.main'
 require 'features.modules.biters_yield_coins'
 require 'features.modules.dangerous_goods'
@@ -124,6 +123,10 @@ Event.add(defines.events.on_chunk_generated, function(event)
     end
 
     surface.set_tiles(tiles, true)]]--
+
+    if global.enable_scramble then
+        Ores.scramble(event)
+    end
 
     if global.enable_undecorator then
         Utils.UndecorateOnChunkGenerate(event)

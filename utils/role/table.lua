@@ -15,7 +15,7 @@ local Public = {
     events = {
         on_role_change=script.generate_event_name()
     }
-}
+}   
 
 Global.register(Public.config,function(tbl)
     Public.config = tbl

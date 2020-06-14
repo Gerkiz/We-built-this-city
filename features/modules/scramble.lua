@@ -1,6 +1,8 @@
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 
+local Public = {}
+
 local insert = table.insert
 
 local this = {
@@ -26,7 +28,7 @@ local function init()
 	end
 end
 
-local function scramble(event)
+function Public.scramble(event)
 	local ores = event.surface.find_entities_filtered{type="resource", area=event.area}
 	for k,v in pairs(ores) do
 		if math.abs(v.position.x) > this.exempt_area or math.abs(v.position.y) > this.exempt_area then
@@ -47,5 +49,10 @@ local function scramble(event)
 	end
 end
 
+function Public.register()
+	Event.add(defines.events.on_chunk_generated, Public.scramble)
+end
+
 Event.on_init(init)
-Event.add(defines.events.on_chunk_generated, scramble)
+
+return Public
