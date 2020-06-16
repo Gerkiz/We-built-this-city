@@ -77,10 +77,10 @@ require 'features.modules.rpg'
 
 --- load from config/map
 -- Oarc
---require 'config'
+require 'config'
 
 -- generated maps
-require 'map_builder'
+--require 'map_builder'
 
 -- lua profiler by boodals
 if _DEBUG then

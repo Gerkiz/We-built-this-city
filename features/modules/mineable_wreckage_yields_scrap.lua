@@ -1,7 +1,5 @@
 --mineable-wreckage yields scrap -- by mewmew
 
-local event = require 'utils.event'
-
 local mining_chance_weights = {
 	{name = "iron-plate", chance = 1000},
 	{name = "iron-gear-wheel", chance = 750},	
@@ -115,6 +113,8 @@ for _, t in pairs (mining_chance_weights) do
 	end			
 end
 
+local size_of_scrap_raffle = #scrap_raffle
+
 local function on_player_mined_entity(event)
 	local entity = event.entity
 	if not entity.valid then return end
@@ -122,7 +122,7 @@ local function on_player_mined_entity(event)
 			
 	event.buffer.clear()
 	
-	local scrap = scrap_raffle[math.random(1, #scrap_raffle)]
+	local scrap = scrap_raffle[math.random(1, size_of_scrap_raffle)]
 	
 	local amount_bonus = (game.forces.enemy.evolution_factor * 2) + (game.forces.player.mining_drill_productivity_bonus * 2)
 	local r1 = math.ceil(scrap_yield_amounts[scrap] * (0.3 + (amount_bonus * 0.3)))
@@ -145,4 +145,5 @@ local function on_player_mined_entity(event)
 	})	
 end
 
-event.add(defines.events.on_player_mined_entity, on_player_mined_entity)
+local Event = require 'utils.event'
+Event.add(defines.events.on_player_mined_entity, on_player_mined_entity)

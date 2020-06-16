@@ -1,5 +1,4 @@
 local Event = require 'utils.event'
---require "modules.spawn"
 local message_color = {r=0.98, g=0.66, b=0.22}
 
 global.renegades = 0
@@ -120,7 +119,7 @@ local function anarchy_gui(player)
 				l.style.maximal_width = members_width * 2
 				l.style.top_padding = 16
 				l.style.bottom_padding = 16
-			end	
+			end
 		end
 
 		for _, member in pairs (group.members) do
@@ -144,7 +143,7 @@ local function anarchy_gui(player)
 				b.style.font = "default-bold"
 				b.style.minimal_width = actions_width
 				b.style.maximal_width = actions_width
-			end 
+			end
 		end
 		--[[if player.admin then
 			if group.members[tostring(player.name)] then
@@ -192,10 +191,10 @@ local function refresh_alliances()
 	refresh_gui()
 end
 
-local function on_gui_click(event) 
+local function on_gui_click(event)
 	if not event then return end
 	if not event.element then return end
-	if not event.element.valid then return end	
+	if not event.element.valid then return end
 	local player = game.players[event.element.player_index]
 	local surface = player.surface
 	local nauvis = game.surfaces["nauvis"]
@@ -211,7 +210,7 @@ local function on_gui_click(event)
 			if event.element.type == "button" and event.element.caption == "Join" then
 				if player.tag ~= "" then
 					player.print("You are already in a group.", {r=191, g=78, b=78})
-					player.play_sound{path='utility/cannot_build'} 
+					player.play_sound{path='utility/cannot_build'}
 				return end
 				if event.element.parent.name == "Protectors" then
 					if #game.forces["Protectors"].connected_players > 1 then
@@ -292,9 +291,9 @@ local function on_tick(event)
 		if not global.map_init_tick then
 --			spawn()
 			local startSurface = game.surfaces["lobby"]
-			e = startSurface.create_entity({name = "compilatron", position = {10,-10}, force = "spectator"}) e.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = e.position, source = e, text = "[color=0,0.7,0]=^_^=[/color] [color=0.6,0,1] https://www.getcomfy.eu/discord[/color] [color=0,0.7,0]=^_^=[/color]"}) 
-			r = startSurface.create_entity({name = "compilatron", position = {-10,10}, force = "spectator"}) r.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = r.position, source = r, text = "[img=virtual-signal/signal-info] [color=0,0.7,0]Please join a faction by clicking [Factionless] to start playing! [/color][img=virtual-signal/signal-info]"}) 
-			--t = startSurface.create_entity({name = "compilatron", position = {10,10}, force = "spectator"}) t.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = t.position, source = t, text = "[color=0,0.6,0]Click the [Factionless] button to choose your faction![/color] [img=virtual-signal/signal-info]"}) 
+			e = startSurface.create_entity({name = "compilatron", position = {10,-10}, force = "spectator"}) e.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = e.position, source = e, text = "[color=0,0.7,0]=^_^=[/color] [color=0.6,0,1] https://www.getcomfy.eu/discord[/color] [color=0,0.7,0]=^_^=[/color]"})
+			r = startSurface.create_entity({name = "compilatron", position = {-10,10}, force = "spectator"}) r.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = r.position, source = r, text = "[img=virtual-signal/signal-info] [color=0,0.7,0]Please join a faction by clicking [Factionless] to start playing! [/color][img=virtual-signal/signal-info]"})
+			--t = startSurface.create_entity({name = "compilatron", position = {10,10}, force = "spectator"}) t.destructible = false startSurface.create_entity({name = "compi-speech-bubble", position = t.position, source = t, text = "[color=0,0.6,0]Click the [Factionless] button to choose your faction![/color] [img=virtual-signal/signal-info]"})
 			global.map_init_tick = true
 		end
 	end
@@ -325,7 +324,7 @@ local function on_player_joined_game(event)
 		game.difficulty_settings.recipe_difficulty = 1
 		game.map_settings.pollution.enabled = false
 		surface.request_to_generate_chunks({-600,600}, 2)
-		--surface.request_to_generate_chunks({0,0}, 2) 
+		--surface.request_to_generate_chunks({0,0}, 2)
 		for name,team in pairs(game.forces) do
 			if name ~= "enemy" and name ~= "Renegades" and name ~= "scrap_defense" and name ~= "spectator" then
 				for x,y in pairs(game.forces) do

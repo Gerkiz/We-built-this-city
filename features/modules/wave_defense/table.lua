@@ -12,8 +12,9 @@ Global.register(
 )
 
 function Public.reset_wave_defense()
-	wave_defense.boss_wave = false
-	wave_defense.side_target_count = 0
+    wave_defense.boss_wave = false
+    wave_defense.boss_wave_warning = false
+    wave_defense.side_target_count = 0
     wave_defense.active_biters = {}
     wave_defense.active_biter_count = 0
     wave_defense.active_biter_threat = 0
@@ -41,20 +42,34 @@ function Public.reset_wave_defense()
     wave_defense.threat_log_index = 0
     wave_defense.unit_groups = {}
     wave_defense.unit_group_command_delay = 3600 * 15
-    wave_defense.unit_group_command_step_length = 80
+    wave_defense.unit_group_command_step_length = 20
     wave_defense.unit_group_last_command = {}
     wave_defense.wave_interval = 3600
     wave_defense.wave_number = 0
     wave_defense.worm_building_chance = 3
     wave_defense.worm_building_density = 16
     wave_defense.worm_raffle = {}
+    wave_defense.clear_corpses = false
+    wave_defense.alert_boss_wave = false
 end
 
 function Public.get_table()
     return wave_defense
 end
 
-local on_init = function ()
+function Public.clear_corpses(value)
+    if value then
+        wave_defense.clear_corpses = value
+    end
+end
+
+function Public.alert_boss_wave(value)
+    if value then
+        wave_defense.alert_boss_wave = value
+    end
+end
+
+local on_init = function()
     Public.reset_wave_defense()
 end
 

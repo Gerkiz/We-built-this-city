@@ -1,9 +1,6 @@
 -- launch fish into space to win the game -- by mewmew
 
 local event = require 'utils.event'
-local m_gui = require "mod-gui"
-local mod = m_gui.get_frame_flow
-local Tabs = require 'utils.gui.main'
 
 local function get_rank()
 	for i = #global.catplanet_goals, 1, -1 do
@@ -14,8 +11,8 @@ local function get_rank()
 end
 
 local function fish_in_space_toggle_button(player)
-	if mod(player).fish_in_space_toggle then return end
-	local button = mod(player).add { name = "fish_in_space_toggle", type = "sprite-button", sprite = "item/raw-fish", tooltip = "Fish in Space"}
+	if player.gui.top["fish_in_space_toggle"] then return end
+	local button = player.gui.top.add { name = "fish_in_space_toggle", type = "sprite-button", sprite = "item/raw-fish", tooltip = "Fish in Space"}
 	button.style.font = "default-bold"
 	button.style.minimal_height = 38
 	button.style.minimal_width = 38
@@ -41,8 +38,6 @@ end
 function fish_in_space_gui(player)
 	if global.fish_in_space == 0 then return end
 	local i = get_rank()
-
-	Tabs.panel_clear_left_gui(player)
 	
 	fish_in_space_toggle_button(player)
 	

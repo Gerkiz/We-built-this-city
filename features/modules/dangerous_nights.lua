@@ -2,8 +2,8 @@
 
 local event = require 'utils.event' 
 
-local unearthing_worm = require "features.functions.unearthing_worm"
-local unearthing_biters = require "features.functions.unearthing_biters"
+local unearthing_worm = require "functions.unearthing_worm"
+local unearthing_biters = require "functions.unearthing_biters"
 
 local immune_tiles = {
 	["concrete"] = true,
@@ -21,7 +21,7 @@ local function on_player_changed_position(event)
 	if player.character.driving == true then return end
 	if player.surface.daytime < 0.33 then return end
 	if player.surface.daytime > 0.66 then return end
-	if math.random(1,32) ~= 1 then return end	
+	if math.random(1,32) ~= 1 then return end
 	
 	for _, lamp in pairs(player.surface.find_entities_filtered({area={{player.position.x - 18, player.position.y - 18},{player.position.x + 18, player.position.y + 18}}, name="small-lamp"})) do
 		local circuit = lamp.get_or_create_control_behavior()
