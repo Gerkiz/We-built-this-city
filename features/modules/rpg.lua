@@ -360,7 +360,9 @@ local function draw_gui(player)
     local value
     local e
 
-    local frame = player.gui.left.add({type = 'frame', name = 'rpg', direction = 'vertical'})
+    local frame =
+        player.gui.left.add({type = 'frame', name = 'rpg', direction = 'vertical', style = 'changelog_subheader_frame'})
+    frame.style.maximal_height = 800
     frame.style.maximal_width = 440
     frame.style.minimal_width = 440
     frame.style.use_header_filler = false

@@ -346,7 +346,7 @@ local function auto_stash(player, event)
 end
 
 local function create_gui_button(player)
-    if player.gui.top.auto_stash then
+    if mod(player).auto_stash then
         return
     end
     local tooltip
@@ -356,15 +356,13 @@ local function create_gui_button(player)
     else
         tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores.'
     end
-    if mod(player).auto_stash then
-        return
-    end
     mod(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/wooden-chest',
             name = 'auto_stash',
-            tooltip = tooltip
+            tooltip = tooltip,
+            style = m_gui.button_style
         }
     )
 end

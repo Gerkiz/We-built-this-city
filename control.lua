@@ -6,9 +6,9 @@ _DUMP_ENV = false
 
 --require 'map_gen.custom_maps.test'
 local loaded = _G.package.loaded
-local require_return_err = true
+local require_return_err = false
 local _require = require
-require = function(path)
+function require(path)
     local _path = path
     local _return = {pcall(_require, path)}
     if not table.remove(_return, 1) then
@@ -32,7 +32,8 @@ require = function(path)
             log('Loaded: ' .. _path)
         end
     end
-    return unpack(_return) and loaded[path]
+    return unpack(_return) and loaded[path] or
+        error('Can only require files at runtime that have been required in the control stage.', 2)
 end
 
 -- other stuff

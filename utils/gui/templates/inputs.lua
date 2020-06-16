@@ -155,7 +155,7 @@ function inputs.add_button(name,display,tooltip,callbacks)
     button:on_event('click',function(event)
         local elements = Core.data('inputs_'..event.element.type) or {}
         local button = elements[event.element.name]
-        if not button and event.element.type == 'sprite-button' then 
+        if not button and event.element.type == 'sprite-button' then
             elements = Core.data('inputs_button') or {}
             button = elements[event.element.name]
         end
@@ -173,7 +173,7 @@ function inputs.add_button(name,display,tooltip,callbacks)
                     if not success then error(err) end
                 elseif not success then error(err) end
             else error('Invalid Callback Condition Format') end
-        end 
+        end
     end)
     return button
 end

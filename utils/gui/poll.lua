@@ -5,7 +5,7 @@ local Game = require 'utils.game'
 local Server = require 'utils.server'
 local session = require 'utils.session_data'
 local Tabs = require 'utils.gui.main'
-local m_gui = require "mod-gui"
+local m_gui = require 'mod-gui'
 local mod = m_gui.get_frame_flow
 
 local insert = table.insert
@@ -242,15 +242,15 @@ local function redraw_poll_viewer_content(data)
 
     local question_label = question_flow.add {type = 'label', caption = poll.question}
     question_label.style.minimal_height = 32
-	question_label.style.single_line = false
+    question_label.style.single_line = false
     --question_label.style.font_color = focus_color
     --question_label.style.font = 'default-listbox'
-	question_label.style.font = 'heading-2'
-	question_label.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
-	question_label.style.top_padding = 4
-	question_label.style.left_padding = 4
-	question_label.style.right_padding = 4
-	question_label.style.bottom_padding = 4
+    question_label.style.font = 'heading-2'
+    question_label.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
+    question_label.style.top_padding = 4
+    question_label.style.left_padding = 4
+    question_label.style.right_padding = 4
+    question_label.style.bottom_padding = 4
 
     local grid = poll_viewer_content.add {type = 'table', column_count = 2}
 
@@ -289,14 +289,14 @@ local function redraw_poll_viewer_content(data)
         vote_buttons[i] = vote_button
 
         local label = grid.add {type = 'label', caption = a.text}
-		label.style.single_line = false
+        label.style.single_line = false
         label.style.minimal_height = 24
-		label.style.font = 'heading-3'
-		label.style.font_color = {r = 0.95, g = 0.95, b = 0.95}
-		--label.style.top_padding = 2
-		label.style.left_padding = 4
-		label.style.right_padding = 4
-		label.style.bottom_padding = 4
+        label.style.font = 'heading-3'
+        label.style.font_color = {r = 0.95, g = 0.95, b = 0.95}
+        --label.style.top_padding = 2
+        label.style.left_padding = 4
+        label.style.right_padding = 4
+        label.style.bottom_padding = 4
     end
 
     data.vote_buttons = vote_buttons
@@ -330,7 +330,15 @@ end
 
 local function draw_main_frame(left, player)
     local trusted = session.get_trusted_table()
-    local frame = left.add {type = 'frame', name = main_frame_name, caption = 'Polls', direction = 'vertical'}
+    local frame =
+        left.add {
+        type = 'frame',
+        name = main_frame_name,
+        caption = 'Polls',
+        direction = 'vertical',
+        style = 'changelog_subheader_frame'
+    }
+    frame.style.maximal_height = 700
     --frame.style.maximal_width = 640
 
     local poll_viewer_top_flow = frame.add {type = 'table', column_count = 5}
@@ -353,7 +361,7 @@ local function draw_main_frame(left, player)
     local poll_viewer_content = frame.add {type = 'scroll-pane'}
     poll_viewer_content.style.maximal_height = 480
     poll_viewer_content.style.width = 295
-	--poll_viewer_content.style.minimal_height = 480
+    --poll_viewer_content.style.minimal_height = 480
     --poll_viewer_content.style.minimal_width = 480
 
     local poll_index = player_poll_index[player.index] or #polls
@@ -585,8 +593,15 @@ local function draw_create_poll_frame(parent, player, previous_data)
     end
 
     local frame =
-        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical'}
+        parent.add {
+        type = 'frame',
+        name = create_poll_frame_name,
+        caption = title_text,
+        direction = 'vertical',
+        style = 'changelog_subheader_frame'
+    }
     frame.style.maximal_width = 320
+    frame.style.maximal_height = 700
 
     local scroll_pane = frame.add {type = 'scroll-pane', vertical_scroll_policy = 'always'}
     scroll_pane.style.maximal_height = 250
@@ -788,21 +803,21 @@ local function vote(event)
                     vote_button.caption = previous_vote_button_count
                     vote_button.tooltip = previous_vote_button_tooltip
 
-                    --if p.index == player_index then
-                    --    local vote_button_style = vote_button.style
-                    --    vote_button_style.font_color = normal_color
-                    --    vote_button_style.disabled_font_color = normal_color
-                    --end
+                --if p.index == player_index then
+                --    local vote_button_style = vote_button.style
+                --    vote_button_style.font_color = normal_color
+                --    vote_button_style.disabled_font_color = normal_color
+                --end
                 end
 
                 local vote_button = vote_buttons[vote_index]
                 vote_button.caption = vote_button_count
                 vote_button.tooltip = vote_button_tooltip
-                -- if p.index == player_index then -- block commented to avoid desync risk      
-                --     local vote_button_style = vote_button.style      
-                --     vote_button_style.font_color = focus_color       
-                --     vote_button_style.disabled_font_color = focus_color      
-                -- end
+            -- if p.index == player_index then -- block commented to avoid desync risk
+            --     local vote_button_style = vote_button.style
+            --     vote_button_style.font_color = focus_color
+            --     vote_button_style.disabled_font_color = focus_color
+            -- end
             end
         end
     end
@@ -821,7 +836,13 @@ local function player_joined(event)
             update_poll_viewer(data)
         end
     else
-       mod(player).add {type = 'sprite-button', name = main_button_name, sprite = 'item/programmable-speaker', tooltip = "Let your question be heard!", style = m_gui.button_style}
+        mod(player).add {
+            type = 'sprite-button',
+            name = main_button_name,
+            sprite = 'item/programmable-speaker',
+            tooltip = 'Let your question be heard!',
+            style = m_gui.button_style
+        }
     end
 end
 
