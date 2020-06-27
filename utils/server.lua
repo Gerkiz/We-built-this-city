@@ -169,28 +169,35 @@ local default_ping_token =
 )
 
 function Public.tick_to_display_format(tick)
-    if not Public.is_type(tick,'number') then return '0H 0M' end
+    if not Public.is_type(tick, 'number') then
+        return '0H 0M'
+    end
     if Public.tick_to_min(tick) < 10 then
-        return string.format('%.2f M',tick/(3600*game.speed))
+        return string.format('%.2f M', tick / (3600 * game.speed))
     else
-        return string.format('%d H %d M',
+        return string.format(
+            '%d H %d M',
             Public.tick_to_hour(tick),
-            Public.tick_to_min(tick)-60*Public.tick_to_hour(tick)
+            Public.tick_to_min(tick) - 60 * Public.tick_to_hour(tick)
         )
     end
 end
 
 function Public.tick_to_hour(tick)
-    if not Public.is_type(tick,'number') then return 0 end
-    return math.floor(tick/(216000*game.speed))
+    if not Public.is_type(tick, 'number') then
+        return 0
+    end
+    return math.floor(tick / (216000 * game.speed))
 end
 
 function Public.tick_to_min(tick)
-    if not Public.is_type(tick,'number') then return 0 end
-    return math.floor(tick/(3600))
+    if not Public.is_type(tick, 'number') then
+        return 0
+    end
+    return math.floor(tick / (3600))
 end
 
-function Public.is_type(v,test_type)
+function Public.is_type(v, test_type)
     return test_type and v and type(v) == test_type or not test_type and not v or false
 end
 
@@ -198,23 +205,35 @@ function Public.player_return(rtn, colour, player)
     local _colour = colour or Color.white
     local _player = player or game.player
     if _player then
-        if not player then return end
-        player.play_sound{path='utility/scenario_message'}
-        if Public.is_type(rtn,'table') then
-            if Public.is_type(rtn.__self,'userdata') then player.print('Can not display userdata',_colour)
-            elseif Public.is_type(rtn[1],'string') and string.find(rtn[1],'.+[.].+') and not string.find(rtn[1],'%s') then pcall(player.print,rtn,_colour)
-            else player.print(Table.to_string(rtn),_colour)
+        if not player then
+            return
+        end
+        player.play_sound {path = 'utility/scenario_message'}
+        if Public.is_type(rtn, 'table') then
+            if Public.is_type(rtn.__self, 'userdata') then
+                player.print('Can not display userdata', _colour)
+            elseif Public.is_type(rtn[1], 'string') and string.find(rtn[1], '.+[.].+') and not string.find(rtn[1], '%s') then
+                pcall(player.print, rtn, _colour)
+            else
+                player.print(Table.to_string(rtn), _colour)
             end
-        elseif Public.is_type(rtn,'function') then player.print('Can not display functions',_colour)
-        else player.print(tostring(rtn),_colour)
+        elseif Public.is_type(rtn, 'function') then
+            player.print('Can not display functions', _colour)
+        else
+            player.print(tostring(rtn), _colour)
         end
     else
         local _return
-        if Public.is_type(rtn,'table') then _return = Table.to_string(rtn)
-        elseif Public.is_type(rtn,'function') then _return = 'Can not display functions'
-        elseif Public.is_type(rtn,'userdata') then _return = 'Can not display userdata'
-        else _return = tostring(rtn)
-        end log(_return)
+        if Public.is_type(rtn, 'table') then
+            _return = Table.to_string(rtn)
+        elseif Public.is_type(rtn, 'function') then
+            _return = 'Can not display functions'
+        elseif Public.is_type(rtn, 'userdata') then
+            _return = 'Can not display userdata'
+        else
+            _return = tostring(rtn)
+        end
+        log(_return)
     end
 end
 
@@ -782,7 +801,7 @@ Event.add(
             message[#message + 1] = ' was killed by '
 
             local name = cause.name
-            if name == 'character' then
+            if name == 'character' and cause.player then
                 name = cause.player.name
             end
 

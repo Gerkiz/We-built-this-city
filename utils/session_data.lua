@@ -1,3 +1,5 @@
+-- luacheck: ignore
+
 local Global = require 'utils.global'
 local Game = require 'utils.game'
 local Token = require 'utils.token'
@@ -5,7 +7,6 @@ local Server = require 'utils.server'
 local Event = require 'utils.event'
 local table = require 'utils.table'
 local Print = require('utils.print_override')
-local Roles = require 'utils.role.main'
 local raw_print = Print.raw_print
 
 local session_data_set = 'sessions'
@@ -20,9 +21,9 @@ local nth_tick = 54001 -- nearest prime to 15 minutes in ticks
 
 Global.register(
     {
-    session=session,
-    online_track=online_track,
-    trusted=trusted
+        session = session,
+        online_track = online_track,
+        trusted = trusted
     },
     function(tbl)
         session = tbl.session
@@ -34,12 +35,12 @@ Global.register(
 local Public = {}
 
 if _DEBUG then
-printinfo =
-    Token.register(
-    function(data)
-        game.print(serpent.block(data))
-    end
-)
+    printinfo =
+        Token.register(
+        function(data)
+            game.print(serpent.block(data))
+        end
+    )
 end
 
 local try_download_data =
@@ -47,25 +48,9 @@ local try_download_data =
     function(data)
         local key = data.key
         local value = data.value
-        local player = game.players[key]
-        if not player then return end
         if value then
             session[key] = value
-            if value > 5184000 then
-                local power = Roles.get_role(player).power
-                local name = Roles.get_role(player).name
-                if name == 'Jail' then return end
-                if power >= 5 then
-                    Roles.give_role(player, 'Veteran', 'Script')
-                end
-                trusted[key] = true
-            elseif value > 2592000 then
-                local power = Roles.get_role(player).power
-                local name = Roles.get_role(player).name
-                if name == 'Jail' then return end
-                if power >= 6 then
-                    Roles.give_role(player, 'Casual', 'Script')
-                end
+            if value > 2592000 then
                 trusted[key] = true
             end
         else
@@ -104,26 +89,28 @@ end
 --- Tries to get data from the webpanel and updates the local table with values.
 -- @param data_set player token
 function Public.try_dl_data(key)
-    local _key = tostring(key)
+    local key = tostring(key)
     local secs = Server.get_current_time()
     if secs == nil then
         raw_print(error_offline)
         return
     else
-        try_get_data(session_data_set, _key, try_download_data)
+        try_get_data(session_data_set, key, try_download_data)
+        secs = nil
     end
 end
 
 --- Tries to get data from the webpanel and updates the local table with values.
 -- @param data_set player token
 function Public.try_ul_data(key)
-    local _key = tostring(key)
+    local key = tostring(key)
     local secs = Server.get_current_time()
     if secs == nil then
         raw_print(error_offline)
         return
     else
-        try_get_data(session_data_set, _key, try_upload_data)
+        try_get_data(session_data_set, key, try_upload_data)
+        secs = nil
     end
 end
 
@@ -187,7 +174,7 @@ Event.add(
             return
         end
         if game.is_multiplayer() then
-        Public.try_ul_data(player.name)
+            Public.try_ul_data(player.name)
         end
     end
 )
