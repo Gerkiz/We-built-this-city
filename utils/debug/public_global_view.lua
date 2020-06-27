@@ -25,11 +25,6 @@ function Public.show(container)
     local left_panel_style = left_panel.style
     left_panel_style.width = 300
 
-    for token_id, token_name in pairs(Global.names) do
-        local header = left_panel.add({type = 'flow'}).add {type = 'label', name = header_name, caption = token_name}
-        Gui.set_data(header, token_id)
-    end
-
     local right_flow = main_flow.add {type = 'flow', direction = 'vertical'}
 
     local right_top_flow = right_flow.add {type = 'flow', direction = 'horizontal'}

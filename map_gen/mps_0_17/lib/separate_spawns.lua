@@ -1088,7 +1088,6 @@ function Public.DisplayWelcomeTextGui(player)
         style = main_style
     }
     wGui.auto_center = true
-
     wGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     wGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
 
@@ -1557,6 +1556,7 @@ function Public.DisplaySharedSpawnOptions(player)
     }
 
     local shGuiFrame = player.gui.screen.shared_spawn_opts
+    shGuiFrame.style.minimal_height = 300
     shGuiFrame.auto_center = true
     local shGui = shGuiFrame.add {type = 'scroll-pane', name = 'spawns_scroll_pane', caption = ''}
     UtilsGui.ApplyStyle(shGui, UtilsGui.my_fixed_width_style)
