@@ -294,11 +294,13 @@ end
 ---@param force LuaForce
 ---@param duration number
 ---@param message string
-function Public.alert_force(force, duration, message)
+---@param color string
+function Public.alert_force(force, duration, message, color)
+    color = color or nil
     local players = force.connected_players
     for i = 1, #players do
         local player = players[i]
-        Public.alert_player(player, duration, message)
+        Public.alert_player(player, duration, message, color)
     end
 end
 

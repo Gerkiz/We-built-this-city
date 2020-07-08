@@ -46,6 +46,8 @@ require 'utils.color_data'
 require 'utils.session_data'
 require 'utils.player_modifiers'
 require 'utils.surface'
+require 'utils.jail_data'
+require 'utils.command_handler'
 
 -- Role system
 require 'utils.role.main'

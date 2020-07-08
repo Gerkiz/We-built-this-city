@@ -97,6 +97,7 @@ function Public.try_dl_data(key)
     else
         try_get_data(session_data_set, key, try_download_data)
         secs = nil
+        return session[key]
     end
 end
 

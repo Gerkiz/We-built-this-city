@@ -201,39 +201,42 @@ function Public.is_type(v, test_type)
     return test_type and v and type(v) == test_type or not test_type and not v or false
 end
 
-function Public.player_return(rtn, colour, player)
-    local _colour = colour or Color.white
-    local _player = player or game.player
-    if _player then
+function Public.player_return(message, colour, player)
+    colour = colour or Color.white
+    player = player or game.player
+    if player then
         if not player then
             return
         end
         player.play_sound {path = 'utility/scenario_message'}
-        if Public.is_type(rtn, 'table') then
-            if Public.is_type(rtn.__self, 'userdata') then
-                player.print('Can not display userdata', _colour)
-            elseif Public.is_type(rtn[1], 'string') and string.find(rtn[1], '.+[.].+') and not string.find(rtn[1], '%s') then
-                pcall(player.print, rtn, _colour)
+        if Public.is_type(message, 'table') then
+            if Public.is_type(message.__self, 'userdata') then
+                player.print('Can not display userdata', colour)
+            elseif
+                Public.is_type(message[1], 'string') and string.find(message[1], '.+[.].+') and
+                    not string.find(message[1], '%s')
+             then
+                pcall(player.print, message, colour)
             else
-                player.print(Table.to_string(rtn), _colour)
+                player.print(Table.to_string(message), colour)
             end
-        elseif Public.is_type(rtn, 'function') then
-            player.print('Can not display functions', _colour)
+        elseif Public.is_type(message, 'function') then
+            player.print('Can not display functions', colour)
         else
-            player.print(tostring(rtn), _colour)
+            player.print(tostring(message), colour)
         end
     else
-        local _return
-        if Public.is_type(rtn, 'table') then
-            _return = Table.to_string(rtn)
-        elseif Public.is_type(rtn, 'function') then
-            _return = 'Can not display functions'
-        elseif Public.is_type(rtn, 'userdata') then
-            _return = 'Can not display userdata'
+        local callback
+        if Public.is_type(message, 'table') then
+            callback = Table.to_string(message)
+        elseif Public.is_type(message, 'function') then
+            callback = 'Can not display functions'
+        elseif Public.is_type(message, 'userdata') then
+            callback = 'Can not display userdata'
         else
-            _return = tostring(rtn)
+            callback = tostring(message)
         end
-        log(_return)
+        log(callback)
     end
 end
 

@@ -1,14 +1,15 @@
-local global_data = require 'map_gen.mps_0_17.lib.table'.get_table()
+local global_data = require 'map_gen.multiplayer_spawn.lib.table'.get()
 
-global.welcome_msg_title = "We built this city!"
-global.welcome_msg = ""
-global.server_msg = "Rules: Be polite. Ask before changing other players stuff. Have fun!\n"..
-"Discord: discord.io/wbtc"
+global.welcome_msg_title = 'We built this city!'
+global.welcome_msg = ''
+global.server_msg =
+    'Rules: Be polite. Ask before changing other players stuff. Have fun!\n' .. 'Discord: discord.io/wbtc'
 
-global.scenario_info_msg = "This scenario gives you and/or your friends your own starting area.\n"..
-"You can be on the main team or your own. All teams are friendly.\n"..
-"If you leave in the first 15 minutes, your base and character will be deleted!\n"..
-"Repeated joining and leaving will result in a temporary ban."
+global.scenario_info_msg =
+    'This scenario gives you and/or your friends your own starting area.\n' ..
+    'You can be on the main team or your own. All teams are friendly.\n' ..
+        'If you leave in the first 15 minutes, your base and character will be deleted!\n' ..
+            'Repeated joining and leaving will result in a temporary ban.'
 
 global.enable_vanilla_spawns = false
 
@@ -30,7 +31,6 @@ global.silo_island_mode = false
 -- Enable Undecorator
 -- Removes decorative items to reduce save file size.
 global.enable_undecorator = false
-
 
 global.enable_scramble = true
 
@@ -79,22 +79,21 @@ global.modded_enemy = false -- disabled cause OE
 -- Market
 ---------------------------------------
 global.enable_market = true
-global.enable_fishbank_terminal = true
 
 ---------------------------------------
 -- Starting Items
 ---------------------------------------
 -- Items provided to the player the first time they join
 global.player_spawn_start_items = {
-    --{name="pistol", count=1},
-    --{name="firearm-magazine", count=100},
-    {name="iron-plate", count=8},
-    {name="burner-mining-drill", count = 4},
-    {name="stone-furnace", count = 4},
-    {name="raw-fish", count = 10},
-    -- {name="iron-plate", count=20},
-    -- {name="burner-mining-drill", count = 1},
-    -- {name="stone-furnace", count = 1},
+    {name = 'pistol', count = 1},
+    {name = 'firearm-magazine', count = 16},
+    {name = 'iron-plate', count = 8},
+    {name = 'burner-mining-drill', count = 4},
+    {name = 'stone-furnace', count = 4},
+    {name = 'raw-fish', count = 10},
+    {name = 'iron-plate', count = 20},
+    {name = 'coal', count = 50},
+    {name = 'stone', count = 50}
     -- {name="power-armor", count=1},
     -- {name="fusion-reactor-equipment", count=1},
     -- {name="battery-mk2-equipment", count=3},
@@ -107,8 +106,8 @@ global.player_spawn_start_items = {
 
 -- Items provided after EVERY respawn (disabled by default)
 global.player_respawn_start_items = {
-     {name="pistol", count=1},
-     {name="firearm-magazine", count=8}
+    {name = 'pistol', count = 1},
+    {name = 'firearm-magazine', count = 8}
 }
 
 ---------------------------------------
@@ -154,57 +153,43 @@ global.vanilla_spawn_distance = 1000
 -- Once you have a config you like, it's a good idea to save it for later use
 -- so you don't lost it if you update the scenario.
 global.scenario_config = {
-
     -- Misc spawn related config.
     gen_settings = {
-
         -- THIS IS WHAT SETS THE SPAWN CIRCLE SIZE!
         -- Create a circle of land area for the spawn
         -- If you make this much bigger than a few chunks, good luck.
-        land_area_tiles = global_data.chunk_size*2.5,
-
+        land_area_tiles = global_data.chunk_size * 2.5,
         -- Allow players to choose to spawn with a moat
         moat_choice_enabled = false,
-
         -- If you change the spawn area size, you might have to adjust this as well
         moat_size_modifier = 1,
-
         -- Start resource shape. true = circle, false = square.
         resources_circle_shape = false,
-
         -- Force the land area circle at the spawn to be fully grass
         force_grass = true,
-
         -- Spawn a circle/octagon of trees around the base outline.
         tree_circle = false,
         tree_octagon = false,
         tree_square = true,
-        trees_enabled = true,
+        trees_enabled = true
     },
-
     -- Safe Spawn Area Options
     -- The default settings here are balanced for my recommended map gen settings (close to train world).
-    safe_area =
-    {
+    safe_area = {
         -- Safe area has no aliens
         -- This is the radius in tiles of safe area.
-        safe_radius = global_data.chunk_size*8,
-
+        safe_radius = global_data.chunk_size * 8,
         -- Warning area has significantly reduced aliens
         -- This is the radius in tiles of warning area.
-        warn_radius = global_data.chunk_size*16,
-
+        warn_radius = global_data.chunk_size * 16,
         -- 1 : X (spawners alive : spawners destroyed) in this area
         warn_reduction = 20,
-
         -- Danger area has slightly reduce aliens
         -- This is the radius in tiles of danger area.
-        danger_radius = global_data.chunk_size*32,
-
+        danger_radius = global_data.chunk_size * 32,
         -- 1 : X (spawners alive : spawners destroyed) in this area
-        danger_reduction = 5,
+        danger_reduction = 5
     },
-
     -- Location of water strip (horizontal)
     water_new = {
         x_offset = -90,
@@ -216,10 +201,8 @@ global.scenario_config = {
         y_offset = -65,
         length = 8
     },
-
     -- Handle placement of starting resources
-    resource_rand_pos_settings =
-    {
+    resource_rand_pos_settings = {
         -- Autoplace resources (randomly in circle)
         -- This will ignore the fixed x_offset/y_offset values in resource_tiles.
         -- Only works for resource_tiles at the moment, not oil patches/water.
@@ -235,62 +218,54 @@ global.scenario_config = {
         angle_final = 4.46 -- 4.46 is approx NNW.
     },
     -- Randomize positions
-    pos =
-        {{x=-5,y=-45},{x=20,y=-45},{x=-30,y=-45},{x=-56,y=-45}
+    pos = {
+        {x = -5, y = -45},
+        {x = 20, y = -45},
+        {x = -30, y = -45},
+        {x = -56, y = -45}
     },
     -- Resource tiles
     -- If you are running with mods like bobs/angels, you'll want to customize this.
-    resource_tiles_new =
-    {
-
-        [1] =
-        {
+    resource_tiles_new = {
+        [1] = {
             amount = 2500,
             size = 18
         },
-        [2] =
-        {
+        [2] = {
             amount = 2500,
             size = 18
         },
-        [3] =
-        {
+        [3] = {
             amount = 2500,
             size = 18
         },
-        [4] =
-        {
+        [4] = {
             amount = 2500,
             size = 18
         }
     },
     -- Resource tiles
     -- If you are running with mods like bobs/angels, you'll want to customize this.
-    resource_tiles_classic =
-    {
-        ["iron-ore"] =
-        {
+    resource_tiles_classic = {
+        ['iron-ore'] = {
             amount = 2500,
             size = 18,
             x_offset = -29,
             y_offset = 16
         },
-        ["copper-ore"] =
-        {
+        ['copper-ore'] = {
             amount = 2500,
             size = 18,
             x_offset = -28,
             y_offset = -3
         },
-        ["stone"] =
-        {
+        ['stone'] = {
             amount = 2500,
             size = 18,
             x_offset = -27,
             y_offset = -34
         },
-        ["coal"] =
-        {
+        ['coal'] = {
             amount = 2500,
             size = 18,
             x_offset = -27,
@@ -298,10 +273,8 @@ global.scenario_config = {
         }
     },
     -- Special resource patches like oil
-    resource_patches_new =
-    {
-        ["crude-oil"] =
-        {
+    resource_patches_new = {
+        ['crude-oil'] = {
             num_patches = 2,
             amount = 900000,
             x_offset_start = 60,
@@ -310,10 +283,8 @@ global.scenario_config = {
             y_offset_next = 0
         }
     },
-    resource_patches_classic =
-    {
-        ["crude-oil"] =
-        {
+    resource_patches_classic = {
+        ['crude-oil'] = {
             num_patches = 2,
             amount = 900000,
             x_offset_start = -3,
@@ -321,7 +292,7 @@ global.scenario_config = {
             x_offset_next = 6,
             y_offset_next = 0
         }
-    },
+    }
 }
 
 ---------------------------------------
@@ -334,7 +305,7 @@ global.scenario_config = {
 global.enable_separate_teams = true
 
 -- Main force is what default players join
-global.main_force_name = "Main Force"
+global.main_force_name = 'Main Force'
 
 -- Enable if players can allow others to join their base.
 -- And specify how many including the host are allowed.
@@ -372,10 +343,12 @@ global.silo_distance = 200
 global.silo_fixed_pos = false
 
 -- If you want to set fixed spawn locations for some silos.
-global.silo_pos = {{x = -1000, y = -1000},
-                  {x = -1000, y = 1000},
-                  {x = 1000,  y = -1000},
-                  {x = 1000,  y = 1000}}
+global.silo_pos = {
+    {x = -1000, y = -1000},
+    {x = -1000, y = 1000},
+    {x = 1000, y = -1000},
+    {x = 1000, y = 1000}
+}
 
 -- Set this to false so that you have to search for the silo's.
 global.enable_silo_vision = true
@@ -388,7 +361,6 @@ global.enable_silo_radar = false
 -- the fixed locations. If this is false, silos are built and assigned
 -- only to the main force.
 global.enable_silo_player_build = true
-
 
 --------------------------------------------------------------------------------
 -- Long Reach Options

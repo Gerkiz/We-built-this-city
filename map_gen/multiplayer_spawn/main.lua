@@ -1,10 +1,6 @@
-local Event = require 'utils.event'
-local market_items = require 'features.modules.map_market_items'
-local Tabs = require 'utils.gui.main'
-local RPG = require 'features.modules.rpg'
-local Fish = require 'features.modules.launch_fish_to_win'
-local Ores = require 'features.modules.scramble'
-local Autostash = require 'features.modules.autostash'
+require 'utils.gui.main'
+require 'features.modules.rpg'
+require 'features.modules.launch_fish_to_win'
 require 'features.modules.spawn_ent.main'
 require 'features.modules.biters_yield_coins'
 require 'features.modules.dangerous_goods'
@@ -21,14 +17,19 @@ require 'features.modules.custom_death_messages'
 require 'features.modules.spawn_area'
 --require 'features.modules.splice'
 --require 'features.modules.oarc_enemies.main'
+require 'map_gen.multiplayer_spawn.config'
 
+local Event = require 'utils.event'
+local market_items = require 'features.modules.map_market_items'
+local Ores = require 'features.modules.scramble'
+local Autostash = require 'features.modules.autostash'
 local Map = require 'features.modules.map_info'
-local Utils = require 'map_gen.mps_0_17.lib.oarc_utils'
-local Silo = require 'map_gen.mps_0_17.lib.frontier_silo'
-local R_launch = require 'map_gen.mps_0_17.lib.rocket_launch'
-local Config = require 'map_gen.mps_0_17.config'
+local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
+local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
+local R_launch = require 'map_gen.multiplayer_spawn.lib.rocket_launch'
 local Surface = require 'utils.surface'.get_surface_name()
-local SS = require 'map_gen.mps_0_17.lib.separate_spawns'
+local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
+local Alert = require 'utils.alert'
 local math_random = math.random
 
 ----------------------------------------
@@ -350,10 +351,10 @@ Event.add(
         local research = event.research
         local force_name = research.force.name
         if research.name == 'rocket-silo' then
-            game.forces[force_name].print(
-                'Note! Rocket-silos can only be built on designated areas! You can find these on the mini-map.',
-                {r = 0, g = 255, b = 171}
-            )
+            local message =
+                'Note! Rocket-silos can only be built on designated areas! You can find these on the mini-map.'
+            Alert.alert_force(force_name, 10, message, {r = 0, g = 255, b = 171})
+
             game.forces[force_name].play_sound {path = 'utility/new_objective', volume_modifier = 0.75}
         end
 

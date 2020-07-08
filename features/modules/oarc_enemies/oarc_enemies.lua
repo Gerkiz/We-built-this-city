@@ -23,9 +23,9 @@
 -- }
 
 local Evo = require 'features.modules.oarc_enemies.oarc_enemies_evo'
-local Utils = require 'map_gen.mps_0_17.lib.oarc_utils'
+local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
 local OE_Table = require 'features.modules.oarc_enemies.table'
-local Table = require 'map_gen.mps_0_17.lib.table'
+local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local Surface = require 'utils.surface'
 local validate = require 'utils.validate_player'
 local insert = table.insert
@@ -353,7 +353,7 @@ function Public.OarcEnemiesChunkIsNearPlayerBuilding(c_pos)
     end
 end
 
-function Public.OarcEnemiesChunkHasPlayerBuilding(position)
+function Public.OarcEnemiesChunkHasPlayerBuilding()
     return true
 end
 
@@ -647,7 +647,7 @@ end
 
 function Public.EnemyGroupGoAttackEntityThenWander(group, target, path)
     local gd = OE_Table.get_table()
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
 
     if (not group or not group.valid or not target or not path) then
         if gd.debug then
@@ -719,7 +719,7 @@ end
 
 function Public.EnemyGroupBuildBaseThenWander(group, target_pos)
     local gd = OE_Table.get_table()
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
 
     if (not group or not group.valid or not target_pos) then
         if gd.debug then

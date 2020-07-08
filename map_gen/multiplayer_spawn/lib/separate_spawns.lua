@@ -4,14 +4,14 @@
 -- Code that handles everything regarding giving each player a separate spawn
 -- Includes the GUI stuff
 
-local Utils = require 'map_gen.mps_0_17.lib.oarc_utils'
-local UtilsGui = require 'map_gen.mps_0_17.lib.oarc_gui_utils'
-local Silo = require 'map_gen.mps_0_17.lib.frontier_silo'
-local Table = require 'map_gen.mps_0_17.lib.table'
+local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
+local UtilsGui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
+local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
+local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local surface_name = require 'utils.surface'.get_surface_name()
 local surface_index = require 'utils.surface'.get_surface()
 local Score = require 'utils.gui.score'
-local Config = require 'map_gen.mps_0_17.config'
+local Config = require 'map_gen.multiplayer_spawn.config'
 local Gui = require 'utils.gui.main'
 
 local Public = {}
@@ -94,7 +94,7 @@ end
 
 -- Call this if a player leaves the game or is reset
 function Public.FindUnusedSpawns(player, remove_player)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     if not player then
         log('ERROR - FindUnusedSpawns on NIL Player!')
         return
@@ -207,7 +207,7 @@ end
 -- This clears enemies in the immediate area, creates a slightly safe area around it,
 -- It no LONGER generates the resources though as that is now handled in a delayed event!
 function Public.SetupAndClearSpawnAreas(surface, chunkArea)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     for _, spawn in pairs(global.uniqueSpawns) do
         -- Create a bunch of useful area and position variables
         local landArea =
@@ -727,7 +727,7 @@ function Public.ChangePlayerSpawn(player, pos)
 end
 
 function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoice, vanillaSpawn, this)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     if not this then
         this = false
     end
@@ -787,8 +787,6 @@ function Public.DelayedSpawnOnTick()
 end
 
 function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
-    local global_data = Table.get_table()
-
     -- DOUBLE CHECK and make sure the area is super safe.
     Utils.ClearNearbyEnemies(
         delayedSpawn.pos,
@@ -822,6 +820,16 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
 
     -- Send the player to that position
     local player = game.players[delayedSpawn.playerName]
+    rendering.draw_text {
+        text = player.name .. ' comfy home!',
+        surface = surface_name,
+        target = {delayedSpawn.pos.x, delayedSpawn.pos.y},
+        color = {r = 0.98, g = 0.66, b = 0.22},
+        scale = 6,
+        font = 'heading-1',
+        alignment = 'center',
+        scale_with_zoom = false
+    }
     player.teleport(delayedSpawn.pos, surface_name)
     Utils.GivePlayerStarterItems(game.players[delayedSpawn.playerName])
     if player and player.character and player.character.valid then
@@ -894,7 +902,7 @@ function Public.SendPlayerToRandomSpawn(player)
 end
 
 function Public.CreateForce(force_name)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     local newForce = nil
 
     -- Check if force already exists
@@ -1394,7 +1402,7 @@ end
 
 -- Handle the gui click of the spawn options
 function Public.SpawnOptsGuiClick(event)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     if not (event and event.element and event.element.valid) then
         return
     end
@@ -1772,7 +1780,7 @@ end
 
 -- This is a toggle function, it either shows or hides the spawn controls
 function Public.CreateSpawnCtrlGuiTab(player, frame)
-    local global_data = Table.get_table()
+    local global_data = MPS.get()
     frame.clear()
     local spwnCtrls =
         frame.add {

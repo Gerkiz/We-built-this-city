@@ -1,14 +1,12 @@
 local Event = require 'utils.event'
 local Core = require 'utils.gui.main'
-local m_gui = require "mod-gui"
-local Server = require 'utils.callback_token'
+local m_gui = require 'mod-gui'
 local mod = m_gui.get_frame_flow
-
 
 local left = {}
 left._left = {}
 
-local function is_type(v,test_type)
+local function is_type(v, test_type)
     return test_type and v and type(v) == test_type or not test_type and not v or false
 end
 
@@ -17,11 +15,15 @@ end
 -- @param obj this is what will be made, needs a name and a draw function(root_frame), open_on_join can be used to set the deaful state true/false, can_open is a test to block it from opening but is not needed
 -- @return the object that is made to... well idk but for the future
 function left.add(obj)
-    if not is_type(obj,'table') then return end
-    if not is_type(obj.name,'string') then return end
-    setmetatable(obj,{__index=left._left})
-    Core.data('left',obj.name,obj)
-    Core.toolbar.add(obj.name,obj.caption,obj.tooltip,obj.toggle)
+    if not is_type(obj, 'table') then
+        return
+    end
+    if not is_type(obj.name, 'string') then
+        return
+    end
+    setmetatable(obj, {__index = left._left})
+    Core.data('left', obj.name, obj)
+    Core.toolbar.add(obj.name, obj.caption, obj.tooltip, obj.toggle)
     return obj
 end
 
@@ -29,39 +31,22 @@ end
 -- @usage Gui.left.update()
 -- @tparam[opt] string frame this is the name of a frame if you only want to update one
 -- @param[opt] players the player to update for, if not given all players are updated, can be one player
-function left.update(frame,players)
-    if not Server or not Server._thread then
-        local players = is_type(players,'table') and #players > 0 and {unpack(players)} or is_type(players,'table') and {players} or game.get_player(players) and {game.get_player(players)} or game.connected_players
-        for _,player in pairs(players) do
-            local frames = Core.data('left') or {}
-            if frame then frames = {[frame]=frames[frame]} or {} end
-            for name,left in pairs(frames) do
-                if _left then
-                    local fake_event = {player_index=player.index,element={name=name}}
-                    left.open(fake_event)
-                end
+function left.update(frame, players)
+    players =
+        is_type(players, 'table') and #players > 0 and {unpack(players)} or is_type(players, 'table') and {players} or
+        game.get_player(players) and {game.get_player(players)} or
+        game.connected_players
+    for _, player in pairs(players) do
+        local frames = Core.data('left') or {}
+        if frame then
+            frames = {[frame] = frames[frame]} or {}
+        end
+        for name, left in pairs(frames) do
+            if left then
+                local fake_event = {player_index = player.index, element = {name = name}}
+                left.open(fake_event)
             end
         end
-    else
-        local frames = Core.data('left') or {}
-        if frame then frames = {[frame]=frames[frame]} or {} end
-        local players = game.connected_players
-        Server.new_thread{
-            data={players=players,frames=frames}
-        }:on_event('tick',function(thread)
-            if #thread.data.players == 0 then thread:close() return end
-            local player = table.remove(thread.data.players,1)
-            Server.new_thread{
-                data={player=player,frames=thread.data.frames}
-            }:on_event('resolve',function(thread)
-                for name,left in pairs(thread.data.frames) do
-                    if left then
-                        local fake_event = {player_index=thread.data.player.index,element={name=name}}
-                        left.open(fake_event)
-                    end
-                end
-            end):queue()
-        end):open()
     end
 end
 
@@ -70,21 +55,14 @@ end
 -- @tparam string left_name this is the gui that you want to open
 function left.open(left_name)
     local _left = Core.data('left')[left_name]
-    if not _left then return end
-    if not Server or not Server._thread then
-        for _,player in pairs(game.connected_players) do
-            local left_flow = mod(player)
-            if left_flow[_left.name] then left_flow[_left.name].style.visible = true end
+    if not _left then
+        return
+    end
+    for _, player in pairs(game.connected_players) do
+        local left_flow = mod(player)
+        if left_flow[_left.name] then
+            left_flow[_left.name].style.visible = true
         end
-    else
-        Server.new_thread{
-            data={players=game.connected_players}
-        }:on_event('tick',function(thread)
-            if #thread.data.players == 0 then thread:close() return end
-            local player = table.remove(thread.data.players,1)
-            local left_flow = mod(player)
-            if left_flow[_left.name] then left_flow[_left.name].style.visible = true end
-        end):open()
     end
 end
 
@@ -93,21 +71,14 @@ end
 -- @tparam string left_name this is the gui that you want to close
 function left.close(left_name)
     local _left = Core.data('left')[left_name]
-    if not _left then return end
-    if not Server or not Server._thread then
-        for _,player in pairs(game.connected_players) do
-            local left_flow = mod(player)
-            if left_flow[_left.name] then left_flow[_left.name].style.visible = false end
+    if not _left then
+        return
+    end
+    for _, player in pairs(game.connected_players) do
+        local left_flow = mod(player)
+        if left_flow[_left.name] then
+            left_flow[_left.name].style.visible = false
         end
-    else
-        Server.new_thread{
-            data={players=game.connected_players}
-        }:on_event('tick',function(thread)
-            if #thread.data.players == 0 then thread:close() return end
-            local player = table.remove(thread.data.players,1)
-            local left_flow = mod(player)
-            if left_flow[_left.name] then left_flow[_left.name].style.visible = false end
-        end):open()
     end
 end
 
@@ -121,11 +92,25 @@ function left._left.open(event)
         frame = left_flow[_left.name]
         frame.clear()
     else
-        frame = left_flow.add{type='frame',name=_left.name,style=mod.frame_style,caption=_left.caption,direction='vertical'}
+        frame =
+            left_flow.add {
+            type = 'frame',
+            name = _left.name,
+            style = mod.frame_style,
+            caption = _left.caption,
+            direction = 'vertical'
+        }
         frame.style.visible = false
-        if is_type(_left.open_on_join,'boolean') then frame.style.visible = _left.open_on_join end
+        if is_type(_left.open_on_join, 'boolean') then
+            frame.style.visible = _left.open_on_join
+        end
     end
-    if is_type(_left.draw,'function') then _left.draw(frame) else frame.style.visible = false error('No Callback On '.._left.name) end
+    if is_type(_left.draw, 'function') then
+        _left.draw(frame)
+    else
+        frame.style.visible = false
+        error('No Callback On ' .. _left.name)
+    end
 end
 
 -- this is called when the toolbar button is pressed
@@ -133,14 +118,20 @@ function left._left.toggle(event)
     local player = game.players[event.player_index]
     local _left = Core.data('left')[event.element.name]
     local left_flow = mod(player)
-    if not left_flow[_left.name] then _left.open(event) end
+    if not left_flow[_left.name] then
+        _left.open(event)
+    end
     local left = left_flow[_left.name]
     local open = false
-    if is_type(_left.can_open,'function') then
-        local success, err = pcall(_left.can_open,player)
-        if not success then error(err)
-        elseif err == true then open = true
-        else open = err end
+    if is_type(_left.can_open, 'function') then
+        local success, err = pcall(_left.can_open, player)
+        if not success then
+            error(err)
+        elseif err == true then
+            open = true
+        else
+            open = err
+        end
     else
         if player.admin then
             open = true
@@ -153,16 +144,21 @@ function left._left.toggle(event)
     else
         left.style.visible = false
     end
-    if open == false then return player.play_sound{path='utility/cannot_build'} end
+    if open == false then
+        return player.play_sound {path = 'utility/cannot_build'}
+    end
 end
 
-Event.add(defines.events.on_player_joined_game,function(event)
-    local player = game.players[event.player_index]
-    local frames = Core.data('left') or {}
-    for name,left in pairs(frames) do
-        local fake_event = {player_index=player.index,element={name=name}}
-        left.open(fake_event)
+Event.add(
+    defines.events.on_player_joined_game,
+    function(event)
+        local player = game.players[event.player_index]
+        local frames = Core.data('left') or {}
+        for name, left in pairs(frames) do
+            local fake_event = {player_index = player.index, element = {name = name}}
+            left.open(fake_event)
+        end
     end
-end)
+)
 
 return left
