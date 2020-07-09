@@ -7,7 +7,6 @@ local nth_tick = 54001
 local msg = {{'chat-bot.join-us'}, {'chat-bot.discord'}, {'chat-bot.custom-commands'}}
 
 local await_popcorn = function(data)
-    log(serpent.block(data))
     game.print {'chat-bot.message', {'chat-bot.get-popcorn-2', data}}
 end
 

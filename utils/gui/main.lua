@@ -95,8 +95,7 @@ function Public.bar(frame, width)
 end
 
 function Public.set_dropdown_index(dropdown, _item)
-    if dropdown and dropdown.valid and dropdown.items and _item then
-    else
+    if not dropdown and not dropdown.valid and not dropdown.items and not _item then
         return
     end
     local _index = 1

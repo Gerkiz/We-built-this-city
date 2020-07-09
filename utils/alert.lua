@@ -298,6 +298,10 @@ end
 function Public.alert_force(force, duration, message, color)
     color = color or nil
     local players = force.connected_players
+    if not players then
+        Public.alert_player(game.players[1], duration, message, color)
+        return
+    end
     for i = 1, #players do
         local player = players[i]
         Public.alert_player(player, duration, message, color)

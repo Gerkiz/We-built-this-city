@@ -76,6 +76,7 @@ require 'features.modules.tree_decon'
 require 'features.commands.repair'
 require 'features.commands.bonus'
 require 'features.commands.misc'
+require 'features.commands.map_restart'
 require 'features.modules.rpg'
 
 --- load from config/map

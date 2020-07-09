@@ -197,6 +197,10 @@ function Public.BuildSiloAttempt(event)
         return
     end
 
+    if not event.created_entity or not event.created_entity.valid then
+        return
+    end
+
     local e_name = event.created_entity.name
     if (event.created_entity.name == 'entity-ghost') then
         e_name = event.created_entity.ghost_name

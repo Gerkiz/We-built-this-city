@@ -113,7 +113,6 @@ local function decompress_map_data()
         local total_count = 0
         local line = use_large_map and map_data_large[y + 1] or map_data[y + 1]
         for letter, count in string.gmatch(line, '(%a+)(%d+)') do
-            log(serpent.block(count))
             for x = total_count, total_count + count do
                 decompressed[y][x] = letter
             end

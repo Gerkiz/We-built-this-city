@@ -32,10 +32,14 @@ end
 -- @tparam[opt] string frame this is the name of a frame if you only want to update one
 -- @param[opt] players the player to update for, if not given all players are updated, can be one player
 function left.update(frame, players)
-    players =
-        is_type(players, 'table') and #players > 0 and {unpack(players)} or is_type(players, 'table') and {players} or
-        game.get_player(players) and {game.get_player(players)} or
-        game.connected_players
+    if players then
+        players =
+            is_type(players, 'table') and #players > 0 and {unpack(players)} or is_type(players, 'table') and {players} or
+            game.get_player(players) and {game.get_player(players)} or
+            game.connected_players
+    else
+        players = game.connected_players
+    end
     for _, player in pairs(players) do
         local frames = Core.data('left') or {}
         if frame then

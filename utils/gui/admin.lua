@@ -1,6 +1,7 @@
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.main'
 local Surface = require 'utils.surface'.get_surface_name()
+local Jailed = require 'utils.jail_data'
 local AntiGrief = require 'features.functions.antigrief'
 local Color = require 'utils.color_presets'
 local Global = require 'utils.global'
@@ -15,6 +16,14 @@ Global.register(
     end
 )
 
+local lower = string.lower
+
+local bring_player_messages = {
+    'Come here my friend!',
+    'Papers, please.',
+    'What are you up to?'
+}
+
 local function admin_only_message(str)
     for _, player in pairs(game.connected_players) do
         if player.admin == true then
@@ -23,11 +32,11 @@ local function admin_only_message(str)
     end
 end
 
-local jail_messages = {
-    'You´re done bud!',
-    'Busted!'
-}
 local function jail(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
+
     local source_role = Roles.get_role(player)
     local target_role = Roles.get_role(source_player)
     if source_role.power < target_role.power then
@@ -39,19 +48,16 @@ local function jail(player, source_player)
         return
     end
     this[player.index] = player.permission_group.name
-    game.print(
-        player.name .. ' has been jailed. ' .. jail_messages[math.random(1, #jail_messages)],
-        {r = 0.98, g = 0.66, b = 0.22}
-    )
+
+    Jailed.try_ul_data(player.name, true, source_player.name)
     Roles.give_role(player, 'Jail', source_player.name)
-    admin_only_message(player.name .. ' was jailed by ' .. source_player.name)
 end
 
-local freedom_messages = {
-    'Yaay!',
-    'Welcome back!'
-}
 local function free(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
+
     local has_role = Roles.get_role(player).name
     if has_role == 'Jail' then
         if this[player.index] then
@@ -61,23 +67,15 @@ local function free(player, source_player)
             Roles.give_role(player, 'Rookie', source_player.name)
             return
         end
-        game.print(
-            player.name .. ' was set free from jail. ' .. freedom_messages[math.random(1, #freedom_messages)],
-            {r = 0.98, g = 0.66, b = 0.22}
-        )
-        admin_only_message(source_player.name .. ' set ' .. player.name .. ' free from jail')
-    else
-        source_player.print(player.name .. ' is not in jail!', Color.warning)
-        return
     end
+
+    Jailed.try_ul_data(player.name, false, source_player.name)
 end
 
-local bring_player_messages = {
-    'Come here my friend!',
-    'Papers, please.',
-    'What are you up to?'
-}
 local function bring_player(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     if player.driving == true then
         source_player.print('Target player is in a vehicle, teleport not available.', {r = 0.88, g = 0.88, b = 0.88})
         return
@@ -99,6 +97,9 @@ local go_to_player_messages = {
     'What are you up to?'
 }
 local function go_to_player(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     local pos = player.surface.find_non_colliding_position('character', player.position, 50, 1)
     if pos then
         source_player.teleport(pos, player.surface)
@@ -111,6 +112,9 @@ local function go_to_player(player, source_player)
 end
 
 local function spank(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     if player.character then
         if player.character.health > 1 then
             player.character.damage(1, 'player')
@@ -126,6 +130,9 @@ local damage_messages = {
     ' recieved a strange package from '
 }
 local function damage(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     if player.character then
         if player.character.health > 1 then
             player.character.damage(1, 'player')
@@ -146,8 +153,10 @@ local kill_messages = {
     ' had a strange accident.',
     ' was struck by lightning.'
 }
-
 local function kill(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     if player.character then
         player.character.die('player')
         game.print(player.name .. kill_messages[math.random(1, #kill_messages)], {r = 0.98, g = 0.66, b = 0.22})
@@ -163,12 +172,14 @@ local function respawn_player(player)
     game.print('Resetting and respawning ' .. player.name, Color.warning)
     log('Resetting and respawning ' .. player.name)
 end
-
 local enemy_messages = {
     'Shoot on sight!',
     'Wanted dead or alive!'
 }
 local function enemy(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     if not game.forces.enemy_players then
         game.create_force('enemy_players')
     end
@@ -181,6 +192,9 @@ local function enemy(player, source_player)
 end
 
 local function ally(player, source_player)
+    if player.name == source_player.name then
+        return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
+    end
     player.force = game.forces.player
     game.print(player.name .. ' is our ally again!', {r = 0.98, g = 0.66, b = 0.22})
     admin_only_message(source_player.name .. ' made ' .. player.name .. ' our ally')
@@ -245,6 +259,139 @@ local function create_mini_camera_gui(player, caption, position, surface)
     )
     camera.style.minimal_width = 640
     camera.style.minimal_height = 480
+end
+
+local function filter_brackets(str)
+    return (string.find(str, '%[') ~= nil)
+end
+
+local function match_test(value, pattern)
+    return lower(value:gsub('-', ' ')):find(pattern)
+end
+
+local function contains_text(key, value, search_text)
+    if filter_brackets(search_text) then
+        return false
+    end
+    if value then
+        if not match_test(key[value], search_text) then
+            return false
+        end
+    else
+        if not match_test(key, search_text) then
+            return false
+        end
+    end
+    return true
+end
+
+local function draw_events(data)
+    local frame = data.frame
+    local antigrief = data.antigrief
+    local search_text = data.search_text or nil
+    local history = frame['admin_history_select'].items[frame['admin_history_select'].selected_index]
+
+    local history_index = {
+        ['Capsule History'] = antigrief.capsule_history,
+        ['Friendly Fire History'] = antigrief.friendly_fire_history,
+        ['Mining History'] = antigrief.mining_history,
+        ['Landfill History'] = antigrief.landfill_history,
+        ['Corpse Looting History'] = antigrief.corpse_history,
+        ['Cancel Crafting History'] = antigrief.cancel_crafting_history
+    }
+
+    local scroll_pane
+    if frame.datalog then
+        frame.datalog.clear()
+    else
+        scroll_pane =
+            frame.add(
+            {
+                type = 'scroll-pane',
+                name = 'datalog',
+                direction = 'vertical',
+                horizontal_scroll_policy = 'never',
+                vertical_scroll_policy = 'auto'
+            }
+        )
+        scroll_pane.style.maximal_height = 200
+    end
+
+    local target_player_name = frame['admin_player_select'].items[frame['admin_player_select'].selected_index]
+    if game.players[target_player_name] then
+        local target_player = game.players[target_player_name].index
+
+        if #history_index[history] <= 0 then
+            return
+        end
+
+        for _, value in pairs(history_index[history][target_player]) do
+            if search_text then
+                local success = contains_text(value, nil, search_text)
+                if not success then
+                    goto continue
+                end
+            end
+
+            frame.datalog.add(
+                {
+                    type = 'label',
+                    caption = value,
+                    tooltip = 'Click to open mini camera.'
+                }
+            )
+            ::continue::
+        end
+    else
+        for key, value in pairs(history_index[history]) do
+            for t = 1, #value do
+                if search_text then
+                    local success = contains_text(value, t, search_text)
+                    if not success then
+                        goto continue
+                    end
+                end
+
+                frame.datalog.add(
+                    {
+                        type = 'label',
+                        caption = history_index[history][key][t],
+                        tooltip = 'Click to open mini camera.'
+                    }
+                )
+                ::continue::
+            end
+        end
+    end
+end
+
+local function text_changed(event)
+    local element = event.element
+    if not element then
+        return
+    end
+    if not element.valid then
+        return
+    end
+
+    local antigrief = AntiGrief.get()
+    local player = game.players[event.player_index]
+
+    local frame = Gui.panel_get_active_frame(player)
+    if not frame then
+        return
+    end
+    if frame.name ~= 'Admin' then
+        return
+    end
+
+    local data = {
+        frame = frame,
+        antigrief = antigrief,
+        search_text = element.text
+    }
+
+    draw_events(data)
 end
 
 local create_admin_panel = (function(player, frame)
@@ -357,7 +504,7 @@ local create_admin_panel = (function(player, frame)
     line.style.top_margin = 8
     line.style.bottom_margin = 8
 
-    local l = frame.add({type = 'label', caption = 'Global Actions:'})
+    frame.add({type = 'label', caption = 'Global Actions:'})
     local t = frame.add({type = 'table', column_count = 2})
     local buttons = {
         t.add(
@@ -404,12 +551,22 @@ local create_admin_panel = (function(player, frame)
     if antigrief.corpse_history then
         table.insert(histories, 'Corpse Looting History')
     end
+    if antigrief.cancel_crafting_history then
+        table.insert(histories, 'Cancel Crafting History')
+    end
 
     if #histories == 0 then
         return
     end
 
+    local search_table = frame.add({type = 'table', column_count = 2})
+    search_table.add({type = 'label', caption = 'Search: '})
+    local search_text = search_table.add({type = 'textfield'})
+    search_text.style.width = 140
+
     local l = frame.add({type = 'label', caption = '----------------------------------------------'})
+    l.style.font = 'default-listbox'
+    l.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
 
     local selected_index_2 = 1
     if global.admin_panel_selected_history_index then
@@ -425,62 +582,12 @@ local create_admin_panel = (function(player, frame)
     drop_down_2.style.right_padding = 12
     drop_down_2.style.left_padding = 12
 
-    local history = frame['admin_history_select'].items[frame['admin_history_select'].selected_index]
-
-    local history_index = {
-        ['Capsule History'] = antigrief.capsule_history,
-        ['Friendly Fire History'] = antigrief.friendly_fire_history,
-        ['Mining History'] = antigrief.mining_history,
-        ['Landfill History'] = antigrief.landfill_history,
-        ['Corpse Looting History'] = antigrief.corpse_history
+    local data = {
+        frame = frame,
+        antigrief = antigrief
     }
 
-    local t = frame.add({type = 'table', column_count = 1})
-    l.style.font = 'default-listbox'
-    l.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
-    local scroll_pane =
-        t.add(
-        {
-            type = 'scroll-pane',
-            direction = 'vertical',
-            horizontal_scroll_policy = 'never',
-            vertical_scroll_policy = 'auto'
-        }
-    )
-    scroll_pane.style.maximal_height = 200
-
-    local target_player_name = frame['admin_player_select'].items[frame['admin_player_select'].selected_index]
-
-    if game.players[target_player_name] then
-        for k, v in pairs(history_index[history]) do
-            local target_player = game.players[target_player_name].index
-            if k == target_player then
-                for i = #v, 1, -1 do
-                    scroll_pane.add(
-                        {
-                            type = 'label',
-                            caption = history_index[history][target_player][i],
-                            tooltip = 'Click to open mini camera.'
-                        }
-                    )
-                end
-            end
-        end
-    else
-        for k, v in pairs(history_index[history]) do
-            if history_index[history][k] ~= nil and history_index[history][k] ~= '' then
-                for i = #v, 1, -1 do
-                    scroll_pane.add(
-                        {
-                            type = 'label',
-                            caption = history_index[history][k][i],
-                            tooltip = 'Click to open mini camera.'
-                        }
-                    )
-                end
-            end
-        end
-    end
+    draw_events(data)
 end)
 
 local admin_functions = {
@@ -500,6 +607,7 @@ local admin_global_functions = {
     ['turn_off_global_speakers'] = turn_off_global_speakers,
     ['delete_all_blueprints'] = delete_all_blueprints
 }
+
 local function get_surface_from_string(str)
     if not str then
         return
@@ -522,9 +630,13 @@ local function get_position_from_string(str)
     if not str then
         return
     end
+    if not type(str) == 'string' then
+        return
+    end
     if str == '' then
         return
     end
+
     str = string.lower(str)
     local x_pos = string.find(str, 'x:')
     local y_pos = string.find(str, 'y:')
@@ -569,6 +681,15 @@ local function get_position_from_string(str)
     return position
 end
 
+local valid_gui = {
+    ['Players'] = true,
+    ['Admins'] = true,
+    ['Groups'] = true,
+    ['Scoreboard'] = true,
+    ['Config'] = true,
+    ['Spawn Controls'] = true
+}
+
 local function on_gui_click(event)
     local player = game.players[event.player_index]
     local frame = Gui.panel_get_active_frame(player)
@@ -577,6 +698,10 @@ local function on_gui_click(event)
     end
 
     if not event.element.valid then
+        return
+    end
+
+    if not valid_gui[frame.name] then
         return
     end
 
@@ -678,5 +803,6 @@ end
 
 Gui.tabs['Admin'] = create_admin_panel
 
+Event.add(defines.events.on_gui_text_changed, text_changed)
 Event.add(defines.events.on_gui_click, on_gui_click)
 Event.add(defines.events.on_gui_selection_state_changed, on_gui_selection_state_changed)
