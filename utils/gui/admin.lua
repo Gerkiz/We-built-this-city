@@ -683,7 +683,8 @@ end
 
 local valid_gui = {
     ['Players'] = true,
-    ['Admins'] = true,
+    ['Admin'] = true,
+    ['Info'] = true,
     ['Groups'] = true,
     ['Scoreboard'] = true,
     ['Config'] = true,
@@ -712,10 +713,6 @@ local function on_gui_click(event)
         return
     end
 
-    if frame.name ~= 'Admin' then
-        return
-    end
-
     if admin_functions[name] then
         local target_player_name = frame['admin_player_select'].items[frame['admin_player_select'].selected_index]
         if not target_player_name then
@@ -737,30 +734,29 @@ local function on_gui_click(event)
         return
     end
 
-    if not frame then
-        return
-    end
     if not event.element.caption then
         return
     end
-    local position = get_position_from_string(event.element.caption)
-    if not position then
-        return
-    end
 
-    local surface = get_surface_from_string(event.element.caption)
-    if not surface then
-        return
-    end
-
-    if player.gui.center['mini_camera'] then
-        if player.gui.center['mini_camera'].caption == event.element.caption then
-            player.gui.center['mini_camera'].destroy()
+    if frame.name == 'Admin' then
+        local position = get_position_from_string(event.element.caption)
+        if not position then
             return
         end
-    end
 
-    create_mini_camera_gui(player, event.element.caption, position, surface)
+        local surface = get_surface_from_string(event.element.caption)
+        if not surface then
+            return
+        end
+
+        if player.gui.center['mini_camera'] then
+            if player.gui.center['mini_camera'].caption == event.element.caption then
+                player.gui.center['mini_camera'].destroy()
+                return
+            end
+        end
+        create_mini_camera_gui(player, event.element.caption, position, surface)
+    end
 end
 
 local function on_gui_selection_state_changed(event)
