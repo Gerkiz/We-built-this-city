@@ -16,7 +16,6 @@ function require(path)
         if not table.remove(__return, 1) then
             if _DEBUG then
                 log('Failed to load: ' .. _path .. ' (' .. _return[1] .. ')')
-                log('Also Attemped: ' .. path .. ' (' .. __return[1] .. ')')
             end
             if require_return_err then
                 error(unpack(_return))
@@ -38,7 +37,6 @@ end
 
 -- other stuff
 local Event = require 'utils.event'
-require 'utils.server'
 require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.table'
@@ -48,6 +46,7 @@ require 'utils.player_modifiers'
 require 'utils.surface'
 require 'utils.jail_data'
 require 'utils.command_handler'
+require 'utils.biter_corpse_remover'
 
 -- Role system
 require 'utils.role.main'
@@ -103,8 +102,8 @@ if _DUMP_ENV then
     require 'utils.dump_env'
 end
 
-local function on_init()
-    game.forces.player.research_queue_enabled = true
-end
-
-Event.on_init(on_init)
+Event.on_init(
+    function()
+        game.forces.player.research_queue_enabled = true
+    end
+)

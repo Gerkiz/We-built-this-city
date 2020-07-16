@@ -75,7 +75,6 @@ function Public.Build(pic)
     local data = pic.data
     local height = pic.height
     local width = pic.width
-    local floor = math.floor
 
     -- the plus one is because lua tables are one based.
     local half_width = floor(width / 2) + 1

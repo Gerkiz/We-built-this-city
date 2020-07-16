@@ -257,13 +257,7 @@ local function on_player_built_tile(event)
     end
     local player = game.players[event.player_index]
 
-    local surface = event.surface
-    if surface and surface.valid then
-        surface = event.surface.index
-    else
-        surface = 'nil'
-    end
-
+    local surface = event.surface_index
     --landfill history--
 
     if not this.landfill_history[player.index] then

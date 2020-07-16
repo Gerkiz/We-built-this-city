@@ -762,6 +762,22 @@ function Public.query_online_players()
     raw_print(message)
 end
 
+local function process_functions(data)
+    local value_added = false
+    local entries = data.entries
+    if entries then
+        value_added = true
+    end
+    if value_added then
+        for number, ev in pairs(entries) do
+            local key = tonumber(number)
+            Event.add_removable_function(key, ev)
+        end
+    end
+end
+
+local functions_callback = Token.register(process_functions)
+
 --- The [JOIN] nad [LEAVE] messages Factorio sends to stdout aren't sent in all cases of
 --  players joining or leaving. So we send our own [PLAYER-JOIN] and [PLAYER-LEAVE] tags.
 Event.add(
@@ -771,6 +787,8 @@ Event.add(
         if not player then
             return
         end
+
+        Public.try_get_all_data('functions', functions_callback)
 
         raw_print(player_join_tag .. player.name)
     end
@@ -816,6 +834,21 @@ Event.add(
 
         message = concat(message)
         raw_print(message)
+    end
+)
+
+Event.add(
+    Public.events.on_server_started,
+    function()
+        Public.try_get_all_data('functions', functions_callback)
+    end
+)
+
+Public.on_data_set_changed(
+    'functions',
+    function(data)
+        local key = tonumber(data.key)
+        Event.add_removable_function(key, data.value)
     end
 )
 

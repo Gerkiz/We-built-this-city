@@ -48,7 +48,8 @@ Event.on_nth_tick(
         if game.tick <= 10 then
             return
         end
-        game.print {'chat-bot.message', {'chat-bot.players-online', #game.connected_players}}
+        local players = #game.connected_players
+        game.print {'chat-bot.message', {'chat-bot.players-online', players}}
         game.print {'chat-bot.message', {'chat-bot.map-time', Server.tick_to_display_format(game.tick)}}
     end
 )
