@@ -98,7 +98,7 @@
 local EventCore = require 'utils.event_core'
 local Global = require 'utils.global'
 local Token = require 'utils.token'
-local ServerUtils = require 'utils.server_utils'
+local Debug = require 'utils.debug'
 
 local table_remove = table.remove
 local core_add = EventCore.add
@@ -109,6 +109,8 @@ local stage_load = _STAGE.load
 local script_on_event = script.on_event
 local script_on_nth_tick = script.on_nth_tick
 local generate_event_name = script.generate_event_name
+local function_table = function_table
+local function_nth_tick_table = function_nth_tick_table
 
 local Event = {}
 
@@ -120,17 +122,20 @@ local on_nth_tick_event_handlers = EventCore.get_on_nth_tick_event_handlers()
 local token_handlers = {}
 local token_nth_tick_handlers = {}
 local function_handlers = {}
+local function_nth_tick_handlers = {}
 
 Global.register(
     {
         token_handlers = token_handlers,
         token_nth_tick_handlers = token_nth_tick_handlers,
-        function_handlers = function_handlers
+        function_handlers = function_handlers,
+        function_nth_tick_handlers = function_nth_tick_handlers
     },
     function(tbl)
         token_handlers = tbl.token_handlers
         token_nth_tick_handlers = tbl.token_nth_tick_handlers
         function_handlers = tbl.function_handlers
+        function_nth_tick_handlers = tbl.function_nth_tick_handlers
     end
 )
 
@@ -158,14 +163,6 @@ function Event.add(event_name, handler)
         error('Calling Event.add after on_init() or on_load() has run is a desync risk.', 2)
     end
 
-    core_add(event_name, handler)
-end
-
---- Register a handler for the event_name event.
--- See documentation at top of file for details on using events.
--- @param event_name<number>
--- @param handler<function>
-function Event.add_force(event_name, handler)
     core_add(event_name, handler)
 end
 
@@ -264,27 +261,47 @@ end
 -- See documentation at top of file for details on using events.
 -- @param  event_name<number>
 -- @param  func<function>
-function Event.add_removable_function(event_name, func, panel)
+-- @param  name<string>
+function Event.add_removable_function(event_name, func, name)
     if _LIFECYCLE == stage_load then
         error('cannot call during on_load', 2)
     end
 
-    local f
-    if panel then
-        f = assert(load('return (' .. func .. ')'))()
-    else
-        f = func
+    if not event_name or not func or not name then
+        return
     end
 
-    function_handlers[event_name] = {f}
+    local f = assert(load('return ' .. func))()
+
+    if type(f) ~= 'function' then
+        error('func must be a function', 2)
+    end
+
+    if Debug.is_closure(f) then
+        error(
+            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.',
+            2
+        )
+    end
+
+    local funcs = function_handlers[name]
+    if not funcs then
+        function_handlers[name] = {}
+        funcs = function_handlers[name]
+    end
+
+    funcs[#funcs + 1] = {event_name = event_name, handler = func}
+
+    local func_table = function_table[name]
+    if not func_table then
+        function_table[name] = {}
+        func_table = function_table[name]
+    end
+
+    func_table[#func_table + 1] = {event_name = event_name, handler = f}
 
     if handlers_added then
         core_add(event_name, f)
-    end
-
-    if panel then
-        func = tostring(func)
-        ServerUtils.add_function_to_dataset('functions', tostring(event_name), func)
     end
 end
 
@@ -292,12 +309,17 @@ end
 -- Do NOT call this method during on_load.
 -- See documentation at top of file for details on using events.
 -- @param  event_name<number>
-function Event.remove_removable_function(event_name, func)
+-- @param  name<string>
+function Event.remove_removable_function(event_name, name)
     if _LIFECYCLE == stage_load then
         error('cannot call during on_load', 2)
     end
 
-    local funcs = function_handlers[event_name]
+    if not event_name or not name then
+        return
+    end
+
+    local funcs = function_handlers[name]
 
     if not funcs then
         return
@@ -305,15 +327,22 @@ function Event.remove_removable_function(event_name, func)
 
     local handlers = event_handlers[event_name]
 
-    remove(funcs, func)
-    remove(handlers, func)
+    for k, v in pairs(function_table[name]) do
+        local n = v.event_name
+        if n == event_name then
+            local f = v.handler
+            function_handlers[name][k] = nil
+            remove(handlers, f)
+        end
+    end
 
     if #handlers == 0 then
         script_on_event(event_name, nil)
     end
 
-    event_name = tostring(event_name)
-    ServerUtils.remove_function_to_dataset('functions', event_name)
+    if #function_handlers[name] == 0 then
+        function_handlers[name] = nil
+    end
 end
 
 --- Register a token handler for the nth tick that can be safely added and removed at runtime.
@@ -368,6 +397,103 @@ function Event.remove_removable_nth_tick(tick, token)
     end
 end
 
+--- Register a handler for the nth tick that can be safely added and removed at runtime.
+-- The handler must not be a closure, as that is a desync risk.
+-- Do NOT call this method during on_load.
+-- See documentation at top of file for details on using events.
+-- @param  tick<number>
+-- @param  func<function>
+function Event.add_removable_nth_tick_function(tick, func, name)
+    if _LIFECYCLE == stage_load then
+        error('cannot call during on_load', 2)
+    end
+
+    if not tick or not func or not name then
+        return
+    end
+
+    local f = assert(load('return ' .. func))()
+
+    if type(f) ~= 'function' then
+        error('func must be a function', 2)
+    end
+
+    if Debug.is_closure(f) then
+        error(
+            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.',
+            2
+        )
+    end
+
+    local funcs = function_nth_tick_handlers[name]
+    if not funcs then
+        function_nth_tick_handlers[name] = {}
+        funcs = function_nth_tick_handlers[name]
+    end
+
+    funcs[#funcs + 1] = {tick = tick, handler = func}
+
+    local func_table = function_nth_tick_table[name]
+    if not func_table then
+        function_nth_tick_table[name] = {}
+        func_table = function_nth_tick_table[name]
+    end
+
+    func_table[#func_table + 1] = {tick = tick, handler = f}
+
+    if handlers_added then
+        core_on_nth_tick(tick, f)
+    end
+end
+
+--- Removes a handler for the nth tick.
+-- Do NOT call this method during on_load.
+-- See documentation at top of file for details on using events.
+-- @param  tick<number>
+-- @param  func<function>
+function Event.remove_removable_nth_tick_function(tick, name)
+    if _LIFECYCLE == stage_load then
+        error('cannot call during on_load', 2)
+    end
+
+    if not tick or not name then
+        return
+    end
+
+    local funcs = function_nth_tick_handlers[name]
+
+    if not funcs then
+        return
+    end
+
+    local handlers = on_nth_tick_event_handlers[tick]
+    local f = function_nth_tick_table[name]
+
+    for k, v in pairs(function_nth_tick_table[name]) do
+        local t = v.tick
+        if t == tick then
+            f = v.handler
+        end
+    end
+
+    remove(handlers, f)
+
+    for k, v in pairs(function_nth_tick_handlers[name]) do
+        local t = v.tick
+        if t == tick then
+            function_nth_tick_handlers[name][k] = nil
+        end
+    end
+
+    if #function_nth_tick_handlers[name] == 0 then
+        function_nth_tick_handlers[name] = nil
+    end
+
+    if #handlers == 0 then
+        script_on_nth_tick(tick, nil)
+    end
+end
+
 --- Generate a new, unique event ID.
 -- @param <string> name of the event/variable that is exposed
 function Event.generate_event_name(name)
@@ -394,6 +520,12 @@ function Event.add_event_filter(event, filter)
 end
 
 local function add_handlers()
+    if not function_table then
+        function_table = {}
+    end
+    if not function_nth_tick_table then
+        function_nth_tick_table = {}
+    end
     for event_name, tokens in pairs(token_handlers) do
         for i = 1, #tokens do
             local handler = Token.get(tokens[i])
@@ -401,10 +533,19 @@ local function add_handlers()
         end
     end
 
-    for event_name, funcs in pairs(function_handlers) do
+    for name, funcs in pairs(function_handlers) do
         for i = 1, #funcs do
-            local handler = funcs[i]
-            core_add(event_name, handler)
+            local e_name = funcs[i].event_name
+            local func = funcs[i].handler
+            local handler = assert(load('return ' .. func))()
+            local func_handler = function_table[name]
+            if not func_handler then
+                function_table[name] = {}
+                func_handler = function_table[name]
+            end
+
+            func_handler[#func_handler + 1] = {event_name = e_name, handler = handler}
+            core_add(e_name, handler)
         end
     end
 
@@ -415,10 +556,28 @@ local function add_handlers()
         end
     end
 
+    for name, funcs in pairs(function_nth_tick_handlers) do
+        for i = 1, #funcs do
+            local tick = funcs[i].tick
+            local func = funcs[i].handler
+            local handler = assert(load('return ' .. func))()
+            local func_handler = function_nth_tick_table[name]
+            if not func_handler then
+                function_nth_tick_table[name] = {}
+                func_handler = function_nth_tick_table[name]
+            end
+
+            func_handler[#func_handler + 1] = {tick = tick, handler = handler}
+            core_on_nth_tick(tick, handler)
+        end
+    end
+
     handlers_added = true
 end
 
 core_on_init(add_handlers)
 core_on_load(add_handlers)
+function_table = {}
+function_nth_tick_table = {}
 
 return Event
