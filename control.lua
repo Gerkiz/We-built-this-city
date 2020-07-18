@@ -39,6 +39,7 @@ end
 local Event = require 'utils.event'
 require 'utils.server_commands'
 require 'utils.utils'
+require 'utils.debug.command'
 require 'utils.table'
 require 'utils.color_data'
 require 'utils.session_data'
@@ -77,6 +78,7 @@ require 'features.commands.bonus'
 require 'features.commands.misc'
 require 'features.commands.map_restart'
 require 'features.modules.rpg'
+require 'features.modules.bp'
 
 --- load from config/map
 -- Oarc
@@ -87,15 +89,10 @@ require 'config'
 
 -- lua profiler by boodals
 if _DEBUG then
-    require 'utils.debug.command'
     require 'utils.profiler'
     function raw(string)
         return game.print(serpent.block(string))
     end
-end
-
-if not _DEBUG then
-    require 'utils.debug.safe.command'
 end
 
 if _DUMP_ENV then

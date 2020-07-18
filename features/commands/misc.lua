@@ -293,9 +293,9 @@ commands.add_command(
                         _a[k].character_inventory_slots_bonus['creative'] = tonumber(i)
                         v.character_inventory_slots_bonus = _a[k].character_inventory_slots_bonus['creative']
                         v.insert {name = name, count = item.stack_size}
-                        Server.player_return('Inserted all base items.', Color.success, v)
                     end
                 end
+                Server.player_return('Inserted all base items.', Color.success, v)
                 _a.creative_are_you_sure = false
                 _a.creative_enabled = false
             end

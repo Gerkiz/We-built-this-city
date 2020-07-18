@@ -208,7 +208,7 @@ function Public.player_return(message, colour, player)
         if not player then
             return
         end
-        player.play_sound {path = 'utility/scenario_message'}
+        player.play_sound {path = 'utility/scenario_message', volume_modifier = 1}
         if Public.is_type(message, 'table') then
             if Public.is_type(message.__self, 'userdata') then
                 player.print('Can not display userdata', colour)
