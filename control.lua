@@ -82,7 +82,7 @@ require 'features.modules.bp'
 
 --- load from config/map
 -- Oarc
-require 'config'
+require 'map_loader'
 
 -- generated maps
 --require 'map_builder'

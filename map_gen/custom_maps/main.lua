@@ -11,7 +11,7 @@ local spawn = {
 }
 
 local codes = {
-    ['a'] = 'false',
+    ['a'] = false,
     ['b'] = 'true',
     ['c'] = 'concrete',
     ['d'] = 'deepwater-green',
@@ -43,56 +43,7 @@ local codes = {
     ['D'] = 'sand-3',
     ['E'] = 'stone-path',
     ['F'] = 'water-green',
-    ['G'] = 'water'
-}
-
---Terrain codes should be in sync with the ConvertMap code
-local terrain_codes = {
-    ['a'] = 'concrete',
-    ['b'] = 'deepwater-green',
-    ['c'] = 'deepwater',
-    ['d'] = 'dirt-1',
-    ['e'] = 'dirt-2',
-    ['f'] = 'dirt-3',
-    ['g'] = 'dirt-4',
-    ['h'] = 'dirt-5',
-    ['j'] = 'dirt-6',
-    ['k'] = 'dirt-7',
-    ['l'] = 'dry-dirt',
-    ['m'] = 'grass-1',
-    ['n'] = 'grass-2',
-    ['o'] = 'grass-3',
-    ['p'] = 'grass-4',
-    ['q'] = 'hazard-concrete-left',
-    ['r'] = 'hazard-concrete-right',
-    ['s'] = 'lab-dark-1',
-    ['t'] = 'lab-dark-2',
-    --['g'] = 'lab-white',
-    ['_'] = 'out-of-map',
-    ['A'] = 'red-desert-0',
-    ['B'] = 'red-desert-1',
-    ['C'] = 'red-desert-2',
-    ['D'] = 'red-desert-3',
-    ['E'] = 'sand-1',
-    ['F'] = 'sand-2',
-    ['G'] = 'sand-3',
-    ['H'] = 'stone-path',
-    ['J'] = 'water-green',
-    ['K'] = 'water'
-    --[[
-    ["_"] = "out-of-map",
-    ["o"] = "deepwater",--ocean
-    ["O"] = "deepwater-green",
-    ["w"] = "water",
-    ["W"] = "water-green",
-    ["g"] = "grass-1",
-    ["m"] = "grass-3",
-    ["G"] = "grass-2",
-    ["d"] = "dirt-3",
-    ["D"] = "dirt-6",
-    ["s"] = "sand-1",
-    ["S"] = "sand-3"]]
-    --
+    ['G'] = false
 }
 
 local function decompress_map_data()
@@ -193,10 +144,10 @@ local function on_chunk_generated(event)
     --get_world_tile_name(spawn.x, spawn.y)
 
     local tiles = {}
-    for y = lt.y - 1, rb.y do
-        for x = lt.x - 1, rb.x do
+    for y = lt.y, rb.y do
+        for x = lt.x, rb.x do
             local tile = get_world_tile_name(x + spawn.x, y + spawn.y)
-            if tile ~= nil then
+            if tile and type(tile) == 'string' then
                 t_insert(tiles, {name = tile, position = {x, y}})
             end
         end

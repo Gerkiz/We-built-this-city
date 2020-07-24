@@ -136,9 +136,8 @@ Event.add(
         end
     end
 
-    surface.set_tiles(tiles, true)]] if
-            global.enable_scramble
-         then
+    surface.set_tiles(tiles, true)]]
+        if global.enable_scramble then
             Ores.scramble(event)
         end
 

@@ -321,44 +321,44 @@ local function draw_create_warp(parent, player, p)
     btn.style.width = 20
 end
 
-local function draw_remove_warp(parent, player)
-    parent.clear()
-    local trusted = Session.get_trusted_table()
-    if player.admin or trusted[player.name] then
+    local function draw_remove_warp(parent, player)
+        parent.clear()
+        local trusted = Session.get_trusted_table()
+        if player.admin or trusted[player.name] then
+            local btn =
+                parent.add {
+                type = 'sprite-button',
+                name = confirmed_button_name,
+                tooltip = 'Do you really want to remove: ' .. parent.name,
+                sprite = 'utility/confirm_slot'
+            }
+            btn.style.height = 20
+            btn.style.width = 20
+            btn.focus()
+        else
+            local btn =
+                parent.add {
+                type = 'sprite-button',
+                name = confirmed_button_name,
+                enabled = 'false',
+                tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' ..
+                    player.name .. '.',
+                sprite = 'utility/set_bar_slot'
+            }
+            btn.style.height = 20
+            btn.style.width = 20
+        end
         local btn =
             parent.add {
             type = 'sprite-button',
-            name = confirmed_button_name,
-            tooltip = 'Do you really want to remove: ' .. parent.name,
-            sprite = 'utility/confirm_slot'
+            name = cancel_button_name,
+            tooltip = 'Cancel deletion of : ' .. parent.name,
+            sprite = 'utility/reset'
         }
         btn.style.height = 20
         btn.style.width = 20
         btn.focus()
-    else
-        local btn =
-            parent.add {
-            type = 'sprite-button',
-            name = confirmed_button_name,
-            enabled = 'false',
-            tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' ..
-                player.name .. '.',
-            sprite = 'utility/set_bar_slot'
-        }
-        btn.style.height = 20
-        btn.style.width = 20
     end
-    local btn =
-        parent.add {
-        type = 'sprite-button',
-        name = cancel_button_name,
-        tooltip = 'Cancel deletion of : ' .. parent.name,
-        sprite = 'utility/reset'
-    }
-    btn.style.height = 20
-    btn.style.width = 20
-    btn.focus()
-end
 
 local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
     if not warp.tag or not warp.tag then

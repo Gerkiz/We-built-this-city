@@ -32,7 +32,7 @@ global.silo_island_mode = false
 -- Removes decorative items to reduce save file size.
 global.enable_undecorator = false
 
-global.enable_scramble = true
+global.enable_scramble = false
 
 -- Enable Long Reach
 global.enable_longreach = false
