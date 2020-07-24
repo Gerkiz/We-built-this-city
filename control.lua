@@ -77,7 +77,6 @@ require 'features.commands.repair'
 require 'features.commands.bonus'
 require 'features.commands.misc'
 require 'features.commands.map_restart'
-require 'features.modules.rpg'
 require 'features.modules.bp'
 
 --- load from config/map
@@ -86,6 +85,14 @@ require 'map_loader'
 
 -- generated maps
 --require 'map_builder'
+
+-- RPG
+local RPG = require 'features.modules.rpg_v2'
+RPG.enable_flame_boots(true)
+RPG.enable_health_and_mana_bars(true)
+RPG.enable_mana(true)
+RPG.enable_stone_path(true)
+RPG.personal_tax_rate(0.3)
 
 -- lua profiler by boodals
 if _DEBUG then

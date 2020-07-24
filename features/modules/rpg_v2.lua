@@ -1,15 +1,18 @@
 local Global = require 'utils.global'
-local Gui = require 'utils.gui'
 local Event = require 'utils.event'
-local Color = require 'utils.color_presets'
 local Alert = require 'utils.alert'
-local Tabs = require 'comfy_panel.main'
+local Tabs = require 'utils.gui.main'
+local P = require 'utils.player_modifiers'
+local Gui = require 'utils.gui'
+local Color = require 'utils.color_presets'
 local Task = require 'utils.task'
 local Token = require 'utils.token'
-local P = require 'player_modifiers'
-local WD = require 'modules.wave_defense.table'
+local WD = require 'features.modules.wave_defense.table'
 local Math2D = require 'math2d'
 local Session = require 'utils.session_data'
+
+local m_gui = require 'mod-gui'
+local mod = m_gui.get_frame_flow
 
 local points_per_level = 5
 local nth_tick = 18001
@@ -424,8 +427,8 @@ local conjure_items = {
         enabled = true
     },
     [24] = {
-        name = 'Suicidal Comfylatron',
-        obj_to_create = 'suicidal_comfylatron',
+        name = 'Suicidal Compilatron',
+        obj_to_create = 'suicidal_compilatron',
         target = false,
         amount = 4,
         damage = false,
@@ -473,13 +476,13 @@ local travelings = {
     'out of my way son',
     'on my way',
     'i need to leave',
-    'comfylatron seeking target',
+    'Compilatron seeking target',
     'gotta go fast',
     'gas gas gas',
-    'comfylatron coming through'
+    'Compilatron coming through'
 }
 
-local function suicidal_comfylatron(pos, surface)
+local function suicidal_compilatron(pos, surface)
     local str = travelings[math.random(1, #travelings)]
     local symbols = {'', '!', '!', '!!', '..'}
     str = str .. symbols[math.random(1, #symbols)]
@@ -706,26 +709,26 @@ local function get_one_punch_chance(player)
 end
 
 local function draw_gui_char_button(player)
-    if player.gui.top[draw_main_frame_name] then
+    if mod(player)[draw_main_frame_name] then
         return
     end
-    local b = player.gui.top.add({type = 'sprite-button', name = draw_main_frame_name, caption = 'CHAR'})
-    b.style.font_color = {165, 165, 165}
-    b.style.font = 'heading-1'
-    b.style.minimal_height = 38
-    b.style.minimal_width = 60
-    b.style.padding = 0
-    b.style.margin = 0
+    mod(player).add {
+        type = 'sprite-button',
+        name = draw_main_frame_name,
+        caption = '[RPG]',
+        tooltip = 'Which class are you?',
+        style = m_gui.button_style
+    }
 end
 
 local function update_char_button(player)
-    if not player.gui.top[draw_main_frame_name] then
+    if not mod(player)[draw_main_frame_name] then
         draw_gui_char_button(player)
     end
     if rpg_t[player.index].points_to_distribute > 0 then
-        player.gui.top[draw_main_frame_name].style.font_color = {245, 0, 0}
+        mod(player)[draw_main_frame_name].style.font_color = {245, 0, 0}
     else
-        player.gui.top[draw_main_frame_name].style.font_color = {175, 175, 175}
+        mod(player)[draw_main_frame_name].style.font_color = {175, 175, 175}
     end
 end
 
@@ -790,13 +793,13 @@ local function add_gui_description(element, value, width, tooltip)
     return e
 end
 
-local function add_gui_stat(element, value, width, tooltip, name)
+local function add_gui_stat(element, value, width, tooltip, name, height)
     local e = element.add({type = 'sprite-button', name = name or nil, caption = value})
     e.tooltip = tooltip or ''
     e.style.maximal_width = width
     e.style.minimal_width = width
-    e.style.maximal_height = 38
-    e.style.minimal_height = 38
+    e.style.maximal_height = height or 38
+    e.style.minimal_height = height or 38
     e.style.font = 'default-bold'
     e.style.font_color = {222, 222, 222}
     e.style.horizontal_align = 'center'
@@ -1217,7 +1220,7 @@ local function draw_gui(player, forced)
         end
     end
 
-    Tabs.comfy_panel_clear_left_gui(player)
+    Tabs.panel_clear_left_gui(player)
 
     if player.gui.left[main_frame_name] then
         player.gui.left[main_frame_name].destroy()
@@ -1249,7 +1252,8 @@ local function draw_gui(player, forced)
         type = 'scroll-pane',
         direction = 'vertical',
         vertical_scroll_policy = 'always',
-        horizontal_scroll_policy = 'never'
+        horizontal_scroll_policy = 'never',
+        style = 'scroll_pane_in_shallow_frame'
     }
     scroll_pane.style.minimal_width = 400
     scroll_pane.style.maximal_width = 450
@@ -1264,7 +1268,7 @@ local function draw_gui(player, forced)
     e = add_gui_stat(t, get_class(player), 200, 'You are an ' .. get_class(player) .. '.')
     e.style.font = 'default-large-bold'
 
-    add_gui_stat(t, 'SETTINGS', 200, 'RPG settings!', settings_button_name)
+    add_gui_stat(t, 'SETTINGS', 150, 'RPG settings!', settings_button_name, 38)
 
     add_separator(scroll_pane, 400)
 
@@ -1463,7 +1467,6 @@ local function draw_gui(player, forced)
         e.style.maximal_height = 24
         e.style.padding = 0
     end
-    add_separator(scroll_pane, 400)
 
     rpg_t[player.index].gui_refresh_delay = game.tick + 60
     update_char_button(player)
@@ -2525,8 +2528,8 @@ local function on_player_used_capsule(event)
     else
         force = 'player'
     end
-    if object.obj_to_create == 'suicidal_comfylatron' then
-        suicidal_comfylatron(position, surface)
+    if object.obj_to_create == 'suicidal_compilatron' then
+        suicidal_compilatron(position, surface)
     elseif projectile_types[obj_name] then
         for i = 1, object.amount do
             local damage_area = {

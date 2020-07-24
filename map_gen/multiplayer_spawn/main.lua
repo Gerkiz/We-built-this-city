@@ -1,5 +1,4 @@
 require 'utils.gui.main'
-require 'features.modules.rpg'
 require 'features.modules.launch_fish_to_win'
 require 'features.modules.spawn_ent.main'
 require 'features.modules.biters_yield_coins'

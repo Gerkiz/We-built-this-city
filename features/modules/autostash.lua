@@ -363,23 +363,15 @@ local function create_gui_button(player)
     else
         tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores.'
     end
-    local b =
-        mod(player).add(
+    mod(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/wooden-chest',
             name = 'auto_stash',
-            tooltip = tooltip
+            tooltip = tooltip,
+            style = m_gui.button_style
         }
     )
-    b.style.font_color = {r = 0.11, g = 0.8, b = 0.44}
-    b.style.font = 'heading-1'
-    b.style.minimal_height = 38
-    b.style.minimal_width = 38
-    b.style.maximal_height = 38
-    b.style.maximal_width = 38
-    b.style.padding = 1
-    b.style.margin = 0
 end
 
 local function on_player_joined_game(event)

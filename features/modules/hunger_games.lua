@@ -5,7 +5,7 @@
 
 require 'features.modules.custom_death_messages'
 require 'features.modules.dynamic_player_spawn'
-local Score = require 'comfy_panel.score'
+local Score = require 'utils.gui.score'
 --require "maps.modules.hunger_games_balance"
 
 local event = require 'utils.event'

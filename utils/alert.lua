@@ -241,7 +241,7 @@ function Public.alert_all_players_location(player, message, color)
             }
             local label_style = label.style
             label_style.single_line = false
-            label_style.font_color = color or Color.comfy
+            label_style.font_color = color or Color.wbtc
         end
     )
 end
@@ -263,7 +263,7 @@ function Public.alert_player(player, duration, message, color)
             }
             local label = container.add({type = 'label', name = close_alert_name, caption = message})
             label.style.single_line = false
-            label.style.font_color = color or Color.comfy
+            label.style.font_color = color or Color.wbtc
         end
     )
 end
@@ -285,7 +285,7 @@ function Public.alert_player_warning(player, duration, message, color)
             }
             local label = container.add({type = 'label', name = close_alert_name, caption = message})
             label.style.single_line = false
-            label.style.font_color = color or Color.comfy
+            label.style.font_color = color or Color.wbtc
         end
     )
 end
@@ -338,8 +338,8 @@ commands.add_command(
                 if not param then
                     return p('Valid arguments are: message_to_print')
                 end
-                local comfy = '[color=blue]' .. player.name .. ':[/color] \n'
-                local message = comfy .. param
+                local m = '[color=blue]' .. player.name .. ':[/color] \n'
+                local message = m .. param
                 Public.alert_all_players_location(player, message)
             end
         else
@@ -347,8 +347,8 @@ commands.add_command(
             if not param then
                 return p('Valid arguments are: message_to_print')
             end
-            local comfy = '[color=blue]Server:[/color] \n'
-            local message = comfy .. param
+            local m = '[color=blue]Server:[/color] \n'
+            local message = m .. param
             p(param)
             Public.alert_all_players(15, message)
         end
@@ -399,8 +399,8 @@ commands.add_command(
                 end
 
                 if t_message then
-                    local comfy = '[color=blue]' .. player.name .. ':[/color] \n'
-                    local message = comfy .. t_message
+                    local m = '[color=blue]' .. player.name .. ':[/color] \n'
+                    local message = m .. t_message
                     Public.alert_player_warning(target_player, 15, message)
                 else
                     p('No message was provided', Color.fail)

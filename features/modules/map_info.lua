@@ -1,5 +1,7 @@
 local Global = require 'utils.global'
-local Tabs = require 'comfy_panel.main'
+local Gui = require 'utils.gui.main'
+local Tabs = require 'utils.gui.main'
+local Validate = require 'utils.validate_player'
 
 local map_info = {
     localised_category = false,
@@ -92,11 +94,13 @@ end)
 local function on_player_joined_game(event)
     local player = game.players[event.player_index]
     if player.online_time == 0 then
-        Tabs.comfy_panel_call_tab(player, 'Map Info')
+        Gui.panel_call_tab(player, 'Info')
     end
 end
 
 local function on_gui_click(event)
+    local player = game.players[event.player_index]
+    Validate(player)
     if not event then
         return
     end
@@ -107,12 +111,12 @@ local function on_gui_click(event)
         return
     end
     if event.element.name == 'close_map_intro' then
-        game.players[event.player_index].gui.left.comfy_panel.destroy()
+        Gui.panel_clear_left_gui(player)
         return
     end
 end
 
-comfy_panel_tabs['Map Info'] = {gui = create_map_intro, admin = false}
+Gui.tabs['Info'] = create_map_intro
 
 local event = require 'utils.event'
 event.add(defines.events.on_player_joined_game, on_player_joined_game)

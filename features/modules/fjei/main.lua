@@ -1,6 +1,5 @@
 --[[
 FJEI - "Factorio Just enough items"
-A comfy recipe browser - MewMew
 ]]
 local Gui = require 'features.modules.fjei.gui'
 local Functions = require 'features.modules.fjei.functions'

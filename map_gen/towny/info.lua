@@ -22,7 +22,7 @@ All towns are opponents to each other, if no alliance is formed with a raw fish.
 If a center falls, the whole team will fall with it and all buildings will turn neutral and lootable.
 The town center also acts as the team's respawn point.
 
-There are very little rules. Have fun and be comfy ^.^]]
+There are very little rules. Have fun ^.^]]
 
 function Public.toggle_button(player)
     if player.gui.top['towny_map_intro_button'] then

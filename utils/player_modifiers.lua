@@ -1,9 +1,11 @@
 --Central to add all player modifiers together.
+--Will overwrite character stats from other mods.
 
 local Global = require 'utils.global'
-local Event = require 'utils.event'
 
-local this = {}
+local this = {
+    disabled_modifier = {}
+}
 
 Global.register(
     this,
@@ -29,8 +31,8 @@ local modifiers = {
     'character_mining_speed_modifier',
     'character_reach_distance_bonus',
     'character_resource_reach_distance_bonus',
-    'character_running_speed_modifier',
-    'character_maximum_following_robot_count_bonus'
+    'character_maximum_following_robot_count_bonus',
+    'character_running_speed_modifier'
 }
 
 function Public.update_player_modifiers(player)
@@ -40,13 +42,18 @@ function Public.update_player_modifiers(player)
             sum_value = sum_value + value
         end
         if player.character then
-            player[modifier] = sum_value
+            if this.disabled_modifier[player.index] and this.disabled_modifier[player.index][modifier] then
+                player[modifier] = 0
+            else
+                player[modifier] = sum_value
+            end
         end
     end
 end
 
 local function on_player_joined_game(event)
     if this[event.player_index] then
+        Public.update_player_modifiers(game.players[event.player_index])
         return
     end
     this[event.player_index] = {}
@@ -55,6 +62,12 @@ local function on_player_joined_game(event)
     end
 end
 
+local function on_player_respawned(event)
+    Public.update_player_modifiers(game.players[event.player_index])
+end
+
+local Event = require 'utils.event'
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
+Event.add(defines.events.on_player_respawned, on_player_respawned)
 
 return Public

@@ -54,7 +54,7 @@ function Public.create_surface()
 
     local surface = game.surfaces[global_data.surface]
 
-    surface.request_to_generate_chunks({0, 0}, 8)
+    surface.request_to_generate_chunks({0, 0}, 2)
     surface.force_generate_chunk_requests()
 
     local _y = surface.find_non_colliding_position('character-corpse', {0, -22}, 2, 2)
