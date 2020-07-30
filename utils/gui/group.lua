@@ -1,6 +1,24 @@
 -- this script adds a group button to create groups for your players --
 
 local Gui = require 'utils.gui.main'
+local Global = require 'utils.global'
+local Event = require 'utils.event'
+
+local this = {
+    player_group = {},
+    join_spam_protection = {},
+    tag_groups = {},
+    alphanumeric = true
+}
+
+Global.register(
+    this,
+    function(t)
+        this = t
+    end
+)
+
+local Public = {}
 
 local build_group_gui = (function(player, frame)
     local group_name_width = 150
@@ -49,58 +67,69 @@ local build_group_gui = (function(player, frame)
         l.style.maximal_width = h[2]
     end
 
-    for _, group in pairs(global.tag_groups) do
-        local l = t.add({type = 'label', caption = group.name})
-        l.style.font = 'default-bold'
-        l.style.top_padding = 16
-        l.style.bottom_padding = 16
-        l.style.minimal_width = group_name_width
-        l.style.maximal_width = group_name_width
-        local color = game.players[group.founder].color
-        color = {r = color.r * 0.6 + 0.4, g = color.g * 0.6 + 0.4, b = color.b * 0.6 + 0.4, a = 1}
-        l.style.font_color = color
-        l.style.single_line = false
-
-        local l = t.add({type = 'label', caption = group.description})
-        l.style.top_padding = 16
-        l.style.bottom_padding = 16
-        l.style.minimal_width = description_width
-        l.style.maximal_width = description_width
-        l.style.font_color = {r = 0.90, g = 0.90, b = 0.90}
-        l.style.single_line = false
-
-        local tt = t.add({type = 'table', column_count = member_columns})
-        for _, p in pairs(game.connected_players) do
-            if group.name == global.player_group[p.name] then
-                local l = tt.add({type = 'label', caption = p.name})
-                local color = {r = p.color.r * 0.6 + 0.4, g = p.color.g * 0.6 + 0.4, b = p.color.b * 0.6 + 0.4, a = 1}
-                l.style.font_color = color
-                --l.style.minimal_width = members_width
-                l.style.maximal_width = members_width * 2
+    for _, group in pairs(this.tag_groups) do
+        if (group.name and group.founder and group.description) then
+            local l = t.add({type = 'label', caption = group.name})
+            l.style.font = 'default-bold'
+            l.style.top_padding = 16
+            l.style.bottom_padding = 16
+            l.style.minimal_width = group_name_width
+            l.style.maximal_width = group_name_width
+            local color
+            if game.players[group.founder] and game.players[group.founder].color then
+                color = game.players[group.founder].color
+            else
+                color = {r = 0.90, g = 0.90, b = 0.90}
             end
-        end
+            color = {r = color.r * 0.6 + 0.4, g = color.g * 0.6 + 0.4, b = color.b * 0.6 + 0.4, a = 1}
+            l.style.font_color = color
+            l.style.single_line = false
+            local l = t.add({type = 'label', caption = group.description})
+            l.style.top_padding = 16
+            l.style.bottom_padding = 16
+            l.style.minimal_width = description_width
+            l.style.maximal_width = description_width
+            l.style.font_color = {r = 0.90, g = 0.90, b = 0.90}
+            l.style.single_line = false
 
-        local tt = t.add({type = 'table', name = group.name, column_count = 1})
-        if group.name ~= global.player_group[player.name] then
-            local b = tt.add({type = 'button', caption = 'Join'})
-            b.style.font = 'default-bold'
-            b.style.minimal_width = actions_width
-            b.style.maximal_width = actions_width
-        else
-            local b = tt.add({type = 'button', caption = 'Leave'})
-            b.style.font = 'default-bold'
-            b.style.minimal_width = actions_width
-            b.style.maximal_width = actions_width
-        end
-        if player.admin == true or group.founder == player.name then
-            local b = tt.add({type = 'button', caption = 'Delete'})
-            b.style.font = 'default-bold'
-            b.style.minimal_width = actions_width
-            b.style.maximal_width = actions_width
-        else
-            local l = tt.add({type = 'label', caption = ''})
-            l.style.minimal_width = actions_width
-            l.style.maximal_width = actions_width
+            local tt = t.add({type = 'table', column_count = member_columns})
+            for _, p in pairs(game.connected_players) do
+                if group.name == this.player_group[p.name] then
+                    local l = tt.add({type = 'label', caption = p.name})
+                    local color = {
+                        r = p.color.r * 0.6 + 0.4,
+                        g = p.color.g * 0.6 + 0.4,
+                        b = p.color.b * 0.6 + 0.4,
+                        a = 1
+                    }
+                    l.style.font_color = color
+                    --l.style.minimal_width = members_width
+                    l.style.maximal_width = members_width * 2
+                end
+            end
+
+            local tt = t.add({type = 'table', name = group.name, column_count = 1})
+            if group.name ~= this.player_group[player.name] then
+                local b = tt.add({type = 'button', caption = 'Join'})
+                b.style.font = 'default-bold'
+                b.style.minimal_width = actions_width
+                b.style.maximal_width = actions_width
+            else
+                local b = tt.add({type = 'button', caption = 'Leave'})
+                b.style.font = 'default-bold'
+                b.style.minimal_width = actions_width
+                b.style.maximal_width = actions_width
+            end
+            if player.admin == true or group.founder == player.name then
+                local b = tt.add({type = 'button', caption = 'Delete'})
+                b.style.font = 'default-bold'
+                b.style.minimal_width = actions_width
+                b.style.maximal_width = actions_width
+            else
+                local l = tt.add({type = 'label', caption = ''})
+                l.style.minimal_width = actions_width
+                l.style.maximal_width = actions_width
+            end
         end
     end
 
@@ -135,21 +164,18 @@ end
 
 local function on_player_joined_game(event)
     local player = game.players[event.player_index]
-    if not global.player_group then
-        global.player_group = {}
+
+    if not this.player_group[player.name] then
+        this.player_group[player.name] = '[Group]'
     end
-    if not global.player_group[player.name] then
-        global.player_group[player.name] = '[Group]'
+
+    if not this.join_spam_protection[player.name] then
+        this.join_spam_protection[player.name] = game.tick
     end
-    if not global.join_spam_protection then
-        global.join_spam_protection = {}
-    end
-    if not global.join_spam_protection[player.name] then
-        global.join_spam_protection[player.name] = game.tick
-    end
-    if not global.tag_groups then
-        global.tag_groups = {}
-    end
+end
+
+local function alphanumeric(str)
+    return (string.match(str, '[^%w]') ~= nil)
 end
 
 local function on_gui_click(event)
@@ -176,17 +202,23 @@ local function on_gui_click(event)
     if name == 'create_new_group' then
         local new_group_name = frame.frame2.group_table.new_group_name.text
         local new_group_description = frame.frame2.group_table.new_group_description.text
-        if new_group_name == 'Comfy' then
-            player.print('Heretic!')
-            return
-        end
-        if
-            new_group_name ~= '' and new_group_name ~= 'Name' and new_group_name ~= 'Owner' and new_group_name ~= 'root' and
-                new_group_name ~= 'admin' and
-                new_group_name ~= 'Root' and
-                new_group_name ~= 'Admin' and
-                new_group_description ~= 'Description'
-         then
+        if new_group_name ~= '' and new_group_name ~= 'Name' and new_group_description ~= 'Description' then
+            if this.alphanumeric then
+                if new_group_name == 'Comfy' then
+                    player.print('Heretic!')
+                    return
+                end
+                if alphanumeric(new_group_name) then
+                    player.print('Group name is not valid.', {r = 0.90, g = 0.0, b = 0.0})
+                    return
+                end
+
+                if alphanumeric(new_group_description) then
+                    player.print('Group description is not valid.', {r = 0.90, g = 0.0, b = 0.0})
+                    return
+                end
+            end
+
             if string.len(new_group_name) > 64 then
                 player.print('Group name is too long. 64 characters maximum.', {r = 0.90, g = 0.0, b = 0.0})
                 return
@@ -197,7 +229,7 @@ local function on_gui_click(event)
                 return
             end
 
-            global.tag_groups[new_group_name] = {
+            this.tag_groups[new_group_name] = {
                 name = new_group_name,
                 description = new_group_description,
                 founder = player.name
@@ -226,11 +258,11 @@ local function on_gui_click(event)
     if p then
         if p.name == 'groups_table' then
             if event.element.type == 'button' and event.element.caption == 'Join' then
-                global.player_group[player.name] = event.element.parent.name
+                this.player_group[player.name] = event.element.parent.name
                 local str = '[' .. event.element.parent.name
                 str = str .. ']'
                 player.tag = str
-                if game.tick - global.join_spam_protection[player.name] > 600 then
+                if game.tick - this.join_spam_protection[player.name] > 600 then
                     local color = {
                         r = player.color.r * 0.7 + 0.3,
                         g = player.color.g * 0.7 + 0.3,
@@ -238,7 +270,7 @@ local function on_gui_click(event)
                         a = 1
                     }
                     game.print(player.name .. ' has joined group "' .. event.element.parent.name .. '"', color)
-                    global.join_spam_protection[player.name] = game.tick
+                    this.join_spam_protection[player.name] = game.tick
                 end
                 refresh_gui()
                 return
@@ -246,21 +278,21 @@ local function on_gui_click(event)
 
             if event.element.type == 'button' and event.element.caption == 'Delete' then
                 for _, p in pairs(game.players) do
-                    if global.player_group[p.name] then
-                        if global.player_group[p.name] == event.element.parent.name then
-                            global.player_group[p.name] = '[Group]'
+                    if this.player_group[p.name] then
+                        if this.player_group[p.name] == event.element.parent.name then
+                            this.player_group[p.name] = '[Group]'
                             p.tag = ''
                         end
                     end
                 end
                 game.print(player.name .. ' deleted group "' .. event.element.parent.name .. '"')
-                global.tag_groups[event.element.parent.name] = nil
+                this.tag_groups[event.element.parent.name] = nil
                 refresh_gui()
                 return
             end
 
             if event.element.type == 'button' and event.element.caption == 'Leave' then
-                global.player_group[player.name] = '[Group]'
+                this.player_group[player.name] = '[Group]'
                 player.tag = ''
                 refresh_gui()
                 return
@@ -269,8 +301,21 @@ local function on_gui_click(event)
     end
 end
 
+function Public.alphanumeric_only(value)
+    if value then
+        this.alphanumeric = value or false
+    end
+end
+
+function Public.reset_groups()
+    this.player_group = {}
+    this.join_spam_protection = {}
+    this.tag_groups = {}
+end
+
 Gui.tabs['Groups'] = build_group_gui
 
-local event = require 'utils.event'
-event.add(defines.events.on_gui_click, on_gui_click)
-event.add(defines.events.on_player_joined_game, on_player_joined_game)
+Event.add(defines.events.on_gui_click, on_gui_click)
+Event.add(defines.events.on_player_joined_game, on_player_joined_game)
+
+return Public

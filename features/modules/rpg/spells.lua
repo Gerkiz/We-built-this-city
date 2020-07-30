@@ -281,7 +281,7 @@ function Public.conjure_items()
         type = 'special',
         mana_cost = 300,
         tick = 2000,
-        enabled = true
+        enabled = false
     }
     return spells
 end

@@ -1,7 +1,3 @@
---antigrief things made by mewmew
---modified by gerkiz--
---as an admin, write either /trust or /untrust and the players name in the chat to grant/revoke immunity from protection
-
 local Event = require 'utils.event'
 local session = require 'utils.session_data'
 local Global = require 'utils.global'
@@ -24,11 +20,13 @@ local this = {
     cancel_crafting_history = {},
     whitelist_types = {},
     players_warned = {},
+    punish_cancel_craft = false,
     log_tree_harvest = false,
     do_not_check_trusted = true,
-    protect_entities = true,
     enable_autokick = true,
-    enable_autoban = false
+    enable_autoban = false,
+    enable_capsule_warning = true,
+    enable_capsule_cursor_warning = true
 }
 
 local blacklisted_types = {
@@ -53,50 +51,9 @@ local ammo_names = {
     ['rocket'] = true
 }
 
-local protected = {
-    ['reactor'] = true,
-    ['roboport'] = true,
-    ['rocket-silo'] = true,
-    ['solar-panel'] = true,
-    ['generator'] = true,
-    ['splitter'] = true,
-    ['transport-belt'] = true,
-    ['underground-belt'] = true,
-    ['assembling-machine'] = true,
-    ['storage-tank'] = true,
-    ['pump'] = true,
-    ['mining-drill'] = true,
-    ['market'] = true,
-    ['accumulator'] = true,
-    ['ammo-turret'] = true,
-    ['artillery-turret'] = true,
-    ['artillery-wagon'] = true,
-    ['beacon'] = true,
-    ['boiler'] = true,
-    ['burner-generator'] = true,
-    ['car'] = true,
-    ['cargo-wagon'] = true,
-    ['constant-combinator'] = true,
-    ['straight-rail'] = true,
-    ['curved-rail'] = true,
-    ['decider-combinator'] = true,
-    ['electric-pole'] = true,
-    ['electric-turret'] = true,
-    ['fluid-turret'] = true,
-    ['fluid-wagon'] = true,
-    ['furnace'] = true,
-    ['gate'] = true,
-    ['heat-interface'] = true,
-    ['heat-pipe'] = true,
-    ['inserter'] = true,
-    ['lab'] = true,
-    ['lamp'] = true,
-    ['loader'] = true,
-    ['locomotive'] = true,
-    ['logistic-robot'] = true,
-    ['offshore-pump'] = true,
-    ['pipe-to-ground'] = true,
-    ['pipe'] = true
+local chests = {
+    ['container'] = true,
+    ['logistic-container'] = true
 }
 
 Global.register(
@@ -232,10 +189,12 @@ local function on_player_ammo_inventory_changed(event)
         playtime = player.online_time + tracker[player.name]
     end
     if playtime < 1296000 then
-        local nukes = player.remove_item({name = 'atomic-bomb', count = 1000})
-        if nukes > 0 then
-            Utils.action_warning('{Nuke}', player.name .. ' tried to equip nukes but was not trusted.')
-            damage_player(player)
+        if this.enable_capsule_warning then
+            local nukes = player.remove_item({name = 'atomic-bomb', count = 1000})
+            if nukes > 0 then
+                Utils.action_warning('{Nuke}', player.name .. ' tried to equip nukes but was not trusted.')
+                damage_player(player)
+            end
         end
     end
 end
@@ -258,6 +217,7 @@ local function on_player_built_tile(event)
     local player = game.players[event.player_index]
 
     local surface = event.surface_index
+
     --landfill history--
 
     if not this.landfill_history[player.index] then
@@ -311,12 +271,11 @@ end
 local function on_player_used_capsule(event)
     local trusted = session.get_trusted_table()
     local player = game.players[event.player_index]
-    if player.admin then
-        return
-    end
+
     if trusted[player.name] and this.do_not_check_trusted then
         return
     end
+
     local item = event.item
 
     if not item then
@@ -330,39 +289,44 @@ local function on_player_used_capsule(event)
     local surface = player.surface
 
     if ammo_names[name] then
-        if
-            surface.count_entities_filtered({force = 'enemy', area = {{x - 10, y - 10}, {x + 10, y + 10}}, limit = 1}) >
-                0
-         then
-            return
-        end
-
-        local count = 0
-        local entities =
-            player.surface.find_entities_filtered {force = player.force, area = {{x - 5, y - 5}, {x + 5, y + 5}}}
-
-        for i = 1, #entities do
-            local e = entities[i]
-            local entity_name = e.name
-            if entity_name ~= name and entity_name ~= 'entity-ghost' and not blacklisted_types[e.type] then
-                count = count + 1
+        local msg
+        if this.enable_capsule_warning then
+            if
+                surface.count_entities_filtered(
+                    {force = 'enemy', area = {{x - 10, y - 10}, {x + 10, y + 10}}, limit = 1}
+                ) > 0
+             then
+                return
             end
+            local count = 0
+            local entities =
+                player.surface.find_entities_filtered {force = player.force, area = {{x - 5, y - 5}, {x + 5, y + 5}}}
+
+            for i = 1, #entities do
+                local e = entities[i]
+                local entity_name = e.name
+                if entity_name ~= name and entity_name ~= 'entity-ghost' and not blacklisted_types[e.type] then
+                    count = count + 1
+                end
+            end
+
+            if count <= capsule_bomb_threshold then
+                return
+            end
+
+            local prefix = '{Capsule}'
+            msg = format(player.name .. ' damaged: %s with: %s', get_entities(name, entities), name)
+            local ban_msg =
+                format(
+                'Damaged: %s with: %s. This action was performed automatically. Visit wbtc.nvfs.se/discord for forgiveness',
+                get_entities(name, entities),
+                name
+            )
+
+            do_action(player, prefix, msg, ban_msg, true)
+        else
+            msg = player.name .. ' used ' .. name
         end
-
-        if count <= capsule_bomb_threshold then
-            return
-        end
-
-        local prefix = '{Capsule}'
-        local msg = format(player.name .. ' damaged: %s with: %s', get_entities(name, entities), name)
-        local ban_msg =
-            format(
-            'Damaged: %s with: %s. This action was performed automatically. Visit wbtc.nvfs.se/discord for forgiveness',
-            get_entities(name, entities),
-            name
-        )
-
-        do_action(player, prefix, msg, ban_msg, true)
 
         if not this.capsule_history[player.index] then
             this.capsule_history[player.index] = {}
@@ -404,10 +368,27 @@ local function on_entity_died(event)
             this.friendly_fire_history[cause.player.index] = {}
         end
 
+        local chest
+        if chests[event.entity.type] then
+            local entity = event.entity
+            local inv = entity.get_inventory(1)
+            local contents = inv.get_contents()
+            local item_types = ''
+
+            for n, count in pairs(contents) do
+                if n == 'explosives' then
+                    item_types = item_types .. n .. ' count: ' .. count .. '. '
+                end
+            end
+            chest = event.entity.name .. ' with content ' .. item_types
+        else
+            chest = event.entity.name
+        end
+
         local t = math.abs(math.floor((game.tick) / 3600))
         local str = '[' .. t .. '] '
         str = str .. name .. ' destroyed '
-        str = str .. event.entity.name
+        str = str .. chest
         str = str .. ' at X:'
         str = str .. math.floor(event.entity.position.x)
         str = str .. ' Y:'
@@ -647,111 +628,75 @@ local function on_player_cursor_stack_changed(event)
     end
 
     if playtime < 1296000 then
-        if ammo_names[name] then
-            local item_to_remove = player.remove_item({name = name, count = 1000})
-            if item_to_remove > 0 then
-                Utils.action_warning('{Capsule}', player.name .. ' equipped ' .. name .. ' but was not trusted.')
-                damage_player(player)
+        if this.enable_capsule_cursor_warning then
+            if ammo_names[name] then
+                local item_to_remove = player.remove_item({name = name, count = 1000})
+                if item_to_remove > 0 then
+                    Utils.action_warning('{Capsule}', player.name .. ' equipped ' .. name .. ' but was not trusted.')
+                    damage_player(player)
+                end
             end
         end
     end
 end
 
 local function on_player_cancelled_crafting(event)
-    local tracker = session.get_session_table()
     local player = game.players[event.player_index]
 
-    local playtime = player.online_time
-    if tracker[player.name] then
-        playtime = player.online_time + tracker[player.name]
-    end
+    local crafting_queue_item_count = event.items.get_item_count()
+    local free_slots = player.get_main_inventory().count_empty_stacks()
+    local crafted_items = #event.items
 
-    local count = #event.items
+    if crafted_items > free_slots then
+        if this.punish_cancel_craft then
+            player.character.character_inventory_slots_bonus = crafted_items + #player.get_main_inventory()
+            for i = 1, crafted_items do
+                player.character.get_main_inventory().insert(event.items[i])
+            end
 
-    if playtime < 1296000 then
-        if count > 40 then
+            player.character.die('player')
+
             Utils.action_warning(
                 '{Crafting}',
                 player.name ..
-                    ' canceled their craft of item ' .. event.recipe.name .. ' of total count ' .. count .. '.'
+                    ' canceled their craft of item ' ..
+                        event.recipe.name ..
+                            ' of total count ' ..
+                                crafting_queue_item_count ..
+                                    ' in raw items (' .. crafted_items .. ' slots) but had no inventory left.'
             )
-            if not this.cancel_crafting_history[player.index] then
-                this.cancel_crafting_history[player.index] = {}
-            end
-            if #this.cancel_crafting_history[player.index] > 100 then
-                this.cancel_crafting_history[player.index] = {}
-            end
-
-            local t = math.abs(math.floor((game.tick) / 3600))
-            local str = '[' .. t .. '] '
-            str = str .. player.name .. ' canceled '
-            str = str .. ' item ' .. event.recipe.name
-            str = str .. ' count was a total of: ' .. count
-            str = str .. ' at X:'
-            str = str .. math.floor(player.position.x)
-            str = str .. ' Y:'
-            str = str .. math.floor(player.position.y)
-            str = str .. ' '
-            str = str .. 'surface:' .. player.surface.index
-            increment(this.cancel_crafting_history, player.index, str)
-        end
-    end
-end
-
-local function protect_entities(event)
-    local entity = event.entity
-
-    local function is_protected(e)
-        if protected[e.type] then
-            return true
         end
 
-        return false
+        if not this.cancel_crafting_history[player.index] then
+            this.cancel_crafting_history[player.index] = {}
+        end
+        if #this.cancel_crafting_history[player.index] > 100 then
+            this.cancel_crafting_history[player.index] = {}
+        end
+
+        local t = math.abs(math.floor((game.tick) / 3600))
+        local str = '[' .. t .. '] '
+        str = str .. player.name .. ' canceled '
+        str = str .. ' item ' .. event.recipe.name
+        str = str .. ' count was a total of: ' .. crafting_queue_item_count
+        str = str .. ' at X:'
+        str = str .. math.floor(player.position.x)
+        str = str .. ' Y:'
+        str = str .. math.floor(player.position.y)
+        str = str .. ' '
+        str = str .. 'surface:' .. player.surface.index
+        increment(this.cancel_crafting_history, player.index, str)
     end
-
-    if is_protected(entity) then
-        entity.health = entity.health + event.final_damage_amount
-    end
-end
-
---- Protect entities from the player force
----@param event
-local function on_entity_damaged(event)
-    if not this.protect_entities then
-        return
-    end
-
-    local entity = event.entity
-
-    if not entity or not entity.valid then
-        return
-    end
-
-    if event.force.index ~= 1 then
-        return
-    end
-
-    if entity.force.index ~= 1 then
-        return
-    end
-
-    protect_entities(event)
 end
 
 local function on_init()
     local branch_version = '0.18.35'
     local sub = string.sub
-    game.forces.player.research_queue_enabled = true
     local is_branch_18 = sub(branch_version, 3, 4)
     local get_active_version = sub(game.active_mods.base, 3, 4)
     local default = game.permissions.get_group('Default')
 
-    default.set_allows_action(defines.input_action.change_multiplayer_config, false)
-    default.set_allows_action(defines.input_action.edit_permission_group, false)
-    default.set_allows_action(defines.input_action.import_permissions_string, false)
-    default.set_allows_action(defines.input_action.delete_permission_group, false)
-    default.set_allows_action(defines.input_action.add_permission_group, false)
-    default.set_allows_action(defines.input_action.admin_action, false)
+    game.forces.player.research_queue_enabled = true
 
     is_branch_18 = is_branch_18 .. sub(branch_version, 6, 7)
     get_active_version = get_active_version .. sub(game.active_mods.base, 6, 7)
@@ -761,15 +706,7 @@ local function on_init()
     end
 end
 
---- Enabling this will protect all entities except for those in the not_protected table.
----@param boolean true/false
-function Public.protect_entities(value)
-    if value then
-        this.protect_entities = value
-    end
-end
-
---- This will reset the table of this
+--- This will reset the table of antigrief
 function Public.reset_tables()
     this.landfill_history = {}
     this.capsule_history = {}
@@ -780,28 +717,77 @@ function Public.reset_tables()
 end
 
 --- Enable this to log when trees are destroyed
----@param value boolean
+---@param value <boolean>
 function Public.log_tree_harvest(value)
     if value then
         this.log_tree_harvest = value
     end
+
+    return this.log_tree_harvest
 end
 
 --- Add entity type to the whitelist so it gets logged.
----@param key string
----@param value string
+---@param key <string>
+---@param value <string>
 function Public.whitelist_types(key, value)
     if key and value then
         this.whitelist_types[key] = value
     end
+
+    return this.whitelist_types[key]
 end
 
 --- If the event should also check trusted players.
----@param value string
+---@param value <string>
 function Public.do_not_check_trusted(value)
     if value then
         this.do_not_check_trusted = value
     end
+
+    return this.do_not_check_trusted
+end
+
+--- If ANY actions should be performed when a player misbehaves.
+---@param value <string>
+function Public.enable_capsule_warning(value)
+    if value then
+        this.enable_capsule_warning = value
+    end
+
+    return this.enable_capsule_warning
+end
+
+--- If ANY actions should be performed when a player misbehaves.
+---@param value <string>
+function Public.enable_capsule_cursor_warning(value)
+    if value then
+        this.enable_capsule_cursor_warning = value
+    end
+
+    return this.enable_capsule_cursor_warning
+end
+
+--- This is used for the RPG module, when casting capsules.
+---@param player <LuaPlayer>
+---@param position <EventPosition>
+---@param msg <string>
+function Public.insert_into_capsule_history(player, position, msg)
+    if not this.capsule_history[player.index] then
+        this.capsule_history[player.index] = {}
+    end
+    if #this.capsule_history[player.index] > 100 then
+        this.capsule_history[player.index] = {}
+    end
+    local t = math.abs(math.floor((game.tick) / 3600))
+    local str = '[' .. t .. '] '
+    str = str .. msg
+    str = str .. ' at X:'
+    str = str .. math.floor(position.x)
+    str = str .. ' Y:'
+    str = str .. math.floor(position.y)
+    str = str .. ' '
+    str = str .. 'surface:' .. player.surface.index
+    increment(this.capsule_history, player.index, str)
 end
 
 --- Returns the table.
@@ -827,6 +813,5 @@ Event.add(defines.events.on_player_used_capsule, on_player_used_capsule)
 Event.add(defines.events.on_player_cursor_stack_changed, on_player_cursor_stack_changed)
 Event.add(defines.events.on_player_cancelled_crafting, on_player_cancelled_crafting)
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
-Event.add(defines.events.on_entity_damaged, on_entity_damaged)
 
 return Public

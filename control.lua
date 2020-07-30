@@ -6,7 +6,7 @@ _DUMP_ENV = false
 
 --require 'map_gen.custom_maps.test'
 local loaded = _G.package.loaded
-local require_return_err = true
+local require_return_err = false
 local _require = require
 function require(path)
     local _path = path
