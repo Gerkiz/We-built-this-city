@@ -1,7 +1,7 @@
 local m_gui = require 'mod-gui'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 
 local this = {
     config = {},

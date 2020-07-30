@@ -1,7 +1,7 @@
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.main'
 local m_gui = require 'mod-gui'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 
 local popup = {}
 popup._popup = {}

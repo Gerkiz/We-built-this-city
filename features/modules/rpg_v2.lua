@@ -12,7 +12,7 @@ local Math2D = require 'math2d'
 local Session = require 'utils.session_data'
 
 local m_gui = require 'mod-gui'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 
 local points_per_level = 5
 local nth_tick = 18001

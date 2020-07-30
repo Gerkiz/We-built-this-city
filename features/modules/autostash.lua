@@ -3,7 +3,7 @@
 
 local Global = require 'utils.global'
 local m_gui = require 'mod-gui'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 local math_floor = math.floor
 local print_color = {r = 120, g = 255, b = 0}
 

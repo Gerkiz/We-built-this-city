@@ -4,7 +4,7 @@ local Gui = require 'utils.gui'
 local m_gui = require 'mod-gui'
 local Color = require 'utils.color_presets'
 local Public = require 'utils.gui'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 local disabled_tabs = {}
 local icons = {
     'entity/small-biter',

@@ -6,7 +6,7 @@ local Server = require 'utils.server'
 local session = require 'utils.session_data'
 local Tabs = require 'utils.gui.main'
 local m_gui = require 'mod-gui'
-local mod = m_gui.get_frame_flow
+local mod = m_gui.get_button_flow
 
 local insert = table.insert
 

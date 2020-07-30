@@ -6,7 +6,7 @@ _DUMP_ENV = false
 
 --require 'map_gen.custom_maps.test'
 local loaded = _G.package.loaded
-local require_return_err = false
+local require_return_err = true
 local _require = require
 function require(path)
     local _path = path
@@ -87,12 +87,8 @@ require 'map_loader'
 --require 'map_builder'
 
 -- RPG
-local RPG = require 'features.modules.rpg_v2'
-RPG.enable_flame_boots(true)
-RPG.enable_health_and_mana_bars(true)
-RPG.enable_mana(true)
-RPG.enable_stone_path(true)
-RPG.personal_tax_rate(0.3)
+local RPG_Settings = require 'features.modules.rpg.table'
+require 'features.modules.rpg.main'
 
 -- lua profiler by boodals
 if _DEBUG then
@@ -109,5 +105,15 @@ end
 Event.on_init(
     function()
         game.forces.player.research_queue_enabled = true
+        RPG_Settings.set_surface_name('wbtc')
+        RPG_Settings.enable_health_and_mana_bars(true)
+        RPG_Settings.enable_wave_defense(true)
+        RPG_Settings.enable_mana(true)
+        RPG_Settings.enable_flame_boots(true)
+        RPG_Settings.personal_tax_rate(0.3)
+        RPG_Settings.enable_stone_path(true)
+        RPG_Settings.enable_one_punch(true)
+        RPG_Settings.enable_one_punch_globally(false)
+        RPG_Settings.disable_cooldowns_on_spells()
     end
 )

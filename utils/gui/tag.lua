@@ -1,5 +1,5 @@
-local m_gui = require "mod-gui"
-local mod = m_gui.get_frame_flow
+local m_gui = require 'mod-gui'
+local mod = m_gui.get_button_flow
 local Gui = require 'utils.gui'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
@@ -31,7 +31,9 @@ local function notify_players(message)
 end
 
 local function change_player_tag(player, tag_name, silent)
-    if player.permission_group == game.permissions.get_group("spectator") then return end
+    if player.permission_group == game.permissions.get_group('spectator') then
+        return
+    end
     local old_tag = player.tag
     if tag_name == '' and old_tag == '' then
         return false
@@ -130,8 +132,6 @@ local function close_gui_player(player)
     end
 end
 
-
-
 local function player_joined(event)
     local player = Game.get_player_by_index(event.player_index)
     if not player or not player.valid then
@@ -142,7 +142,12 @@ local function player_joined(event)
         return
     end
 
-    mod(player).add {name = main_button_name, type = 'sprite-button', sprite = "entity/medium-biter", tooltip = "Player tag group management"}
+    mod(player).add {
+        name = main_button_name,
+        type = 'sprite-button',
+        sprite = 'entity/medium-biter',
+        tooltip = 'Player tag group management'
+    }
 end
 
 local function draw_main_frame_content(parent)

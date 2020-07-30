@@ -35,7 +35,7 @@ commands.add_command(
             return
         end
 
-        if param == 'oarc_0_18' then
+        if param == 'wbtc_oarc' then
             if not this.reset_are_you_sure then
                 this.reset_are_you_sure = true
                 p(
@@ -44,7 +44,7 @@ commands.add_command(
                 return
             end
             this.reset_are_you_sure = nil
-            Server.start_scenario('oarc_0_18')
+            Server.start_scenario('We_Built_This_City_Oarc')
             return
         elseif param == 's1_freeplay' then
             if not this.reset_are_you_sure then
