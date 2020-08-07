@@ -68,19 +68,19 @@ function Public.DistortionMap(interpolate_, perlin_, maxstepsize_, integration_t
 
             -- RK4
             local dh1 = dh(x, y)
-            local dh2 = dh(x - dh1[2] * stepsize_,     y + dh1[1] * stepsize_)
-            local dh3 = dh(x - dh2[2] * stepsize_,     y + dh2[1] * stepsize_)
+            local dh2 = dh(x - dh1[2] * stepsize_, y + dh1[1] * stepsize_)
+            local dh3 = dh(x - dh2[2] * stepsize_, y + dh2[1] * stepsize_)
             local dh4 = dh(x - dh3[2] * stepsize_ * 2, y + dh3[1] * stepsize_ * 2)
-            x = x - (stepsize_ / 3) * (dh1[2] + 2*dh2[2] + 2*dh3[2] + dh4[2])
-            y = y + (stepsize_ / 3) * (dh1[1] + 2*dh2[1] + 2*dh3[1] + dh4[1])
+            x = x - (stepsize_ / 3) * (dh1[2] + 2 * dh2[2] + 2 * dh3[2] + dh4[2])
+            y = y + (stepsize_ / 3) * (dh1[1] + 2 * dh2[1] + 2 * dh3[1] + dh4[1])
 
             -- Correct back to the desired contour
             -- For some reason, the following seems to behave really poorly
             -- local hs = perlin.h_and_dh(x, y)
             -- local alpha = (h - hs[1]) / (hs[2] * hs[2] + hs[3] * hs[3])
             -- if alpha == alpha and math.abs(alpha) < 0.1 then
-                -- x = x + hs[2] * alpha / 4
-                -- y = y + hs[3] * alpha / 4
+            -- x = x + hs[2] * alpha / 4
+            -- y = y + hs[3] * alpha / 4
             -- end
         end
         return {x - x0, y - y0}
@@ -109,17 +109,17 @@ function Public.DistortionMap(interpolate_, perlin_, maxstepsize_, integration_t
         local ry = 0
 
         local m = data.map
-        rx = rx + m[i]                              * (1 - x) * (1 - y)
-        ry = ry + m[i + kkNN]                       * (1 - x) * (1 - y)
+        rx = rx + m[i] * (1 - x) * (1 - y)
+        ry = ry + m[i + kkNN] * (1 - x) * (1 - y)
 
-        rx = rx + m[(i + kN) % kkNN]                * x * (1 - y)
-        ry = ry + m[((i + kN) % kkNN) + kkNN]       * x * (1 - y)
+        rx = rx + m[(i + kN) % kkNN] * x * (1 - y)
+        ry = ry + m[((i + kN) % kkNN) + kkNN] * x * (1 - y)
 
-        rx = rx + m[(i + 1) % kkNN]                 * (1 - x) * y
-        ry = ry + m[((i + 1) % kkNN) + kkNN]        * (1 - x) * y
+        rx = rx + m[(i + 1) % kkNN] * (1 - x) * y
+        ry = ry + m[((i + 1) % kkNN) + kkNN] * (1 - x) * y
 
-        rx = rx + m[(i + kN + 1) % kkNN]            * x * y
-        ry = ry + m[((i + kN + 1) % kkNN) + kkNN]   * x * y
+        rx = rx + m[(i + kN + 1) % kkNN] * x * y
+        ry = ry + m[((i + kN + 1) % kkNN) + kkNN] * x * y
 
         return {rx, ry}
     end

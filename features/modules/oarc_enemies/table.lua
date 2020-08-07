@@ -13,25 +13,25 @@ local global_data = {
     max_attacks_retal = 150,
     safe_area_radius = 50,
     search_radius_chunks = 200,
-    type_target_player       = 1,
-    type_target_area         = 2,
-    type_target_building     = 3,
-    type_target_unknown       = 4,
-    type_target_entity       = 5,
-    process_find_target      = 0,
-    process_find_spawn       = 1,
-    process_find_spawn_path_req   = 2,
-    process_find_spawn_path_calc  = 3,
-    process_find_create_group     = 4,
-    process_find_command_group        = 5,
-    process_find_group_active     = 6,
-    process_find_command_failed       = 7,
-    process_find_fallback_attack  = 8,
-    process_find_fallback_final   = 9,
-    process_find_retry_path_req   = 10,
-    process_find_retry_path_calc  = 11,
-    process_find_build_base       = 12,
-    debug = false,
+    type_target_player = 1,
+    type_target_area = 2,
+    type_target_building = 3,
+    type_target_unknown = 4,
+    type_target_entity = 5,
+    process_find_target = 0,
+    process_find_spawn = 1,
+    process_find_spawn_path_req = 2,
+    process_find_spawn_path_calc = 3,
+    process_find_create_group = 4,
+    process_find_command_group = 5,
+    process_find_group_active = 6,
+    process_find_command_failed = 7,
+    process_find_fallback_attack = 8,
+    process_find_fallback_final = 9,
+    process_find_retry_path_req = 10,
+    process_find_retry_path_calc = 11,
+    process_find_build_base = 12,
+    debug = true,
     disable = false,
     next_wave = 3600,
     groups = {},
@@ -39,7 +39,7 @@ local global_data = {
     p_time = {},
     player_sbubbles = {},
     attacks = {},
-    render_paths = false,
+    render_paths = true,
     params = {
         attack_size_min = 1,
         attack_size_max = 150,
@@ -54,14 +54,12 @@ local global_data = {
         tech_peak_count = 180,
         rand_evo_amnt = 0.15, -- Up to + this amount
         rand_size_amnt = 10, -- Up to + this amount
-        seconds_between_attacks_min = 5*6,
-        seconds_between_attacks_max = 30*6,
-        seconds_between_attacks_rand = 4*6,
-        radar_scan_attack_chance = 500, -- 1 in X change to trigger an attack due to a radar ping.
+        seconds_between_attacks_min = 5 * 6,
+        seconds_between_attacks_max = 30 * 6,
+        seconds_between_attacks_rand = 4 * 6,
+        radar_scan_attack_chance = 500 -- 1 in X change to trigger an attack due to a radar ping.
     }
 }
-
-
 
 Global.register(
     global_data,

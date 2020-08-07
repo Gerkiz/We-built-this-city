@@ -76,7 +76,6 @@ function Public.SpiralSearch(starting_c_pos, max_radius, max_count)
         end
         return nil
     else
-        game.print(serpent.block(found))
         return found
     end
 end

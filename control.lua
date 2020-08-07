@@ -107,7 +107,7 @@ Event.on_init(
         game.forces.player.research_queue_enabled = true
         RPG_Settings.set_surface_name('wbtc')
         RPG_Settings.enable_health_and_mana_bars(true)
-        RPG_Settings.enable_wave_defense(true)
+        RPG_Settings.enable_wave_defense(false)
         RPG_Settings.enable_mana(true)
         RPG_Settings.enable_flame_boots(true)
         RPG_Settings.personal_tax_rate(0.3)

@@ -200,6 +200,7 @@ local function on_pre_player_mined_item(event)
     if not player then
         return
     end
+
     if not this.storage[player.index] then
         this.storage[player.index] = {}
     end
