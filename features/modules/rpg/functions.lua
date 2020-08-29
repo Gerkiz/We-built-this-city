@@ -13,7 +13,6 @@ local xp_floating_text_color = RPG.xp_floating_text_color
 local teller_level_limit = RPG.teller_level_limit
 local experience_levels = RPG.experience_levels
 local teller_global_pool = RPG.teller_global_pool
-local rpg_frame_icons = RPG.rpg_frame_icons
 local points_per_level = RPG.points_per_level
 
 --RPG Frames
@@ -104,6 +103,7 @@ end
 local function level_up(player)
     local rpg_t = RPG.get('rpg_t')
     local RPG_GUI = package.loaded['features.modules.rpg.gui']
+    local names = RPG.auto_allocate_nodes
 
     local distribute_points_gain = 0
     for i = rpg_t[player.index].level + 1, #experience_levels, 1 do
@@ -120,10 +120,20 @@ local function level_up(player)
     RPG_GUI.draw_level_text(player)
     rpg_t[player.index].points_to_distribute = rpg_t[player.index].points_to_distribute + distribute_points_gain
     RPG_GUI.update_char_button(player)
-    table.shuffle_table(rpg_frame_icons)
-    if player.gui.left[main_frame_name] then
+    if rpg_t[player.index].allocate_index ~= 1 then
+        local node = rpg_t[player.index].allocate_index
+        local index = names[node]:lower()
+        rpg_t[player.index][index] = rpg_t[player.index][index] + distribute_points_gain
+        rpg_t[player.index].points_to_distribute = rpg_t[player.index].points_to_distribute - distribute_points_gain
+        if not rpg_t[player.index].reset then
+            rpg_t[player.index].total = rpg_t[player.index].total + distribute_points_gain
+        end
+        RPG_GUI.update_player_stats(player)
+    end
+    if player.gui.screen[main_frame_name] then
         RPG_GUI.toggle(player, true)
     end
+
     Public.level_up_effects(player)
 end
 
@@ -225,8 +235,8 @@ function Public.update_mana(player)
         return
     end
 
-    if player.gui.left[main_frame_name] then
-        local f = player.gui.left[main_frame_name]
+    if player.gui.screen[main_frame_name] then
+        local f = player.gui.screen[main_frame_name]
         local data = Gui.get_data(f)
         if data.mana and data.mana.valid then
             data.mana.caption = rpg_t[player.index].mana
@@ -271,8 +281,8 @@ function Public.reward_mana(player, mana_to_add)
         return
     end
 
-    if player.gui.left[main_frame_name] then
-        local f = player.gui.left[main_frame_name]
+    if player.gui.screen[main_frame_name] then
+        local f = player.gui.screen[main_frame_name]
         local data = Gui.get_data(f)
         if data.mana and data.mana.valid then
             data.mana.caption = rpg_t[player.index].mana
@@ -306,8 +316,8 @@ function Public.update_health(player)
         return
     end
 
-    if player.gui.left[main_frame_name] then
-        local f = player.gui.left[main_frame_name]
+    if player.gui.screen[main_frame_name] then
+        local f = player.gui.screen[main_frame_name]
         local data = Gui.get_data(f)
         if data.health and data.health.valid then
             data.health.caption = (math.round(player.character.health * 10) / 10)
@@ -503,6 +513,7 @@ function Public.rpg_reset_player(player, one_time_reset)
             mana_max = 0,
             last_spawned = 0,
             dropdown_select_index = 1,
+            allocate_index = 1,
             flame_boots = false,
             enable_entity_spawn = false,
             health_bar = rpg_t[player.index].health_bar,
@@ -534,6 +545,7 @@ function Public.rpg_reset_player(player, one_time_reset)
             mana_max = 0,
             last_spawned = 0,
             dropdown_select_index = 1,
+            allocate_index = 1,
             flame_boots = false,
             enable_entity_spawn = false,
             points_to_distribute = 0,

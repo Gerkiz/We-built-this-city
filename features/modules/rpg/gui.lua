@@ -16,7 +16,6 @@ local gain_info_tooltip = 'XP gain from mining, moving, crafting, repairing and 
 local classes = RPG.classes
 
 --RPG Settings
-local rpg_frame_icons = RPG.rpg_frame_icons
 local experience_levels = RPG.experience_levels
 
 --RPG Frames
@@ -26,6 +25,8 @@ local settings_button_name = RPG.settings_button_name
 local settings_frame_name = RPG.settings_frame_name
 local discard_button_name = RPG.discard_button_name
 local save_button_name = RPG.save_button_name
+
+local sub = string.sub
 
 function Public.draw_gui_char_button(player)
     if mod(player)[draw_main_frame_name] then
@@ -163,13 +164,13 @@ local function remove_main_frame(main_frame, screen)
     end
 end
 
-local function draw_main_frame(player)
+local function draw_main_frame(player, location)
     if not player.character then
         return
     end
 
     local main_frame =
-        player.gui.left.add(
+        player.gui.screen.add(
         {
             type = 'frame',
             name = main_frame_name,
@@ -177,12 +178,11 @@ local function draw_main_frame(player)
             direction = 'vertical'
         }
     )
-    local main_frame_style = main_frame.style
-    main_frame_style.maximal_height = 1000
-    main_frame_style.top_padding = 4
-    main_frame_style.right_padding = 8
-    main_frame_style.bottom_padding = 8
-    main_frame_style.left_padding = 8
+    if location then
+        main_frame.location = location
+    else
+        main_frame.location = {x = 1, y = 40}
+    end
 
     local data = {}
     local rpg_extra = RPG.get('rpg_extra')
@@ -194,7 +194,8 @@ local function draw_main_frame(player)
         style = 'deep_frame_in_shallow_frame'
     }
     local inside_frame_style = inside_frame.style
-    inside_frame_style.maximal_height = 1000
+    inside_frame_style.padding = 0
+    inside_frame_style.maximal_height = 800
 
     local inside_table =
         inside_frame.add {
@@ -446,13 +447,7 @@ local function draw_main_frame(player)
         add_gui_stat(right_bottom_table, mana_bonus_value, w2, mana_bonus_tooltip)
     end
 
-    local t = scroll_pane.add({type = 'table', column_count = 14})
-    for iv = 1, 14, 1 do
-        local rpg_biter_icons = t.add({type = 'sprite', sprite = rpg_frame_icons[iv]})
-        rpg_biter_icons.style.maximal_width = 24
-        rpg_biter_icons.style.maximal_height = 24
-        rpg_biter_icons.style.padding = 0
-    end
+    add_separator(scroll_pane, 400)
 
     Public.update_char_button(player)
     data.frame = main_frame
@@ -536,32 +531,43 @@ function Public.update_player_stats(player)
 end
 
 function Public.toggle(player, recreate)
-    local left = player.gui.left
     local screen = player.gui.screen
-    local main_frame = left[main_frame_name]
+    local main_frame = screen[main_frame_name]
 
     if recreate and main_frame then
+        local location = main_frame.location
         remove_main_frame(main_frame, screen)
-        draw_main_frame(player, true)
+        draw_main_frame(player, location)
         return
     end
     if main_frame then
         remove_main_frame(main_frame, screen)
     else
         Tabs.panel_clear_left_gui(player)
-        draw_main_frame(player, true)
+        draw_main_frame(player)
+    end
+end
+
+function Public.remove_frame(player)
+    local screen = player.gui.screen
+    local main_frame = screen[main_frame_name]
+
+    if main_frame then
+        remove_main_frame(main_frame, screen)
     end
 end
 
 local toggle = Public.toggle
+Public.remove_main_frame = remove_main_frame
 
 Gui.on_click(
     draw_main_frame_name,
     function(event)
         local player = event.player
-        if not player.character then
+        if not player or not player.valid or not player.character then
             return
         end
+
         toggle(player)
     end
 )
@@ -570,7 +576,7 @@ Gui.on_click(
     save_button_name,
     function(event)
         local player = event.player
-        if not player.character then
+        if not player or not player.valid or not player.character then
             return
         end
 
@@ -587,10 +593,15 @@ Gui.on_click(
         local enable_entity_gui_input = data.enable_entity_gui_input
         local stone_path_gui_input = data.stone_path_gui_input
         local one_punch_gui_input = data.one_punch_gui_input
+        local auto_allocate_gui_input = data.auto_allocate_gui_input
 
         local rpg_t = RPG.get('rpg_t')
 
         if frame and frame.valid then
+            if auto_allocate_gui_input and auto_allocate_gui_input.valid and auto_allocate_gui_input.selected_index then
+                rpg_t[player.index].allocate_index = auto_allocate_gui_input.selected_index
+            end
+
             if one_punch_gui_input and one_punch_gui_input.valid then
                 if not one_punch_gui_input.state then
                     rpg_t[player.index].one_punch = false
@@ -654,6 +665,7 @@ Gui.on_click(
 
             if reset_gui_input and reset_gui_input.valid and reset_gui_input.state then
                 if not rpg_t[player.index].reset then
+                    rpg_t[player.index].allocate_index = 1
                     rpg_t[player.index].reset = true
                     Functions.rpg_reset_player(player, true)
                 end
@@ -672,7 +684,7 @@ Gui.on_click(
 
             remove_settings_frame(event.element)
 
-            if player.gui.left[main_frame_name] then
+            if player.gui.screen[main_frame_name] then
                 toggle(player, true)
             end
         end
@@ -685,7 +697,7 @@ Gui.on_click(
         local player = event.player
         local screen = player.gui.screen
         local frame = screen[settings_frame_name]
-        if not player.character then
+        if not player or not player.valid or not player.character then
             return
         end
         if frame and frame.valid then
@@ -700,9 +712,15 @@ Gui.on_click(
         local player = event.player
         local screen = player.gui.screen
         local frame = screen[settings_frame_name]
-        if not player.character then
+        if not player or not player.valid or not player.character then
             return
         end
+
+        local surface_name = RPG.get('rpg_extra').surface_name
+        if sub(player.surface.name, 0, #surface_name) ~= surface_name then
+            return
+        end
+
         if frame and frame.valid then
             frame.destroy()
         else

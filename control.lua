@@ -37,15 +37,18 @@ end
 
 -- other stuff
 local Event = require 'utils.event'
+local GameSurface = require 'utils.surface'
 require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
 require 'utils.table'
-require 'utils.color_data'
-require 'utils.session_data'
+require 'utils.datastore.color_data'
+require 'utils.datastore.session_data'
+require 'utils.datastore.jail_data'
+require 'utils.datastore.quickbar_data'
+require 'utils.datastore.message_on_join_data'
+require 'utils.datastore.player_tag_data'
 require 'utils.player_modifiers'
-require 'utils.surface'
-require 'utils.jail_data'
 require 'utils.command_handler'
 require 'utils.biter_corpse_remover'
 
@@ -82,6 +85,7 @@ require 'features.modules.bp'
 --- load from config/map
 -- Oarc
 require 'map_loader'
+-- GameSurface.set_modded(true)
 
 -- generated maps
 --require 'map_builder'
@@ -114,6 +118,7 @@ Event.on_init(
         RPG_Settings.enable_stone_path(true)
         RPG_Settings.enable_one_punch(true)
         RPG_Settings.enable_one_punch_globally(false)
+        RPG_Settings.enable_auto_allocate(true)
         RPG_Settings.disable_cooldowns_on_spells()
     end
 )

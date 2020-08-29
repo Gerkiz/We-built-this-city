@@ -6,7 +6,7 @@ local Global = require 'utils.global'
 local Surface = require 'utils.surface'
 local Tabs = require 'utils.gui.main'
 local Color = require 'utils.color_presets'
-local Session = require 'utils.session_data'
+local Session = require 'utils.datastore.session_data'
 local Roles = require 'utils.role.table'
 
 local warp_entities = {

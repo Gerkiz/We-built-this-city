@@ -21,7 +21,7 @@ global.enable_buddy_spawn = true
 
 -- Frontier style rocket silo mode
 -- This means you can't build silos, but some spawn out in the wild for you to use.
-global.frontier_rocket_silo_mode = true
+global.frontier_rocket_silo_mode = false
 
 -- Silo Islands
 -- This options is only valid when used with global.enable_vanilla_spawns and global.frontier_rocket_silo_mode!

@@ -3,7 +3,7 @@ local Event = require 'utils.event'
 local Table = require 'utils.extended_table'
 local Public = require 'utils.role.table'
 local Server = require 'utils.server'
-local Session = require 'utils.session_data'
+local Session = require 'utils.datastore.session_data'
 local Token = require 'utils.token'
 local Task = require 'utils.task'
 

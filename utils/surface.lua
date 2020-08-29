@@ -11,7 +11,8 @@ local global_data = {
     spawn_position = nil,
     island = false,
     surface_name = wbtc_surface_name,
-    water = 0.5
+    water = 0.5,
+    modded = false
 }
 
 Global.register(
@@ -21,23 +22,50 @@ Global.register(
     end
 )
 
-function Public.create_surface()
-    local map_gen_settings = {}
-    map_gen_settings.water = global_data.water
-    map_gen_settings.starting_area = 0.5
-    --map_gen_settings.width = 128
-    --map_gen_settings.height = 128
-    map_gen_settings.cliff_settings = {cliff_elevation_interval = 35, cliff_elevation_0 = 35}
-    map_gen_settings.autoplace_controls = {
-        ['coal'] = {frequency = 0.33, size = 1, richness = 1},
-        ['stone'] = {frequency = 0.33, size = 1, richness = 1},
-        ['copper-ore'] = {frequency = 0.33, size = 1, richness = 1},
-        ['iron-ore'] = {frequency = 0.33, size = 1, richness = 1},
-        ['crude-oil'] = {frequency = 0.33, size = 1, richness = 1},
-        ['uranium-ore'] = {frequency = 0.33, size = 1, richness = 1},
-        ['trees'] = {frequency = 1, size = 1, richness = 1},
-        ['enemy-base'] = {frequency = 0.33, size = 0.33, richness = 1}
-    }
+function Public.create_surface(modded)
+    local map_gen_settings
+    if modded then
+        map_gen_settings = {
+            ['seed'] = math.random(10000, 99999),
+            ['water'] = 0.001,
+            ['starting_area'] = 2,
+            ['cliff_settings'] = {cliff_elevation_interval = 0, cliff_elevation_0 = 0},
+            ['default_enable_all_autoplace_controls'] = true,
+            ['autoplace_settings'] = {
+                ['entity'] = {treat_missing_as_default = true},
+                ['tile'] = {treat_missing_as_default = true},
+                ['decorative'] = {treat_missing_as_default = true}
+            },
+            property_expression_names = {
+                cliffiness = 0,
+                ['tile:water:probability'] = -10000,
+                ['tile:deep-water:probability'] = -10000
+            }
+        }
+        map_gen_settings.autoplace_controls = game.surfaces.nauvis.map_gen_settings.autoplace_controls
+        for k, v in pairs(map_gen_settings.autoplace_controls) do
+            v.size = 3
+            v.richness = 3
+        end
+    else
+        map_gen_settings = {}
+        map_gen_settings.water = global_data.water
+        map_gen_settings.starting_area = 0.5
+        map_gen_settings.seed = math.random(10000, 99999)
+        --map_gen_settings.width = 128
+        --map_gen_settings.height = 128
+        map_gen_settings.cliff_settings = {cliff_elevation_interval = 35, cliff_elevation_0 = 35}
+        map_gen_settings.autoplace_controls = {
+            ['coal'] = {frequency = 0.33, size = 1, richness = 1},
+            ['stone'] = {frequency = 0.33, size = 1, richness = 1},
+            ['copper-ore'] = {frequency = 0.33, size = 1, richness = 1},
+            ['iron-ore'] = {frequency = 0.33, size = 1, richness = 1},
+            ['crude-oil'] = {frequency = 0.33, size = 1, richness = 1},
+            ['uranium-ore'] = {frequency = 0.33, size = 1, richness = 1},
+            ['trees'] = {frequency = 1, size = 1, richness = 1},
+            ['enemy-base'] = {frequency = 0.33, size = 0.33, richness = 1}
+        }
+    end
     local mine = {}
     mine['control-setting:moisture:bias'] = 0.33
     mine['control-setting:moisture:frequency:multiplier'] = 1
@@ -79,8 +107,11 @@ local function on_init()
     mgs.height = 16
     game.surfaces['nauvis'].map_gen_settings = mgs
     game.surfaces['nauvis'].clear()
-
-    Public.create_surface()
+    if global_data.modded then
+        Public.create_surface(true)
+    else
+        Public.create_surface(false)
+    end
 end
 
 function Public.get_surface()
@@ -93,6 +124,15 @@ end
 
 function Public.set_spawn_pos(var)
     global_data.spawn_position = var
+end
+
+function Public.set_modded(value)
+    if value then
+        global_data.modded = true
+    else
+        global_data.modded = false
+    end
+    return global_data.modded
 end
 
 function Public.set_island(var)

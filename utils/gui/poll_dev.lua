@@ -3,7 +3,7 @@ local Global = require 'utils.global'
 local Event = require 'utils.event'
 local Server = require 'utils.server'
 local Game = require 'utils.game'
-local session = require 'utils.session_data'
+local session = require 'utils.datastore.session_data'
 local Guis = require 'utils.gui.main'
 
 local insert = table.insert
@@ -225,15 +225,15 @@ local function redraw_poll_viewer_content(data)
 
     local question_label = question_flow.add {type = 'label', caption = poll.question}
     question_label.style.minimal_height = 32
-	question_label.style.single_line = false
+    question_label.style.single_line = false
     --question_label.style.font_color = focus_color
     --question_label.style.font = 'default-listbox'
-	question_label.style.font = 'heading-2'
-	question_label.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
-	question_label.style.top_padding = 4
-	question_label.style.left_padding = 4
-	question_label.style.right_padding = 4
-	question_label.style.bottom_padding = 4
+    question_label.style.font = 'heading-2'
+    question_label.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
+    question_label.style.top_padding = 4
+    question_label.style.left_padding = 4
+    question_label.style.right_padding = 4
+    question_label.style.bottom_padding = 4
 
     local grid = poll_viewer_content.add {type = 'table', column_count = 2}
 
@@ -272,14 +272,14 @@ local function redraw_poll_viewer_content(data)
         vote_buttons[i] = vote_button
 
         local label = grid.add {type = 'label', caption = a.text}
-		label.style.single_line = false
+        label.style.single_line = false
         label.style.minimal_height = 24
-		label.style.font = 'heading-3'
-		label.style.font_color = {r = 0.95, g = 0.95, b = 0.95}
-		--label.style.top_padding = 2
-		label.style.left_padding = 4
-		label.style.right_padding = 4
-		label.style.bottom_padding = 4
+        label.style.font = 'heading-3'
+        label.style.font_color = {r = 0.95, g = 0.95, b = 0.95}
+        --label.style.top_padding = 2
+        label.style.left_padding = 4
+        label.style.right_padding = 4
+        label.style.bottom_padding = 4
     end
 
     data.vote_buttons = vote_buttons
@@ -339,7 +339,7 @@ local function draw_main_frame(player, left)
     local poll_viewer_content = frame.add {type = 'scroll-pane'}
     poll_viewer_content.style.maximal_height = 300
     poll_viewer_content.style.width = 360
-	--poll_viewer_content.style.minimal_height = 480
+    --poll_viewer_content.style.minimal_height = 480
     --poll_viewer_content.style.minimal_width = 480
 
     local poll_index = player_poll_index[player.index] or #polls
@@ -427,7 +427,7 @@ local function toggle(event)
     if main_frame then
         remove_main_frame(main_frame, left, event.player)
     else
-        Guis.panel_call_tab(p, "Polls")
+        Guis.panel_call_tab(p, 'Polls')
     end
 end
 
@@ -637,17 +637,17 @@ local function show_new_poll(poll_data)
 
     for _, p in pairs(game.connected_players) do
         if block_notify[p.index] then
-          p.print(message)
+            p.print(message)
         else
-          local frame = Guis.panel_call_tab(p, "Polls")
-          p.print(message)
+            local frame = Guis.panel_call_tab(p, 'Polls')
+            p.print(message)
             if frame and frame.valid then
                 local data = Gui.get_data(frame)
                 data.poll_index = #polls
                 update_poll_viewer(data)
             else
                 player_poll_index[p.index] = nil
-                Guis.panel_call_tab(p, "Polls")
+                Guis.panel_call_tab(p, 'Polls')
             end
         end
     end
@@ -758,36 +758,36 @@ local function vote(event)
     local vote_button_count, vote_button_tooltip = update_vote(voters, answer, 1)
 
     for _, p in pairs(game.connected_players) do
-      if p.gui.left.panel ~= nil then
-        local frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
-        if frame and frame.valid then
-            local data = Gui.get_data(frame)
+        if p.gui.left.panel ~= nil then
+            local frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
+            if frame and frame.valid then
+                local data = Gui.get_data(frame)
 
-            if data.poll_index == poll_index then
-                local vote_buttons = data.vote_buttons
-                if previous_vote_answer then
-                    local vote_button = vote_buttons[previous_vote_index]
-                    vote_button.caption = previous_vote_button_count
-                    vote_button.tooltip = previous_vote_button_tooltip
+                if data.poll_index == poll_index then
+                    local vote_buttons = data.vote_buttons
+                    if previous_vote_answer then
+                        local vote_button = vote_buttons[previous_vote_index]
+                        vote_button.caption = previous_vote_button_count
+                        vote_button.tooltip = previous_vote_button_tooltip
 
                     --if p.index == player_index then
                     --    local vote_button_style = vote_button.style
                     --    vote_button_style.font_color = normal_color
                     --    vote_button_style.disabled_font_color = normal_color
                     --end
-                end
+                    end
 
-                local vote_button = vote_buttons[vote_index]
-                vote_button.caption = vote_button_count
-                vote_button.tooltip = vote_button_tooltip
+                    local vote_button = vote_buttons[vote_index]
+                    vote_button.caption = vote_button_count
+                    vote_button.tooltip = vote_button_tooltip
                 -- if p.index == player_index then -- block commented to avoid desync risk
                 --     local vote_button_style = vote_button.style
                 --     vote_button_style.font_color = focus_color
                 --     vote_button_style.disabled_font_color = focus_color
                 -- end
+                end
             end
         end
-      end
     end
 end
 
@@ -797,31 +797,33 @@ local function player_joined(event)
         return
     end
 
-      if not block_notify[player.index] then block_notify[player.index] = true end
+    if not block_notify[player.index] then
+        block_notify[player.index] = true
+    end
 end
 
 local function tick()
     for _, p in pairs(game.connected_players) do
-      if p.gui.left.panel ~= nil then
-        if p.gui.left.panel.tabbed_pane ~= nil then
-            if p.gui.left.panel.tabbed_pane.Polls ~= nil then
-                local frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
-                if frame and frame.valid then
-                    local data = Gui.get_data(frame)
-                    local poll = polls[data.poll_index]
-                    if poll then
-                        local poll_enabled = do_remaining_time(poll, data.remaining_time_label)
+        if p.gui.left.panel ~= nil then
+            if p.gui.left.panel.tabbed_pane ~= nil then
+                if p.gui.left.panel.tabbed_pane.Polls ~= nil then
+                    local frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
+                    if frame and frame.valid then
+                        local data = Gui.get_data(frame)
+                        local poll = polls[data.poll_index]
+                        if poll then
+                            local poll_enabled = do_remaining_time(poll, data.remaining_time_label)
 
-                        if not poll_enabled then
-                            for _, v in pairs(data.vote_buttons) do
-                                v.enabled = poll_enabled
+                            if not poll_enabled then
+                                for _, v in pairs(data.vote_buttons) do
+                                    v.enabled = poll_enabled
+                                end
                             end
                         end
                     end
                 end
             end
         end
-      end
     end
 end
 
@@ -839,7 +841,9 @@ Gui.on_click(
         if frame and frame.valid then
             remove_create_poll_frame(frame, player.index)
         else
-            if player.gui.left.panel then player.gui.left.panel.destroy() end
+            if player.gui.left.panel then
+                player.gui.left.panel.destroy()
+            end
             draw_create_poll_frame(player, left)
         end
     end
@@ -986,11 +990,11 @@ Gui.on_click(
 
                 local main_frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
                 if main_frame and main_frame.valid then
-                  local main_frame_data = Gui.get_data(main_frame)
-                  local poll_index = main_frame_data.poll_index
+                    local main_frame_data = Gui.get_data(main_frame)
+                    local poll_index = main_frame_data.poll_index
 
-                  if removed_index < poll_index then
-                      main_frame_data.poll_index = poll_index - 1
+                    if removed_index < poll_index then
+                        main_frame_data.poll_index = poll_index - 1
                     end
 
                     update_poll_viewer(main_frame_data)
@@ -1092,7 +1096,7 @@ Gui.on_click(
             local main_frame = p.gui.left.panel.tabbed_pane.Polls[main_frame_name]
 
             if block_notify[p.index] then
-              p.print(message)
+                p.print(message)
             else
                 p.print(message)
                 if main_frame and main_frame.valid then
@@ -1100,7 +1104,7 @@ Gui.on_click(
                     main_frame_data.poll_index = poll_index
                     update_poll_viewer(main_frame_data)
                 else
-                    Guis.panel_call_tab(p, "Polls")
+                    Guis.panel_call_tab(p, 'Polls')
                 end
             end
         end
@@ -1297,6 +1301,6 @@ function Class.send_poll_result_to_discord(id)
     Server.to_discord_embed(message)
 end
 
-Gui.tabs["Polls"] = draw_main_frame
+Gui.tabs['Polls'] = draw_main_frame
 
 return Class

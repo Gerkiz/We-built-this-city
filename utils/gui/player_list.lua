@@ -1,5 +1,5 @@
 local Event = require 'utils.event'
-local play_time = require 'utils.session_data'
+local play_time = require 'utils.datastore.session_data'
 local Gui = require 'utils.gui.main'
 local Roles = require 'utils.role.main'
 
