@@ -22,6 +22,10 @@ function Gui.uid_name()
     return tostring(Token.uid())
 end
 
+function Gui.uid()
+    return Token.uid()
+end
+
 -- Associates data with the LuaGuiElement. If data is nil then removes the data
 function Gui.set_data(element, value)
     data[element.player_index * 0x100000000 + element.index] = value

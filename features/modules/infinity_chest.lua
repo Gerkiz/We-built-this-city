@@ -9,8 +9,6 @@ local this = {
     storage = {},
     chest = {
         ['infinity-chest'] = 'infinity-chest'
-        --,
-        --["steel-chest"] = "steel-chest"
     },
     stop = false,
     editor = {}

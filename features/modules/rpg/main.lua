@@ -639,6 +639,11 @@ local function on_player_changed_position(event)
     end
 
     local enable_flame_boots = RPG.get('rpg_extra').enable_flame_boots
+    local rpg_t = RPG.get('rpg_t')
+
+    if not rpg_t[player.index] then
+        return
+    end
 
     if enable_flame_boots then
         give_player_flameboots(player)

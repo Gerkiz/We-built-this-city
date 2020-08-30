@@ -1,10 +1,9 @@
--- control stages
+--! control stages
 require 'utils.data_stages'
 _LIFECYCLE = _STAGE.control -- Control stage
 _DEBUG = false
 _DUMP_ENV = false
 
---require 'map_gen.custom_maps.test'
 local loaded = _G.package.loaded
 local require_return_err = false
 local _require = require
@@ -35,9 +34,10 @@ function require(path)
         error('Can only require files at runtime that have been required in the control stage.', 2)
 end
 
--- other stuff
+--! other stuff
 local Event = require 'utils.event'
 local GameSurface = require 'utils.surface'
+local RPG_Settings = require 'features.modules.rpg.table'
 require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
@@ -50,15 +50,16 @@ require 'utils.datastore.message_on_join_data'
 require 'utils.datastore.player_tag_data'
 require 'utils.player_modifiers'
 require 'utils.command_handler'
+require 'features.modules.rpg.main'
 require 'utils.biter_corpse_remover'
 
--- Role system
+--! Role system
 require 'utils.role.main'
 local Role = require 'utils.role.permissions'
 require 'utils.role.roles'
 Role.adjust_permission()
 
--- gui and modules
+--! gui and modules
 require 'utils.gui.main'
 require 'utils.gui.player_list'
 require 'utils.gui.admin'
@@ -80,31 +81,14 @@ require 'features.commands.repair'
 require 'features.commands.bonus'
 require 'features.commands.misc'
 require 'features.commands.map_restart'
+-- require 'features.modules.infinity_chest'
+require 'features.modules.portable_chest'
 require 'features.modules.bp'
 
---- load from config/map
--- Oarc
-require 'map_loader'
--- GameSurface.set_modded(true)
-
--- generated maps
+---! load from config/map
+-- require 'map_loader'
+GameSurface.set_modded(false)
 --require 'map_builder'
-
--- RPG
-local RPG_Settings = require 'features.modules.rpg.table'
-require 'features.modules.rpg.main'
-
--- lua profiler by boodals
-if _DEBUG then
-    require 'utils.profiler'
-    function raw(string)
-        return game.print(serpent.block(string))
-    end
-end
-
-if _DUMP_ENV then
-    require 'utils.dump_env'
-end
 
 Event.on_init(
     function()
@@ -122,3 +106,16 @@ Event.on_init(
         RPG_Settings.disable_cooldowns_on_spells()
     end
 )
+
+--! DEBUG SETTINGS
+
+if _DEBUG then
+    require 'utils.profiler'
+    function raw(string)
+        return game.print(serpent.block(string))
+    end
+end
+
+if _DUMP_ENV then
+    require 'utils.dump_env'
+end
