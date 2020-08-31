@@ -14,7 +14,8 @@ local this = {
     editor = {},
     ores_only = false,
     allow_barrels = true,
-    total_slots = 48
+    total_slots = {},
+    stack_size = {}
 }
 
 local ore_names = {
@@ -27,8 +28,10 @@ local ore_names = {
 }
 
 local format = string.format
+local size = 35
 local main_button_name = Gui.uid_name()
 local main_frame_name = Gui.uid_name()
+local stack_slider_name = Gui.uid_name()
 
 local Public = {}
 
@@ -49,6 +52,7 @@ local function clear_gui(player)
         return
     end
     if data.frame and data.frame.valid then
+        Gui.remove_data_recursively(data.frame)
         data.frame.destroy()
     end
     this.inf_gui[player.index] = nil
@@ -89,7 +93,14 @@ local function validate_player(player)
 end
 
 local function item(item_name, item_count, player, chest_id)
-    local item_stack = game.item_prototypes[item_name].stack_size
+    local stack_size = this.stack_size[player.index]
+    local item_stack
+    if stack_size then
+        item_stack = game.item_prototypes[item_name].stack_size * stack_size
+    else
+        item_stack = game.item_prototypes[item_name].stack_size
+    end
+
     local diff = item_count - item_stack
 
     if not this.inf_storage[chest_id] then
@@ -162,6 +173,9 @@ local function draw_main_frame(player, target, chest_id)
         name = main_frame_name
     }
     frame.auto_center = true
+
+    local data = {}
+
     local controls = frame.add {type = 'flow', direction = 'horizontal'}
     local items = frame.add {type = 'flow', direction = 'vertical'}
 
@@ -169,7 +183,7 @@ local function draw_main_frame(player, target, chest_id)
     local btn =
         tbl.add {
         type = 'sprite-button',
-        tooltip = '[color=blue]Info![/color]\nYou can easily remove an item by left/right-clicking it.\n\nItems selected in the table below will remove all stacks except one from the player inventory.\nIf the stack-size is bigger in the personal stash than the players inventory stack then the players inventory will automatically refill from the personal stash.\n\n[color=red]Usage[/color]\nPressing the following keys will do the following actions:\nCTRL: Retrieves all stacks from clicked item\nSHIFT:Retrieves a stack from clicked item.',
+        tooltip = '[color=blue]Info![/color]\nYou can easily remove an item by left/right-clicking it.\n\nItems selected in the table below will remove all stacks except one from the player inventory.\nIf the stack-size is bigger in the personal stash than the players inventory stack then the players inventory will automatically refill from the personal stash.\n\n[color=red]Usage[/color]\nPressing the following keys will do the following actions:\nCTRL: Retrieves all stacks from clicked item\nSHIFT:Retrieves a stack from clicked item.\nStack-Size slider will always ensure that you have <x> amounts of stacks in your inventory.',
         sprite = 'utility/questionmark'
     }
     btn.style.height = 20
@@ -178,16 +192,14 @@ local function draw_main_frame(player, target, chest_id)
     btn.focus()
 
     if not player.admin and this.ores_only then
-        this.total_slots = 6
-    else
-        this.total_slots = 70
+        this.total_slots[player.index] = 6
     end
 
     local amount_and_types
     if this.ores_only then
-        amount_and_types = this.total_slots .. ' different ore'
+        amount_and_types = this.total_slots[player.index] .. ' different ore'
     else
-        amount_and_types = this.total_slots .. ' different item'
+        amount_and_types = this.total_slots[player.index] .. ' different item'
     end
 
     local text =
@@ -199,6 +211,27 @@ local function draw_main_frame(player, target, chest_id)
         )
     }
     text.style.single_line = false
+
+    local tbl_2 = tbl.add {type = 'table', column_count = 2}
+    local stack_size = this.stack_size[player.index]
+
+    local stack_value = tbl_2.add({type = 'label', caption = 'Stack Size: ' .. stack_size .. ' '})
+    stack_value.style.font = 'default-bold'
+    data.stack_value = stack_value
+
+    local slider =
+        tbl_2.add(
+        {
+            type = 'slider',
+            minimum_value = 1,
+            maximum_value = 10,
+            name = stack_slider_name,
+            value = stack_size
+        }
+    )
+    data.slider = slider
+    slider.style.width = 115
+    Gui.set_data(slider, data)
 
     tbl.add({type = 'line'})
 
@@ -264,11 +297,17 @@ local function update_gui()
                 name = item_name
             }
             btn.enabled = true
+            btn.style.height = size
+            btn.style.width = size
+            btn.focus()
         end
 
-        while total < this.total_slots do
+        while total < this.total_slots[player.index] do
             local btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
             btns.enabled = true
+            btns.style.height = size
+            btns.style.width = size
+            btns.focus()
             if this.viewing_player[player.index] then
                 btns.enabled = false
             end
@@ -439,7 +478,6 @@ local function on_gui_elem_changed(event)
     end
 
     storage[name] = 0
-    element.tooltip = 'Right click to remove.'
     if this.editor[player.index] then
         storage[name] = 5000000
     end
@@ -463,8 +501,18 @@ local function on_player_joined_game(event)
         }
     end
 
-    if not this.inf_chests[player.index] then
+    chest_id = this.player_chests[player.index].chest_id
+
+    if not this.inf_chests[chest_id] then
         this.inf_chests[chest_id] = player
+    end
+
+    if not this.stack_size[player.index] then
+        this.stack_size[player.index] = 1
+    end
+
+    if not this.total_slots[player.index] then
+        this.total_slots[player.index] = 50
     end
 
     if not mod(player)[main_button_name] then
@@ -500,7 +548,7 @@ end
 Gui.on_click(
     main_button_name,
     function(event)
-        local player = event.player
+        local player = game.get_player(event.player_index)
         if not player or not player.valid or not player.character then
             return
         end
@@ -511,6 +559,39 @@ Gui.on_click(
             clear_gui(player)
         else
             draw_main_frame(player)
+        end
+    end
+)
+
+Gui.on_value_changed(
+    stack_slider_name,
+    function(event)
+        local player = game.get_player(event.player_index)
+        if not player or not player.valid or not player.character then
+            return
+        end
+
+        local element = event.element
+        if not element or not element.valid then
+            return
+        end
+
+        local data = Gui.get_data(element)
+        local stack_value = data.stack_value
+        if not stack_value or not stack_value.valid then
+            return
+        end
+
+        local slider = data.slider
+        if not slider or not slider.valid then
+            return
+        end
+
+        local screen = player.gui.screen
+        local main_frame = screen[main_frame_name]
+        if main_frame and main_frame.valid then
+            this.stack_size[player.index] = element.slider_value
+            stack_value.caption = 'Stack Size: ' .. this.stack_size[player.index] .. ' '
         end
     end
 )
