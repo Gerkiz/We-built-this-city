@@ -13,7 +13,8 @@ local this = {
     viewing_player = {},
     editor = {},
     ores_only = false,
-    allow_barrels = true
+    allow_barrels = true,
+    total_slots = 48
 }
 
 local ore_names = {
@@ -176,11 +177,17 @@ local function draw_main_frame(player, target, chest_id)
     btn.enabled = false
     btn.focus()
 
+    if not player.admin and this.ores_only then
+        this.total_slots = 6
+    else
+        this.total_slots = 70
+    end
+
     local amount_and_types
     if this.ores_only then
-        amount_and_types = '6 different ore'
+        amount_and_types = this.total_slots .. ' different ore'
     else
-        amount_and_types = '48 different item'
+        amount_and_types = this.total_slots .. ' different item'
     end
 
     local text =
@@ -259,24 +266,13 @@ local function update_gui()
             btn.enabled = true
         end
 
-        if this.ores_only then
-            while total < 6 do
-                local btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
-                btns.enabled = true
-                if this.viewing_player[player.index] then
-                    btns.enabled = false
-                end
-                total = total + 1
+        while total < this.total_slots do
+            local btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
+            btns.enabled = true
+            if this.viewing_player[player.index] then
+                btns.enabled = false
             end
-        else
-            while total < 48 do
-                local btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
-                btns.enabled = true
-                if this.viewing_player[player.index] then
-                    btns.enabled = false
-                end
-                total = total + 1
-            end
+            total = total + 1
         end
 
         this.inf_gui[player.index].updated = true
@@ -572,7 +568,7 @@ function Public.allow_barrels(value)
     return this.allow_barrels
 end
 
-Event.on_nth_tick(15, tick)
+Event.on_nth_tick(10, tick)
 Event.add(defines.events.on_gui_click, gui_click)
 Event.add(defines.events.on_gui_closed, gui_closed)
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
