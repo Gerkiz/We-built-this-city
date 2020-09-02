@@ -141,6 +141,9 @@ local function update_chest()
         end
 
         local inv = chest.get_inventory(defines.inventory.character_main)
+        if not inv or not inv.valid then
+            return
+        end
         local content = inv.get_contents()
 
         for item_name, item_count in pairs(content) do
@@ -566,15 +569,8 @@ Gui.on_click(
 Gui.on_value_changed(
     stack_slider_name,
     function(event)
-        local player = game.get_player(event.player_index)
-        if not player or not player.valid or not player.character then
-            return
-        end
-
+        local player = event.player
         local element = event.element
-        if not element or not element.valid then
-            return
-        end
 
         local data = Gui.get_data(element)
         local stack_value = data.stack_value

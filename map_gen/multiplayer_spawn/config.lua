@@ -38,7 +38,7 @@ global.enable_scramble = false
 global.enable_longreach = false
 
 -- Enable Autofill
-global.enable_autofill = true
+global.enable_autofill = false
 
 -- Enable vanilla loaders
 global.enable_loaders = true
