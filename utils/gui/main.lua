@@ -526,7 +526,6 @@ local function on_gui_click(event)
     Public.refresh(player)
 end
 
-Gui.allow_player_to_toggle_top_element_visibility(main_button_name)
 Event.add(
     defines.events.on_tick,
     function(event)

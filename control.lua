@@ -30,8 +30,7 @@ function require(path)
             log('Loaded: ' .. _path)
         end
     end
-    return unpack(_return) and loaded[path] or
-        error('Can only require files at runtime that have been required in the control stage.', 2)
+    return unpack(_return) and loaded[path] or error(unpack(_return))
 end
 
 --! other stuff
