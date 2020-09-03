@@ -7,7 +7,6 @@ local this = {
     refill_chests = {index = 1, placed = 0},
     full_turrets = {},
     valid_chest = {
-        ['steel-chest'] = {valid = true, limit = 4},
         ['iron-chest'] = {valid = true, limit = 4}
     },
     valid_turrets = {
@@ -127,10 +126,9 @@ local function get_valid_chest()
 
         for i = 1, #refill_chests do
             chest = refill_chests[i]
-            if not chest then
-                return
-            end
-            if not chest.valid then
+            if chest then
+                return chest
+            elseif not chest.valid then
                 fast_remove(refill_chests, i)
                 refill_chests.placed = refill_chests.placed - 1
                 if refill_chests.placed <= 0 then
@@ -139,12 +137,6 @@ local function get_valid_chest()
                 return
             end
         end
-
-        if not chest then
-            return
-        end
-
-        return chest
     end
 
     local player_data = this.player_settings
@@ -165,11 +157,9 @@ local function get_valid_chest()
             end
             for t = 1, #chests do
                 chest = chests[t]
-                if not chest then
-                    return
-                end
-
-                if not chest.valid then
+                if chest then
+                    return chest
+                elseif not chest.valid then
                     fast_remove(chests, i)
                     p_data.placed = p_data.placed - 1
                     if p_data.placed <= 0 then
@@ -180,12 +170,6 @@ local function get_valid_chest()
             end
         end
     end
-
-    if not chest then
-        return false
-    end
-
-    return chest
 end
 
 local function get_ammo(entity_turret)

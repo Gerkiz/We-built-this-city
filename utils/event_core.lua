@@ -17,7 +17,7 @@ local script_on_event = script.on_event
 local script_on_nth_tick = script.on_nth_tick
 
 local call_handlers
-if _DEBUG then
+if _DEBUsG then
     function call_handlers(handlers, event)
         for i = 1, #handlers do
             local handler = handlers[i]

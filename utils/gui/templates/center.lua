@@ -24,7 +24,7 @@ function center.add(obj)
     setmetatable(obj, {__index = center._center})
     obj.tabs = {}
     obj._tabs = {}
-    Core.data('center', obj.name, obj)
+    Core.fetch_data('center', obj.name, obj)
     Core.toolbar.add(obj.name, obj.caption, obj.tooltip, obj.open)
     return obj
 end
@@ -42,7 +42,7 @@ end
 -- used on the button press when the toolbar button is press, can be overriden
 function center._center.open(event)
     local player = game.players[event.player_index]
-    local _center = Core.data('center')[event.element.name]
+    local _center = Core.fetch_data('center')[event.element.name]
     local center_flow = center.get_flow(player)
     if center_flow[_center.name] then
         center.clear(player)
@@ -158,7 +158,7 @@ function center._center:add_tab(name, caption, tooltip, callback)
             local tab = event.element.parent.parent.parent.parent.tab.tab_scroll.tab_scroll_flow
             tab.clear()
             local frame_name = tab.parent.parent.parent.name
-            local _center = Core.data('center')[frame_name]
+            local _center = Core.fetch_data('center')[frame_name]
             local _tab = _center._tabs[event.element.name]
             if is_type(_tab, 'function') then
                 for _, button in pairs(event.element.parent.children) do

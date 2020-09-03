@@ -34,8 +34,15 @@ local add_tick = function(callback, data, tick)
 end
 
 local basic_settings = {
-    {type = 'slider', object = 'force', key = 'manual_mining_speed_modifier', name = 'mining-speed', min = 0, max = 30},
-    {type = 'slider', object = 'force', key = 'manual_crafting_speed_modifier', name = 'craft-speed', min = 0, max = 50},
+    {type = 'slider', object = 'force', key = 'manual_mining_speed_modifier', name = 'mining-speed', min = 0, max = 100},
+    {
+        type = 'slider',
+        object = 'force',
+        key = 'manual_crafting_speed_modifier',
+        name = 'craft-speed',
+        min = 0,
+        max = 100
+    },
     {
         type = 'slider',
         object = 'force',
@@ -50,7 +57,7 @@ local basic_settings = {
         key = 'character_build_distance_bonus',
         name = 'build-distance',
         min = 0,
-        max = 50
+        max = 100
     },
     {
         type = 'slider',
@@ -58,13 +65,13 @@ local basic_settings = {
         key = 'character_reach_distance_bonus',
         name = 'reach-distance',
         min = 0,
-        max = 50
+        max = 100
     },
     {type = 'slider', object = 'force', key = 'worker_robots_speed_modifier', name = 'bot-speed', min = 0, max = 20},
     {type = 'slider', object = 'force', key = 'worker_robots_battery_modifier', name = 'bot-battery', min = 0, max = 20},
     {type = 'slider', object = 'force', key = 'worker_robots_storage_bonus', name = 'bot-storage', min = 0, max = 20},
-    {type = 'slider', object = 'force', key = 'laboratory_speed_modifier', name = 'lab-speed', min = 0, max = 40},
-    {type = 'slider', object = 'force', key = 'stack_inserter_capacity_bonus', name = 'stack-bonus', min = 1, max = 40}
+    {type = 'slider', object = 'force', key = 'laboratory_speed_modifier', name = 'lab-speed', min = 0, max = 100},
+    {type = 'slider', object = 'force', key = 'stack_inserter_capacity_bonus', name = 'stack-bonus', min = 1, max = 100}
 }
 
 local advanced_settings = {
@@ -82,7 +89,7 @@ local advanced_settings = {
         key = 'mining_drill_productivity_bonus',
         name = 'mining-prod',
         min = 0,
-        max = 10
+        max = 100
     },
     {type = 'slider', object = 'game', key = 'speed', name = 'game-speed', min = 0.01, max = 5},
     {type = 'function', object = 'game', key = 'server_save', name = 'save'},
@@ -100,7 +107,7 @@ local personal_settings = {
         key = 'character_resource_reach_distance_bonus',
         name = 'reach-bonus',
         min = 0,
-        max = 30
+        max = 100
     },
     {
         type = 'slider',
@@ -108,7 +115,7 @@ local personal_settings = {
         key = 'character_mining_speed_modifier',
         name = 'mining-speed',
         min = 0,
-        max = 30
+        max = 100
     },
     {
         type = 'slider',
@@ -116,7 +123,7 @@ local personal_settings = {
         key = 'character_crafting_speed_modifier',
         name = 'craft-speed',
         min = 0,
-        max = 30
+        max = 100
     },
     {
         type = 'slider',
@@ -132,7 +139,7 @@ local personal_settings = {
         key = 'character_build_distance_bonus',
         name = 'build-distance',
         min = 0,
-        max = 50
+        max = 100
     },
     {
         type = 'slider',
@@ -140,7 +147,7 @@ local personal_settings = {
         key = 'character_reach_distance_bonus',
         name = 'reach-distance',
         min = 0,
-        max = 50
+        max = 100
     },
     {
         type = 'slider',

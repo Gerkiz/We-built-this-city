@@ -11,11 +11,11 @@ local this = {
         ['infinity-chest'] = 'infinity-chest'
     },
     stop = false,
-    editor = {}
+    editor = {},
+    limits = {}
 }
 
-local format = string.format
-
+local default_limit = 4800
 local Public = {}
 
 Public.storage = {}
@@ -64,7 +64,7 @@ local function validate_player(player)
     if not player.connected then
         return false
     end
-    if not game.players[player.name] then
+    if not game.players[player.index] then
         return false
     end
     return true
@@ -80,15 +80,20 @@ local function built_entity(event)
     end
     if event.player_index then
         local player = game.get_player(event.player_index)
-        if this.storage[player.index] then
+        if this.storage[player.index] and has_value(this.storage[player.index].chests) then
             if this.stop then
                 goto continue
             end
-            local index = this.storage[player.index]
-            this.inf_storage[entity.unit_number] = return_value(index)
+            local chest_index = this.storage[player.index].chests
+            local limit_index = this.storage[player.index].limits
+            this.inf_storage[entity.unit_number] = return_value(chest_index)
+            this.limits[entity.unit_number] = return_value(limit_index)
         end
         ::continue::
         entity.active = false
+        if not this.limits[entity.unit_number] then
+            this.limits[entity.unit_number] = default_limit
+        end
         this.inf_chests[entity.unit_number] = entity
         this.inf_mode[entity.unit_number] = 1
         rendering.draw_text {
@@ -126,14 +131,25 @@ local function item(item_name, item_count, inv, unit_number)
     local mode = this.inf_mode[unit_number]
     if mode == 2 then
         diff = 2 ^ 31
-    elseif mode == 3 then
+    elseif mode == 4 then
         diff = 2 ^ 31
     end
     if diff > 0 then
-        local count = inv.remove({name = item_name, count = diff})
         if not storage[item_name] then
+            local count = inv.remove({name = item_name, count = diff})
             this.inf_storage[unit_number][item_name] = count
         else
+            if this.inf_storage[unit_number][item_name] >= this.limits[unit_number] then
+                if mode == 1 then
+                    this.inf_mode[unit_number] = 3
+                end
+                if inv.can_insert({name = item_name, count = item_stack}) then
+                    local count = inv.insert({name = item_name, count = item_stack})
+                    this.inf_storage[unit_number][item_name] = storage[item_name] - count
+                end
+                return
+            end
+            local count = inv.remove({name = item_name, count = diff})
             this.inf_storage[unit_number][item_name] = storage[item_name] + count
         end
     elseif diff < 0 then
@@ -161,7 +177,8 @@ local function is_chest_empty(entity, player)
                     goto no_storage
                 end
                 if (has_value(v) >= 1) then
-                    this.storage[player][number] = this.inf_storage[number]
+                    this.storage[player].chests[number] = this.inf_storage[number]
+                    this.storage[player].limits[number] = this.limits[number]
                 end
             end
         end
@@ -169,10 +186,12 @@ local function is_chest_empty(entity, player)
 
         this.inf_chests[number] = nil
         this.inf_storage[number] = nil
+        this.limits[number] = nil
         this.inf_mode[number] = nil
     else
         this.inf_chests[number] = nil
         this.inf_storage[number] = nil
+        this.limits[number] = nil
         this.inf_mode[number] = nil
     end
 end
@@ -200,7 +219,10 @@ local function on_pre_player_mined_item(event)
     end
 
     if not this.storage[player.index] then
-        this.storage[player.index] = {}
+        this.storage[player.index] = {
+            chests = {},
+            limits = {}
+        }
     end
 
     if entity.name ~= this.chest[entity.name] then
@@ -228,10 +250,14 @@ local function update_chest()
                 inv.set_bar()
                 chest.destructible = false
                 chest.minable = false
-            else
+            elseif mode == 2 then
                 inv.set_bar(1)
                 chest.destructible = true
                 chest.minable = true
+            elseif mode == 3 then
+                inv.set_bar(2)
+                chest.destructible = false
+                chest.minable = false
             end
         end
 
@@ -243,7 +269,10 @@ local function update_chest()
         if not storage then
             goto continue
         end
-        for item_name, _ in pairs(this.inf_storage[unit_number]) do
+        for item_name, _ in pairs(storage) do
+            if storage[item_name] <= this.limits[unit_number] then
+                this.inf_mode[unit_number] = 1
+            end
             if not content[item_name] then
                 item(item_name, 0, inv, unit_number)
             end
@@ -251,6 +280,53 @@ local function update_chest()
 
         ::continue::
     end
+end
+
+local function text_changed(event)
+    local element = event.element
+    if not element then
+        return
+    end
+    if not element.valid then
+        return
+    end
+
+    local player = game.players[event.player_index]
+
+    local data = this.inf_gui[player.name]
+    if not data then
+        return
+    end
+
+    if not data.text_field or not data.text_field.valid then
+        return
+    end
+
+    if not data.text_field.text then
+        return
+    end
+
+    local value = tonumber(element.text)
+
+    if not value then
+        return
+    end
+
+    if value ~= '' and value >= default_limit then
+        data.text_field.text = value
+
+        local entity = data.entity
+        if not entity or not entity.valid then
+            return
+        end
+
+        local unit_number = entity.unit_number
+
+        this.limits[unit_number] = value
+    elseif value ~= '' and value <= default_limit then
+        return
+    end
+    this.inf_gui[player.name].updated = false
 end
 
 local function gui_opened(event)
@@ -279,41 +355,59 @@ local function gui_opened(event)
     local selected = mode and mode or 1
     local tbl = controls.add {type = 'table', column_count = 1}
 
-    local text =
+    local limit_tooltip =
+        '[color=yellow]Limit Info:[/color]\nThis is only usable if you intend to use this chest for one item.'
+
+    local mode_tooltip =
+        '[color=yellow]Mode Info:[/color]\nEnabled: will active the chest and allow for insertions.\nDisabled: will deactivate the chest and let´s the player utilize the GUI to retrieve items.\nLimited: will deactivate the chest as per limit.'
+
+    local btn =
         tbl.add {
-        type = 'label',
-        caption = format(
-            'This chest stores unlimited quantity of items (up to 48 different item types).\nThe chest is best used with an inserter to add / remove items.\nThe chest is mineable if state is disabled.\nContent is kept when mined.'
-        )
+        type = 'sprite-button',
+        tooltip = '[color=blue]Info![/color]\nThis chest stores unlimited quantity of items (up to 48 different item types).\nThe chest is best used with an inserter to add / remove items.\nThe chest is mineable if state is disabled.\nContent is kept when mined.\n[color=yellow]Limit:[/color]\nThis is only usable if you intend to use this chest for one item.',
+        sprite = 'utility/questionmark'
     }
-    text.style.single_line = false
+    btn.style.height = 20
+    btn.style.width = 20
+    btn.enabled = false
+    btn.focus()
 
-    local tbl_2 = tbl.add {type = 'table', column_count = 2}
+    local tbl_2 = tbl.add {type = 'table', column_count = 4}
 
-    tbl_2.add {type = 'label', caption = 'Mode: '}
+    tbl_2.add {type = 'label', caption = 'Mode: ', tooltip = mode_tooltip}
     local drop_down
     if player.admin and this.editor[player.name] then
         drop_down =
             tbl_2.add {
             type = 'drop-down',
-            items = {'Enabled', 'Disabled', 'Editor'},
+            items = {'Enabled', 'Disabled', 'Limited', 'Editor'},
             selected_index = selected,
-            name = entity.unit_number
+            name = entity.unit_number,
+            tooltip = mode_tooltip
         }
     else
         drop_down =
             tbl_2.add {
             type = 'drop-down',
-            items = {'Enabled', 'Disabled'},
+            items = {'Enabled', 'Disabled', 'Limited'},
             selected_index = selected,
-            name = entity.unit_number
+            name = entity.unit_number,
+            tooltip = mode_tooltip
         }
     end
+
+    tbl_2.add({type = 'label', caption = ' Limit: ', tooltip = limit_tooltip})
+    local text_field = tbl_2.add({type = 'textfield', text = this.limits[entity.unit_number]})
+    text_field.style.width = 80
+    text_field.numeric = true
+    text_field.tooltip = limit_tooltip
+
     this.inf_mode[entity.unit_number] = drop_down.selected_index
     player.opened = frame
     this.inf_gui[player.name] = {
         item_frame = items,
         frame = frame,
+        text_field = text_field,
         entity = entity,
         updated = false
     }
@@ -334,10 +428,7 @@ local function update_gui()
             goto continue
         end
         local mode = this.inf_mode[entity.unit_number]
-        if mode == 3 and this.inf_gui[player.name].updated then
-            goto continue
-        end
-        if mode == 2 and this.inf_gui[player.name].updated then
+        if (mode == 2 or mode == 3 or mode == 4) and this.inf_gui[player.name].updated then
             goto continue
         end
         frame.clear()
@@ -347,6 +438,10 @@ local function update_gui()
         local items = {}
 
         local storage = this.inf_storage[entity.unit_number]
+        local inv = entity.get_inventory(defines.inventory.chest)
+        local content = inv.get_contents()
+        local limit = this.limits[entity.unit_number]
+        local full
 
         if not storage then
             goto no_storage
@@ -354,11 +449,15 @@ local function update_gui()
         for item_name, item_count in pairs(storage) do
             total = total + 1
             items[item_name] = item_count
+            if storage[item_name] >= limit then
+                full = true
+            end
         end
         ::no_storage::
 
-        local inv = entity.get_inventory(defines.inventory.chest)
-        local content = inv.get_contents()
+        if full then
+            goto full
+        end
 
         for item_name, item_count in pairs(content) do
             if not items[item_name] then
@@ -369,9 +468,11 @@ local function update_gui()
             end
         end
 
+        ::full::
+
         local btn
         for item_name, item_count in pairs(items) do
-            if mode == 1 then
+            if mode == 1 or mode == 3 then
                 btn =
                     tbl.add {
                     type = 'sprite-button',
@@ -382,17 +483,7 @@ local function update_gui()
                     tooltip = 'Withdrawal is possible when state is disabled!'
                 }
                 btn.enabled = false
-            elseif mode == 2 then
-                btn =
-                    tbl.add {
-                    type = 'sprite-button',
-                    sprite = 'item/' .. item_name,
-                    style = 'slot_button',
-                    number = item_count,
-                    name = item_name
-                }
-                btn.enabled = true
-            elseif mode == 3 then
+            elseif mode == 2 or mode == 4 then
                 btn =
                     tbl.add {
                     type = 'sprite-button',
@@ -407,10 +498,10 @@ local function update_gui()
 
         while total < 48 do
             local btns
-            if mode == 1 or mode == 2 then
+            if mode == 1 or mode == 2 or mode == 3 then
                 btns = tbl.add {type = 'sprite-button', style = 'slot_button'}
                 btns.enabled = false
-            elseif mode == 3 then
+            elseif mode == 4 then
                 btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
                 btns.enabled = true
             end
@@ -454,14 +545,7 @@ local function state_changed(event)
     end
     this.inf_mode[unit_number] = element.selected_index
     local mode = this.inf_mode[unit_number]
-    if mode == 2 then
-        local player = game.players[event.player_index]
-        if not validate_player(player) then
-            return
-        end
-        this.inf_gui[player.name].updated = false
-        return
-    elseif mode == 3 then
+    if mode >= 2 then
         local player = game.players[event.player_index]
         if not validate_player(player) then
             return
@@ -503,7 +587,7 @@ local function gui_click(event)
     end
 
     if player.admin then
-        if mode == 3 then
+        if mode == 4 then
             if not storage[name] then
                 return
             end
@@ -633,5 +717,6 @@ Event.add(defines.events.on_pre_player_mined_item, on_pre_player_mined_item)
 Event.add(defines.events.on_gui_selection_state_changed, state_changed)
 Event.add(defines.events.on_entity_died, on_entity_died)
 Event.add(defines.events.on_gui_elem_changed, on_gui_elem_changed)
+Event.add(defines.events.on_gui_text_changed, text_changed)
 
 return Public

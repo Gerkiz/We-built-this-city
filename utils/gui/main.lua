@@ -44,7 +44,7 @@ Public.defines = {}
 Public.names = {}
 Public.tabs = {}
 
-Public.data =
+Public.fetch_data =
     setmetatable(
     {},
     {
@@ -72,7 +72,7 @@ function Public.get_table(key)
     elseif key == 'icons' then
         return icons
     end
-    return Gui.data
+    return Gui.fetch_data
 end
 
 function Public:_load_parts(parts)

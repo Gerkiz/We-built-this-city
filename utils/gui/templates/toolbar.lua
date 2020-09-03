@@ -16,7 +16,7 @@ local toolbar = {}
 function toolbar.add(name, caption, tooltip, callback)
     local button = Gui.inputs.add {type = 'sprite-button', name = name, caption = caption, tooltip = tooltip}
     button:on_event(Gui.inputs.events.click, callback)
-    Gui.data('toolbar', name, button)
+    Gui.fetch_data('toolbar', name, button)
     return button
 end
 
@@ -30,10 +30,10 @@ function toolbar.draw(event)
     end
     local frame = mod(player)
 
-    if not Gui.data('toolbar') then
+    if not Gui.fetch_data('toolbar') then
         return
     end
-    for name, button in pairs(Gui.data('toolbar')) do
+    for name, button in pairs(Gui.fetch_data('toolbar')) do
         button:remove(frame)
         if Server.is_type(Roles, 'table') and Roles.config.meta.role_count > 0 then
             local role = Roles.get_role(player)

@@ -309,11 +309,7 @@ function Public.OarcEnemiesPlayerCreatedEvent(event)
     --validate(p_name)
 
     if not gd.p_time[player] then
-        if _DEBUG then
-            gd.p_time[player] = {next_wave_player = 50}
-        else
-            gd.p_time[player] = {next_wave_player = 3600}
-        end
+        gd.p_time[player] = {next_wave_player = 3600}
     end
 
     --if not gd.p_time[player] then

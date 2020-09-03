@@ -152,7 +152,7 @@ function inputs.add(obj)
     obj.data = {}
     obj.events = {}
     setmetatable(obj, {__index = inputs._input})
-    Core.data('inputs_' .. type, obj.name, obj)
+    Core.fetch_data('inputs_' .. type, obj.name, obj)
     return obj
 end
 
@@ -161,10 +161,10 @@ function inputs._event_handler(event)
     if not event.element then
         return
     end
-    local elements = event.element.valid and Core.data('inputs_' .. event.element.type) or {}
+    local elements = event.element.valid and Core.fetch_data('inputs_' .. event.element.type) or {}
     local element = event.element.valid and elements[event.element.name]
     if not event.element.valid and element and event.element.type == 'sprite-button' then
-        elements = Core.data('inputs_button') or {}
+        elements = Core.fetch_data('inputs_button') or {}
         element = elements[event.element.name]
     end
     if element then
@@ -202,10 +202,10 @@ function inputs.add_button(name, display, tooltip, callbacks)
     button:on_event(
         'click',
         function(event)
-            local elements = Core.data('inputs_' .. event.element.type) or {}
+            local elements = Core.fetch_data('inputs_' .. event.element.type) or {}
             local button = elements[event.element.name]
             if not button and event.element.type == 'sprite-button' then
-                elements = Core.data('inputs_button') or {}
+                elements = Core.fetch_data('inputs_button') or {}
                 button = elements[event.element.name]
             end
             local player = game.players[event.player_index]
@@ -260,7 +260,7 @@ function inputs.add_elem_button(name, elem_type, tooltip, callback)
     button:on_event(
         'elem',
         function(event)
-            local button = Core.data('inputs_' .. event.element.type)[event.element.name]
+            local button = Core.fetch_data('inputs_' .. event.element.type)[event.element.name]
             local player = game.players[event.player_index]
             local element = event.element or {elem_type = nil, elem_value = nil}
             local elem = {type = element.elem_type, value = element.elem_value}
@@ -308,7 +308,7 @@ function inputs.add_checkbox(name, radio, display, default, callback_true, callb
     checkbox:on_event(
         'state',
         function(event)
-            local checkbox = Core.data('inputs_' .. event.element.type)[event.element.name]
+            local checkbox = Core.fetch_data('inputs_' .. event.element.type)[event.element.name]
             local player = game.players[event.player_index]
             local state = event.element.state
             if state then
@@ -342,7 +342,7 @@ function inputs.reset_radio(elements)
     if #elements > 0 then
         for _, element in pairs(elements) do
             if element.valid then
-                local _elements = Core.data('inputs_' .. element.type) or {}
+                local _elements = Core.fetch_data('inputs_' .. element.type) or {}
                 local _element = _elements[element.name]
                 local player = game.players(element.player_index)
                 local state = false
@@ -357,7 +357,7 @@ function inputs.reset_radio(elements)
         end
     else
         if elements.valid then
-            local _elements = Core.data('inputs_' .. elements.type) or {}
+            local _elements = Core.fetch_data('inputs_' .. elements.type) or {}
             local _element = _elements[elements.name]
             local player = game.players(elements.player_index)
             local state = false
@@ -394,7 +394,7 @@ function inputs.add_text(name, box, text, callback)
     textbox:on_event(
         'text',
         function(event)
-            local textbox = Core.data('inputs_' .. event.element.type)[event.element.name]
+            local textbox = Core.fetch_data('inputs_' .. event.element.type)[event.element.name]
             local player = game.players[event.player_index]
             local element = event.element
             local callback = textbox.data._callback
@@ -437,7 +437,7 @@ function inputs.add_slider(name, orientation, min, max, value_step, start_callba
     slider:on_event(
         'slider',
         function(event)
-            local slider = Core.data('inputs_' .. event.element.type)[event.element.name]
+            local slider = Core.fetch_data('inputs_' .. event.element.type)[event.element.name]
             local player = game.players[event.player_index]
             local value = event.element.slider_value
             local data = slider.data
@@ -475,7 +475,7 @@ function inputs.add_drop_down(name, items, index, callback)
     drop_down:on_event(
         'selection',
         function(event)
-            local drop_down = Core.data('inputs_' .. event.element.type)[event.element.name]
+            local drop_down = Core.fetch_data('inputs_' .. event.element.type)[event.element.name]
             local player = game.players[event.player_index]
             local element = event.element
             local items = element.items
