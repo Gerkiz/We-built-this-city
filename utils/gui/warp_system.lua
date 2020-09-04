@@ -128,7 +128,7 @@ function Public.remove_warp_point(name)
     for x = -radius - 2, radius + 2 do
         for y = -radius - 2, radius + 2 do
             if x ^ 2 + y ^ 2 < (radius + 1) ^ 2 then
-                table.insert(tiles, {name = base_tile, position = {x + offset.x, y + offset.y}})
+                tiles[#tiles + 1] = {name = base_tile, position = {x + offset.x, y + offset.y}}
                 local entities =
                     surface.find_entities_filtered {
                     area = {{x + offset.x - 1, y + offset.y - 1}, {x + offset.x, y + offset.y}}
@@ -165,7 +165,7 @@ function Public.make_warp_point(player, position, surface, force, name, shared)
     for x = -radius - 2, radius + 2 do
         for y = -radius - 2, radius + 2 do
             if x ^ 2 + y ^ 2 < radius ^ 2 then
-                table.insert(base_tiles, {name = warp_tile, position = {x + offset.x, y + offset.y}})
+                base_tiles[#base_tiles + 1] = {name = warp_tile, position = {x + offset.x, y + offset.y}}
             end
         end
     end
@@ -173,10 +173,10 @@ function Public.make_warp_point(player, position, surface, force, name, shared)
     surface.set_tiles(base_tiles)
     -- player_table adds the patterns and entities
     for _, p in pairs(warp_tiles) do
-        table.insert(
-            tiles,
-            {name = warp_tile, position = {p[1] + offset.x + global_offset.x, p[2] + offset.y + global_offset.y}}
-        )
+        tiles[#tiles + 1] = {
+            name = warp_tile,
+            position = {p[1] + offset.x + global_offset.x, p[2] + offset.y + global_offset.y}
+        }
     end
     surface.set_tiles(tiles)
     for _, e in pairs(warp_entities) do

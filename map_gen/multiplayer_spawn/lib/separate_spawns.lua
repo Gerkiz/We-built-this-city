@@ -39,7 +39,17 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
     end
 
     local i = player.get_main_inventory()
-    i.clear()
+    local armor = player.get_inventory(defines.inventory.character_armor)
+    local guns = player.get_inventory(defines.inventory.character_guns)
+    local ammo = player.get_inventory(defines.inventory.character_ammo)
+    local trash = player.get_inventory(defines.inventory.character_trash)
+    if i and armor and guns and ammo and trash then
+        i.clear()
+        armor.clear()
+        guns.clear()
+        ammo.clear()
+        trash.clear()
+    end
 
     player.character.active = false
 

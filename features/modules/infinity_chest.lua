@@ -12,10 +12,11 @@ local this = {
     },
     stop = false,
     editor = {},
-    limits = {}
+    limits = {},
+    debug = false
 }
 
-local default_limit = 4800
+local default_limit = 1000
 local Public = {}
 
 Public.storage = {}
@@ -29,6 +30,14 @@ Global.register(
 
 function Public.get_table()
     return this
+end
+
+function Public.err_msg(string)
+    local debug = this.debug
+    if not debug then
+        return
+    end
+    log('[Infinity] ' .. string)
 end
 
 local function has_value(tab)
@@ -140,6 +149,7 @@ local function item(item_name, item_count, inv, unit_number)
             this.inf_storage[unit_number][item_name] = count
         else
             if this.inf_storage[unit_number][item_name] >= this.limits[unit_number] then
+                Public.err_msg('Limit for entity: ' .. unit_number .. 'and item: ' .. item_name .. ' is limited. ')
                 if mode == 1 then
                     this.inf_mode[unit_number] = 3
                 end
@@ -208,7 +218,7 @@ local function on_entity_died(event)
     this.inf_mode[number] = nil
     this.inf_chests[number] = nil
     this.inf_storage[number] = nil
-    this.inf_mode[number] = nil
+    this.limits[number] = nil
 end
 
 local function on_pre_player_mined_item(event)
@@ -270,7 +280,7 @@ local function update_chest()
             goto continue
         end
         for item_name, _ in pairs(storage) do
-            if storage[item_name] <= this.limits[unit_number] then
+            if storage[item_name] <= this.limits[unit_number] and mode == 3 then
                 this.inf_mode[unit_number] = 1
             end
             if not content[item_name] then
@@ -702,6 +712,30 @@ local function on_gui_elem_changed(event)
     end
 end
 
+local function on_entity_settings_pasted(event)
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then
+        return
+    end
+
+    local source = event.source
+    if not source or not source.valid then
+        return
+    end
+
+    local destination = event.destination
+    if not destination or not destination.valid then
+        return
+    end
+
+    local source_number = source.unit_number
+    local destination_number = destination.unit_number
+
+    local source_limit = this.limits[source_number]
+
+    this.limits[destination_number] = source_limit
+end
+
 local function tick()
     update_chest()
     update_gui()
@@ -718,5 +752,6 @@ Event.add(defines.events.on_gui_selection_state_changed, state_changed)
 Event.add(defines.events.on_entity_died, on_entity_died)
 Event.add(defines.events.on_gui_elem_changed, on_gui_elem_changed)
 Event.add(defines.events.on_gui_text_changed, text_changed)
+Event.add(defines.events.on_entity_settings_pasted, on_entity_settings_pasted)
 
 return Public

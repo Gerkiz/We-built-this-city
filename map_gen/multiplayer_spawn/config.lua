@@ -55,7 +55,7 @@ global.enable_base_removal = true
 -- Enable the new 0.17 research queue by default for all forces.
 global.enable_r_queue = true
 
-global.enable_power_armor = false
+global.enable_power_armor = true
 
 --------------------------------------------------------------------------------
 -- MAP CONFIGURATION OPTIONS
