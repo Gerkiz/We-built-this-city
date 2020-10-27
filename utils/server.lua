@@ -18,15 +18,18 @@ local serialize_options = {sparse = true, compact = true}
 local Public = {}
 
 local server_time = {secs = nil, tick = 0}
+local server_ups = {ups = 60}
 local requests = {}
 
 Global.register(
     {
         server_time = server_time,
+        server_ups = server_ups,
         requests = requests
     },
     function(tbl)
         server_time = tbl.server_time
+        server_ups = tbl.server_ups
         requests = tbl.requests
     end
 )
@@ -35,14 +38,15 @@ local discord_tag = '[DISCORD]'
 local discord_raw_tag = '[DISCORD-RAW]'
 local discord_bold_tag = '[DISCORD-BOLD]'
 local discord_admin_tag = '[DISCORD-ADMIN]'
-local discord_admin_raw_tag = '[DISCORD-ADMIN-RAW]'
 local discord_banned_tag = '[DISCORD-BANNED]'
 local discord_banned_embed_tag = '[DISCORD-BANNED-EMBED]'
+local discord_admin_raw_tag = '[DISCORD-ADMIN-RAW]'
 local discord_embed_tag = '[DISCORD-EMBED]'
 local discord_embed_raw_tag = '[DISCORD-EMBED-RAW]'
 local discord_admin_embed_tag = '[DISCORD-ADMIN-EMBED]'
 local discord_admin_embed_raw_tag = '[DISCORD-ADMIN-EMBED-RAW]'
 local start_scenario_tag = '[START-SCENARIO]'
+local stop_scenario_tag = '[STOP-SCENARIO]'
 local ping_tag = '[PING]'
 local data_set_tag = '[DATA-SET]'
 local data_get_tag = '[DATA-GET]'
@@ -157,6 +161,15 @@ function Public.start_scenario(scenario_name)
     raw_print(message)
 end
 
+--- Stops and saves the factorio server.
+-- @usage
+-- local Server = require 'utils.server'
+-- Server.stop_scenario()
+function Public.stop_scenario()
+    local message = stop_scenario_tag
+
+    raw_print(message)
+end
 local default_ping_token =
     Token.register(
     function(sent_tick)
@@ -629,6 +642,40 @@ local function escape(str)
     return str:gsub('\\', '\\\\'):gsub('"', '\\"')
 end
 
+local statistics = {
+    'item_production_statistics',
+    'fluid_production_statistics',
+    'kill_count_statistics',
+    'entity_build_count_statistics'
+}
+function Public.export_stats()
+    local table_to_json = game.table_to_json
+    local stats = {
+        game_tick = game.tick,
+        player_count = #game.connected_players,
+        game_flow_statistics = {
+            pollution_statistics = {
+                input = game.pollution_statistics.input_counts,
+                output = game.pollution_statistics.output_counts
+            }
+        },
+        rockets_launched = {},
+        force_flow_statistics = {}
+    }
+    for _, force in pairs(game.forces) do
+        local flow_statistics = {}
+        for _, statName in pairs(statistics) do
+            flow_statistics[statName] = {
+                input = force[statName].input_counts,
+                output = force[statName].output_counts
+            }
+        end
+        stats.rockets_launched[force.name] = force.rockets_launched
+
+        stats.force_flow_statistics[force.name] = flow_statistics
+    end
+    rcon.print(table_to_json(stats))
+end
 --- If the player exists bans the player.
 -- Regardless of whether or not the player exists the name is synchronized with other servers
 -- and stored in the database.
@@ -726,6 +773,18 @@ function Public.get_time_data_raw()
     return server_time
 end
 
+--- Called by the web server to set the ups value.
+-- @param  tick<number> tick
+function Public.set_ups(tick)
+    server_ups.ups = tick
+end
+
+--- Gets a the estimated UPS from the web panel that is sent to the server.
+-- This is calculated and measured in the wrapper.
+-- @return number
+function Public.get_ups()
+    return server_ups.ups
+end
 --- Gets an estimate of the current server time as a unix epoch timestamp.
 -- If the server time has not been set returns nil.
 -- The estimate may be slightly off if within the last minute the game has been paused, saving or overwise,
@@ -762,7 +821,7 @@ function Public.query_online_players()
     raw_print(message)
 end
 
---- The [JOIN] nad [LEAVE] messages Factorio sends to stdout aren't sent in all cases of
+--- The [JOIN] and [LEAVE] messages Factorio sends to stdout aren't sent in all cases of
 --  players joining or leaving. So we send our own [PLAYER-JOIN] and [PLAYER-LEAVE] tags.
 Event.add(
     defines.events.on_player_joined_game,

@@ -61,6 +61,9 @@ local try_upload_data =
         local key = data.key
         local value = data.value
         local player = game.get_player(key)
+        if not player or not player.valid then
+            return
+        end
         if value then
             local old_time_ingame = value
 

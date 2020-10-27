@@ -72,6 +72,15 @@ local function on_start()
     -- Create new game surface
     Utils.CreateGameSurface()
 
+    for k, v in pairs(global.scenario_config.resource_tiles_new) do
+        v.amount = 10000
+        v.size = 35
+    end
+
+    global.scenario_config.pos = {{x = -60, y = -45}, {x = -20, y = -45}, {x = 20, y = -45}, {x = 60, y = -45}}
+    global.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 85
+    global['scenario_config'].water_new.x_offset = -100
+
     -- MUST be before other stuff, but after surface creation.
     SS.InitSpawnGlobalsAndForces()
 

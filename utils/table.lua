@@ -1,4 +1,5 @@
 --luacheck: globals table
+local Stats = require 'utils.stats'
 local random = math.random
 local floor = math.floor
 local remove = table.remove
@@ -142,7 +143,7 @@ end
 
 --- Chooses a random entry from a weighted table
 -- because this uses math.random, it cannot be used outside of events
--- @param weight_table <table> of tables with items and their weights
+-- @param weighted_table <table> of tables with items and their weights
 -- @param item_index <number> of the index of items, defaults to 1
 -- @param weight_index <number> of the index of the weights, defaults to 2
 -- @return <any> table element
@@ -164,6 +165,24 @@ function table.get_random_weighted(weighted_table, item_index, weight_index)
             return w[item_index]
         end
     end
+end
+
+--- Returns a table with % chance values for each item of a weighted_table
+-- @param weighted_table <table> of tables with items and their weights
+-- @param item_index <number> of the index of items, defaults to 1
+-- @param weight_index <number> of the index of the weights, defaults to 2
+function table.get_random_weighted_chances(weighted_table, item_index, weight_index)
+    local total_weight = 0
+    item_index = item_index or 1
+    weight_index = weight_index or 2
+    for _, v in pairs(weighted_table) do
+        total_weight = total_weight + v[weight_index]
+    end
+	local chance_table = {}
+	for k, v in pairs(weighted_table) do
+        chance_table[k] = v[weight_index] / total_weight
+    end
+	return chance_table
 end
 
 --- Creates a fisher-yates shuffle of a sequential number-indexed table
@@ -275,5 +294,10 @@ table.merge = util.merge
 -- @param tbl2 <table>
 -- @return <boolean>
 table.equals = table.compare
+
+--- Gets the median value out of a table.
+-- @param tbl1 <table>
+-- @return <int>
+table.mean = Stats.mean
 
 return table

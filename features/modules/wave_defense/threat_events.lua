@@ -22,7 +22,7 @@ local function remove_unit(entity)
 end
 
 local function place_nest_near_unit_group(wave_defense_table)
-    local group = wave_defense_table.unit_groups[math_random(1, #wave_defense_table.unit_groups)]
+    local group = wave_defense_table.unit_groups[wave_defense_table.random_group]
     if not group then
         return
     end
@@ -50,12 +50,17 @@ local function place_nest_near_unit_group(wave_defense_table)
     local r = wave_defense_table.nest_building_density
     if
         unit.surface.count_entities_filtered(
-            {type = 'unit-spawner', area = {{position.x - r, position.y - r}, {position.x + r, position.y + r}}}
+            {
+                type = 'unit-spawner',
+                force = unit.force,
+                area = {{position.x - r, position.y - r}, {position.x + r, position.y + r}}
+            }
         ) > 0
      then
         return
-    end
-    unit.surface.create_entity({name = name, position = position, force = unit.force})
+	end
+	local spawner = unit.surface.create_entity({name = name, position = position, force = unit.force})
+	wave_defense_table.nests[#wave_defense_table.nests+1] = spawner
     unit.surface.create_entity({name = 'blood-explosion-huge', position = position})
     unit.surface.create_entity({name = 'blood-explosion-huge', position = unit.position})
     remove_unit(unit)
@@ -69,7 +74,7 @@ function Public.build_nest()
     if wave_defense_table.threat < 1024 then
         return
     end
-    if #wave_defense_table.unit_groups == 0 then
+    if wave_defense_table.index == 0 then
         return
     end
     for _ = 1, 2, 1 do
@@ -87,10 +92,10 @@ function Public.build_worm()
     if math_random(1, wave_defense_table.worm_building_chance) ~= 1 then
         return
     end
-    if #wave_defense_table.unit_groups == 0 then
+    if wave_defense_table.index == 0 then
         return
     end
-    local group = wave_defense_table.unit_groups[math_random(1, #wave_defense_table.unit_groups)]
+    local group = wave_defense_table.unit_groups[wave_defense_table.random_group]
     if not group then
         return
     end
@@ -116,7 +121,11 @@ function Public.build_worm()
     local r = wave_defense_table.worm_building_density
     if
         unit.surface.count_entities_filtered(
-            {type = 'turret', area = {{position.x - r, position.y - r}, {position.x + r, position.y + r}}}
+            {
+                type = 'turret',
+                force = unit.force,
+                area = {{position.x - r, position.y - r}, {position.x + r, position.y + r}}
+            }
         ) > 0
      then
         return

@@ -47,7 +47,8 @@ local noises = {
     ['n1'] = {{modifier = 0.0001, weight = 1}},
     ['n2'] = {{modifier = 0.001, weight = 1}},
     ['n3'] = {{modifier = 0.01, weight = 1}},
-    ['n4'] = {{modifier = 0.1, weight = 1}},
+	['n4'] = {{modifier = 0.1, weight = 1}},
+    ['n5'] = {{modifier = 0.07, weight = 1}},
     ['watery_world'] = {
         {modifier = 0.0007, weight = 1},
         {modifier = 0.01, weight = 0.02},
@@ -72,6 +73,11 @@ local noises = {
         {modifier = 0.05, weight = 0.23},
         {modifier = 0.1, weight = 0.11}
     },
+	['big_cave'] = {
+        {modifier = 0.003, weight = 1},
+        {modifier = 0.02, weight = 0.05},
+        {modifier = 0.15, weight = 0.02}
+    },
     ['small_caves'] = {
         {modifier = 0.008, weight = 1},
         {modifier = 0.03, weight = 0.15},
@@ -81,16 +87,44 @@ local noises = {
         {modifier = 0.009, weight = 1},
         {modifier = 0.05, weight = 0.25},
         {modifier = 0.25, weight = 0.05}
-    }
+    },
+    ['forest_location'] = {
+        {modifier = 0.006, weight = 1},
+        {modifier = 0.01, weight = 0.25},
+        {modifier = 0.05, weight = 0.15},
+        {modifier = 0.1, weight = 0.05}
+    },
+    ['forest_density'] = {
+        {modifier = 0.01, weight = 1},
+        {modifier = 0.05, weight = 0.5},
+        {modifier = 0.1, weight = 0.025}
+    },
+	['cave_miner_01'] = {
+        {modifier = 0.002, weight = 1},
+		{modifier = 0.003, weight = 0.5},
+        {modifier = 0.01, weight = 0.01},
+        {modifier = 0.1, weight = 0.015}
+    },
+	['cave_miner_02'] = {
+        {modifier = 0.006, weight = 1},
+        {modifier = 0.02, weight = 0.15},
+        {modifier = 0.25, weight = 0.025}
+    },
+	['cm_ocean'] = {
+		{modifier = 0.002, weight = 1},
+		{modifier = 0.004, weight = 1},
+		{modifier = 0.02, weight = 0.05},
+    },
 }
 
 --returns a float number between -1 and 1
 local function get_noise(name, pos, seed)
     local noise = 0
     local d = 0
-    for _, n in pairs(noises[name]) do
-        noise = noise + simplex_noise(pos.x * n.modifier, pos.y * n.modifier, seed) * n.weight
-        d = d + n.weight
+    for i = 1, #noises[name] do
+        local mod = noises[name]
+        noise = noise + simplex_noise(pos.x * mod[i].modifier, pos.y * mod[i].modifier, seed) * mod[i].weight
+        d = d + mod[i].weight
         seed = seed + 10000
     end
     noise = noise / d

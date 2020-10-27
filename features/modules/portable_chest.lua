@@ -352,11 +352,6 @@ local function gui_click(event)
     if parent.name ~= 'personal_inventory' then
         return
     end
-    local chest_id = this.player_chests[player.index].chest_id
-    if not chest_id then
-        return
-    end
-
     if this.viewing_player[player.index] then
         goto update
     end
@@ -364,7 +359,7 @@ local function gui_click(event)
     local shift = event.shift
     local ctrl = event.control
     local name = element.name
-    local storage = this.inf_storage[chest_id]
+    local storage = this.inf_storage[player.index]
     local delete_mode = this.inf_gui[player.index].delete_mode
 
     if not storage then
@@ -517,17 +512,15 @@ local function on_player_joined_game(event)
     if not (player and player.valid) then
         return
     end
-    local chest_id = Gui.uid()
+    local chest_id = player.index
     if not this.player_chests[player.index] then
         this.player_chests[player.index] = {
             chest_id = chest_id
         }
     end
 
-    chest_id = this.player_chests[player.index].chest_id
-
-    if not this.inf_chests[chest_id] then
-        this.inf_chests[chest_id] = player
+    if not this.inf_chests[player.index] then
+        this.inf_chests[player.index] = player
     end
 
     if not this.stack_size[player.index] then

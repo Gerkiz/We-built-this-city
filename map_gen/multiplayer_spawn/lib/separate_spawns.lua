@@ -38,6 +38,10 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
         Public.FindUnusedSpawns(player, false)
     end
 
+    if game.forces[player.name] then
+        game.merge_forces(player.name, global.main_force_name)
+    end
+
     local i = player.get_main_inventory()
     local armor = player.get_inventory(defines.inventory.character_armor)
     local guns = player.get_inventory(defines.inventory.character_guns)

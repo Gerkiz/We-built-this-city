@@ -1,5 +1,5 @@
 local Event = require 'utils.event'
-local HDT = require 'features.modules.hidden_dimension.table'
+local HDT = require 'modules.hidden_dimension.table'
 
 local Public = {}
 Public.events = {
@@ -551,7 +551,7 @@ end
 
 --- If a different surface is wanted then this should be called
 -- with:
--- local HD = require 'features.modules.hidden_dimension.main'
+-- local HD = require 'modules.hidden_dimension.main'
 -- HD.init({hd_surface = some_surface})
 function Public.init(args)
     local hidden_dimension = HDT.get('hidden_dimension')
@@ -560,6 +560,7 @@ function Public.init(args)
         hidden_dimension.hd_surface = args.hd_surface or 'nauvis'
     else
         hidden_dimension.hd_surface = 'nauvis'
+        hidden_dimension.position = {x = 0, y = 3}
     end
 end
 

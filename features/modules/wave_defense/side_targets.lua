@@ -52,6 +52,9 @@ local function add_entity(entity)
     if entity.surface.index ~= wave_defense_table.surface_index then
         return
     end
+    if wave_defense_table.side_target_count >= 512 then
+        return
+    end
 
     --add entity to the side target list
     table.insert(wave_defense_table.side_targets, entity)

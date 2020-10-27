@@ -22,6 +22,17 @@ Global.register(
     end
 )
 
+local function is_game_modded()
+    local i = 0
+    for k, _ in pairs(game.active_mods) do
+        i = i + 1
+        if i > 1 then
+            return true
+        end
+    end
+    return false
+end
+
 function Public.create_surface(modded)
     local map_gen_settings
     if modded then
@@ -44,13 +55,15 @@ function Public.create_surface(modded)
         }
         map_gen_settings.autoplace_controls = game.surfaces.nauvis.map_gen_settings.autoplace_controls
         for k, v in pairs(map_gen_settings.autoplace_controls) do
-            v.size = 3
-            v.richness = 3
+            if k ~= 'trees' then
+                v.size = 10
+                v.richness = 10
+            end
         end
     else
         map_gen_settings = {}
         map_gen_settings.water = global_data.water
-        map_gen_settings.starting_area = 0.5
+        map_gen_settings.starting_area = 2
         map_gen_settings.seed = math.random(10000, 99999)
         --map_gen_settings.width = 128
         --map_gen_settings.height = 128
@@ -155,6 +168,16 @@ Event.add(
         local pos =
             game.surfaces[global_data.surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
         player.teleport(pos, global_data.surface_name)
+
+        if global_data.modded then
+            if player.online_time == 0 then
+                player.insert({name = 'pistol', count = 1})
+                player.insert({name = 'firearm-magazine', count = 16})
+                player.insert({name = 'iron-plate', count = 64})
+                player.insert({name = 'burner-mining-drill', count = 4})
+                player.insert({name = 'stone-furnace', count = 4})
+            end
+        end
     end
 )
 

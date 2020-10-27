@@ -116,6 +116,8 @@ local function progress()
             ) do
                 if entities[e.name] and e.valid and e.health then
                     e.die()
+                elseif e.valid then
+                    e.destroy()
                 end
             end
         end

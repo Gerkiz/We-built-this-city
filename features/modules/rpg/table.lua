@@ -45,9 +45,6 @@ Public.nth_tick = 18001
 Public.visuals_delay = 1800
 Public.xp_floating_text_color = {157, 157, 157}
 
-Public.teller_global_pool = '[color=blue]Global Pool Reward:[/color] \n'
-Public.teller_level_limit = '[color=blue]Level Limit:[/color] \n'
-
 Public.enemy_types = {
     ['unit'] = true,
     ['unit-spawner'] = true,
@@ -92,6 +89,15 @@ function Public.reset_table()
     this.rpg_extra.enable_auto_allocate = false
     this.rpg_extra.enable_one_punch = true
     this.rpg_extra.enable_one_punch_globally = false
+    this.rpg_extra.blacklisted_crafting_items = {
+        ['red-wire'] = true,
+        ['green-wire'] = true,
+        ['stone-furnace'] = true,
+        ['wooden-chest'] = true,
+        ['copper-cable'] = true,
+        ['iron-stick'] = true,
+        ['iron-gear-wheel'] = true
+    }
     this.rpg_t = {}
     this.rpg_extra.rpg_xp_yield = {
         ['behemoth-biter'] = 16,
@@ -386,6 +392,21 @@ function Public.disable_cooldowns_on_spells()
     this.rpg_spells = new_spells
 
     return new_spells
+end
+
+--- This will disable the cooldown of all spells.
+function Public.blacklisted_crafting_items(tbl)
+    if not tbl then
+        return
+    end
+
+    if type(type) ~= 'table' then
+        return
+    end
+
+    this.blacklisted_crafting_items = tbl
+
+    return this.blacklisted_crafting_items
 end
 
 Public.get_projectiles = Spells.projectile_types

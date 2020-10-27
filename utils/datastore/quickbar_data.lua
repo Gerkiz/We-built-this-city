@@ -21,7 +21,9 @@ local fetch =
         if value then
             for i, item_name in pairs(value) do
                 if item_name ~= nil and item_name ~= '' then
-                    player.set_quick_bar_slot(i, item_name)
+                    if game.item_prototypes[item_name] then
+                        player.set_quick_bar_slot(i, item_name)
+                    end
                 end
             end
         end
