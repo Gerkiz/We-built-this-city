@@ -35,7 +35,6 @@ end
 
 --! other stuff
 local Event = require 'utils.event'
-local GameSurface = require 'utils.surface'
 local RPG_Settings = require 'features.modules.rpg.table'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
@@ -43,6 +42,7 @@ require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
 require 'utils.table'
+require 'utils.surface'
 require 'utils.datastore.server_ups'
 require 'utils.datastore.color_data'
 require 'utils.datastore.session_data'
@@ -91,7 +91,6 @@ require 'features.modules.bp'
 
 ---! load from config/map
 require 'map_loader'
-GameSurface.set_modded(false)
 --require 'map_builder'
 
 Event.add(
