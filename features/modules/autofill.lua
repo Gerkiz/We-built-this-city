@@ -5,7 +5,6 @@ local Global = require 'utils.global'
 local this = {
     refill_turrets = {},
     refill_chests = {index = 1, placed = 0},
-    full_turrets = {},
     valid_chest = {
         ['iron-chest'] = {valid = true, limit = 4}
     },
@@ -19,9 +18,7 @@ local this = {
         ['uranium-rounds-magazine'] = {valid = true, priority = 3}
     },
     message_limit = {},
-    player_settings = {},
-    force_only = true,
-    globally_enabled = false
+    force_only = true
 }
 
 Global.register(
@@ -59,38 +56,11 @@ local function fast_remove(tbl, index)
     tbl[count] = nil
 end
 
-local function get_player_data(player, remove_user_data)
-    if this.globally_enabled then
+local function contains(tbl, entity)
+    if not tbl then
         return
     end
-    local index
-    if this.force_only then
-        index = player.force.index
-    else
-        index = player.index
-    end
-
-    if remove_user_data then
-        if this.player_settings[index] then
-            this.player_settings[index] = nil
-        end
-    end
-    if not this.player_settings[index] then
-        this.player_settings[index] = {
-            placed = 0,
-            chests = {},
-            turrets = {},
-            enabled = true
-        }
-    end
-    return this.player_settings[index]
-end
-
-local function contains(table, entity)
-    if not table then
-        return
-    end
-    for k, turret in pairs(table) do
+    for k, turret in pairs(tbl) do
         if not validate_entity(turret) then
             return false
         end
@@ -103,12 +73,15 @@ local function contains(table, entity)
     end
 end
 
-local function get_highest(table)
+local function get_highest(chest, tbl)
     local highest = -math.huge
     local item
     local count
 
-    for k, v in pairs(table) do
+    for k, v in pairs(tbl) do
+        if (k and not valid_ammo[k]) then
+            chest.remove({name = k, count = 999999})
+        end
         if (k and valid_ammo[k] and valid_ammo[k].priority > highest) then
             item = k
             count = v
@@ -116,7 +89,7 @@ local function get_highest(table)
     end
 
     if not item or not count then
-        return false
+        return false, false
     end
 
     return item, count
@@ -124,65 +97,40 @@ end
 
 local function get_valid_chest()
     local chests = {}
-    if this.globally_enabled then
-        local refill_chests = this.refill_chests
-
-        if not next(refill_chests) then
-            goto continue
-        end
-
-        local chest
-
-        for i = 1, #refill_chests do
-            chest = refill_chests[i]
-            if chest then
-                chests[#chests + 1] = chest
-            end
-
-            if not chest.valid then
-                fast_remove(refill_chests, i)
-                refill_chests.placed = refill_chests.placed - 1
-                if refill_chests.placed <= 0 then
-                    refill_chests.placed = 0
-                end
-                return false
-            end
-        end
-        return chests
+    local refill_chests = this.refill_chests
+    local index = refill_chests.index
+    if not index then
+        refill_chests.index = 1
+        index = refill_chests.index
     end
 
-    local player_data = this.player_settings
-
-    if not next(player_data) then
-        goto continue
+    if index > #refill_chests then
+        refill_chests.index = 1
+        return
+    end
+    if not next(refill_chests) then
+        return
     end
 
-    for i = 1, #player_data do
-        local player = game.get_player(i)
-        if player and player.valid then
-            local p_data = get_player_data(player)
-            local p_chests = p_data.chests
-            if not next(p_chests) then
-                goto continue
-            end
-            for index, chest in next, p_chests do
-                if chest then
-                    chests[#chests + 1] = chest
-                end
-                if not (chest and chest.valid) then
-                    fast_remove(p_data.chests, index)
-                    p_data.placed = p_data.placed - 1
-                    if p_data.placed <= 0 then
-                        p_data.placed = 0
-                    end
-                    goto continue
-                end
-            end
-            return chests
+    refill_chests.index = index + 1
+
+    local chest = refill_chests[index]
+    if chest then
+        chests[#chests + 1] = chest
+    end
+
+    if not chest.valid then
+        fast_remove(refill_chests, index)
+        refill_chests.placed = refill_chests.placed - 1
+        if refill_chests.placed <= 0 then
+            refill_chests.placed = 0
         end
+        return false
     end
 
-    ::continue::
+    refill_chests.index = index
+
+    return chests
 end
 
 local function get_ammo(entity_turret)
@@ -204,11 +152,13 @@ end
 
 local function get_items(chest)
     local contents = chest.get_contents()
-    local item, count = get_highest(contents)
+    local item, count = get_highest(chest, contents)
 
     if valid_ammo[item] and valid_ammo[item].valid and count >= 1 then
         return item, count
     end
+
+    return false, false
 end
 
 local function remove_ammo(chest, entity_turret)
@@ -237,28 +187,29 @@ end
 local function refill(entity_turret, entity_chest)
     local turret = entity_turret
 
-    for _, chests in next, entity_chest do
-        local chest = chests.get_inventory(defines.inventory.chest)
+    for _, chests in pairs(entity_chest) do
+        if turret.force.name == chests.force.name then
+            local chest = chests.get_inventory(defines.inventory.chest)
+            local item, count = get_items(chest)
 
-        local item, count = get_items(chest)
+            if valid_ammo[item] and valid_ammo[item].valid and count >= 1 then
+                local turret_inv = turret.get_inventory(defines.inventory.turret_ammo)
+                local ammo_name, ammo_count = get_ammo(turret)
 
-        local turret_inv = turret.get_inventory(defines.inventory.turret_ammo)
-        if valid_ammo[item] and valid_ammo[item].valid and count >= 1 then
-            local ammo_name, ammo_count = get_ammo(turret)
+                if ammo_name and valid_ammo[ammo_name].priority < valid_ammo[item].priority then
+                    remove_ammo(chest, turret)
+                end
+                if ammo_count and ammo_count >= 10 then
+                    goto continue
+                end
+                local t = {name = item, count = 1}
+                local c = turret_inv.insert(t)
+                if (c > 0) then
+                    chest.remove({name = item, count = c})
+                end
 
-            if ammo_name and valid_ammo[ammo_name].priority < valid_ammo[item].priority then
-                remove_ammo(chest, turret)
+                ::continue::
             end
-            if ammo_count and ammo_count >= 10 then
-                goto continue
-            end
-            local t = {name = item, count = 1}
-            local c = turret_inv.insert(t)
-            if (c > 0) then
-                chest.remove({name = item, count = c})
-            end
-
-            ::continue::
         end
     end
 end
@@ -270,65 +221,18 @@ local function do_refill_turrets()
         goto continue
     end
 
-    if this.globally_enabled then
-        local turrets = this.refill_turrets
+    local refill_turrets = this.refill_turrets
 
-        if not next(turrets) then
+    for i = 1, #refill_turrets do
+        local turret = refill_turrets[i]
+        if not turret then
             goto continue
         end
 
-        for i = 1, #turrets do
-            local turret = turrets[i]
-            if not turret then
-                goto continue
-            end
-
-            if not turret.valid then
-                fast_remove(turrets, i)
-            else
-                refill(turret, chest)
-            end
-        end
-        goto continue
-    end
-
-    local player_data = this.player_settings
-
-    if not next(player_data) then
-        goto continue
-    end
-
-    local player_or_force
-    if this.force_only then
-        player_or_force = game.connected_players
-    else
-        player_or_force = player_data
-    end
-
-    for p, _ in next, player_or_force do
-        local player = game.get_player(p)
-        if player and player.valid then
-            local p_data = get_player_data(player)
-            if not p_data then
-                goto continue
-            end
-
-            local turrets = p_data.turrets
-            if not next(turrets) then
-                goto continue
-            end
-
-            for key, turret in next, turrets do
-                if not turret then
-                    goto continue
-                end
-
-                if not turret.valid then
-                    fast_remove(turrets, key)
-                else
-                    refill(turret, chest)
-                end
-            end
+        if not turret.valid then
+            fast_remove(refill_turrets, i)
+        else
+            refill(turret, chest)
         end
     end
 
@@ -433,56 +337,24 @@ local function on_entity_built(event)
 
     if (valid_chest[ce.name] and valid_chest[ce.name].valid) then
         local limit
-        if this.force_only then
-            limit = 16
-        else
-            limit = valid_chest[ce.name].limit
-        end
 
-        if this.globally_enabled then
-            if (this.refill_chests.placed < limit) then
-                if this.message_limit[player.index] then
-                    this.message_limit[player.index] = nil
-                end
-                Public.add_chest_to_refill_callback(nil, ce)
-            else
-                if not this.message_limit[player.index] then
-                    this.message_limit[player.index] = true
-                    player.print('[Autofill] Chest limit reached.', Color.warning)
-                end
+        limit = valid_chest[ce.name].limit
+
+        if (this.refill_chests.placed < limit) then
+            if this.message_limit[player.index] then
+                this.message_limit[player.index] = nil
             end
+            Public.add_chest_to_refill_callback(ce)
         else
-            local player_data = get_player_data(player)
             if not this.message_limit[player.index] then
-                this.message_limit[player.index] = {notified = false, tutorial = false}
-            end
-            if (player_data.placed < limit) then
-                if this.message_limit[player.index].notified then
-                    this.message_limit[player.index].notified = nil
-                end
-                if not this.message_limit[player.index].tutorial then
-                    this.message_limit[player.index].tutorial = true
-                    player.print(
-                        '[Autofill] Iron-chests acts as an chest that autofill turrets automatically. You are limited to 4 chests.',
-                        Color.yellow
-                    )
-                end
-                Public.add_chest_to_refill_callback(player, ce)
-            else
-                if not this.message_limit[player.index].notified then
-                    this.message_limit[player.index].notified = true
-                    player.print('[Autofill] Chest limit reached.', Color.warning)
-                end
+                this.message_limit[player.index] = true
+                player.print('[Autofill] Chest limit reached.', Color.warning)
             end
         end
     end
 
     if (valid_turrets[ce.name]) then
-        if this.globally_enabled then
-            Public.refill_turret_callback(nil, ce)
-        else
-            Public.refill_turret_callback(player, ce)
-        end
+        Public.refill_turret_callback(ce)
         auto_insert_into_turret(player, ce)
     end
 
@@ -507,70 +379,37 @@ local function on_pre_player_mined_item(event)
         return
     end
 
-    if this.globally_enabled then
-        local chest = get_valid_chest()
+    local refill_turrets = this.refill_turrets
 
-        if not chest then
-            return
-        end
-
-        local refill_turrets = this.refill_turrets
-        local full_turrets = this.full_turrets
-
-        if contains(refill_turrets, entity) or contains(full_turrets, entity) then
-            remove_ammo(chest, entity)
-        end
-        return
-    end
-
-    local chest = get_valid_chest(player)
+    local chest = get_valid_chest()
 
     if not chest then
         return
     end
 
-    local refill_turrets = this.refill_turrets
-    local full_turrets = this.full_turrets
-
-    if contains(refill_turrets, entity) or contains(full_turrets, entity) then
+    if contains(refill_turrets, entity) then
         remove_ammo(chest, entity)
     end
+    return
 end
 
 local function on_tick()
     do_refill_turrets()
 end
 
-Public.refill_turret_callback = function(player, turret)
-    if this.globally_enabled then
-        local refill_turrets = this.refill_turrets
-        if turret and turret.valid then
-            refill_turrets[#refill_turrets + 1] = turret
-        end
-        return
-    end
+Public.refill_turret_callback = function(turret)
+    local refill_turrets = this.refill_turrets
     if turret and turret.valid then
-        local player_data = get_player_data(player)
-        local turrets = player_data.turrets
-        insert(turrets, turret)
+        insert(refill_turrets, turret)
     end
+    return
 end
 
-Public.add_chest_to_refill_callback = function(player, entity)
+Public.add_chest_to_refill_callback = function(entity)
     if entity and entity.valid then
-        if this.globally_enabled then
-            local refill_chests = this.refill_chests
-            refill_chests[#refill_chests + 1] = entity
-            refill_chests.placed = refill_chests.placed + 1
-        else
-            local player_data = get_player_data(player)
-            local chest_placed = player_data.placed
-            local chests = player_data.chests
-
-            insert(chests, entity)
-
-            player_data.placed = chest_placed + 1
-        end
+        local refill_chests = this.refill_chests
+        refill_chests[#refill_chests + 1] = entity
+        refill_chests.placed = refill_chests.placed + 1
 
         rendering.draw_text {
             text = '⚙',
@@ -582,15 +421,6 @@ Public.add_chest_to_refill_callback = function(player, entity)
             alignment = 'center'
         }
     end
-end
-
-Public.globally_enabled = function(value)
-    if value then
-        this.globally_enabled = value
-    else
-        this.globally_enabled = false
-    end
-    return this.globally_enabled
 end
 
 Event.add(defines.events.on_built_entity, on_entity_built)
