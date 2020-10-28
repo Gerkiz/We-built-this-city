@@ -33,9 +33,10 @@ local function is_game_modded()
     return false
 end
 
-function Public.create_surface(modded)
+function Public.create_surface()
     local map_gen_settings
-    if modded then
+    local is_modded = is_game_modded()
+    if is_modded then
         map_gen_settings = {
             ['seed'] = math.random(10000, 99999),
             ['water'] = 0.001,
