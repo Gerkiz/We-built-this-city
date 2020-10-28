@@ -59,7 +59,7 @@ end
 
 function Public.warning(player_ident, msg, color)
     local player = Public.validate_player(player_ident)
-    color = color or Color.comfy
+    color = color or Color.wbtc
 
     if player then
         player.print(warning_prefix .. msg, color)

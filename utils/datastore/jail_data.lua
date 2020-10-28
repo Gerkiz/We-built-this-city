@@ -108,6 +108,7 @@ local get_gulag_permission_group = function()
         gulag.set_allows_action(defines.input_action.drop_item, false)
         gulag.set_allows_action(defines.input_action.place_equipment, false)
         gulag.set_allows_action(defines.input_action.take_equipment, false)
+        gulag.set_allows_action(defines.input_action.open_technology_gui, false)
     end
     local gulag = game.permissions.get_group('gulag')
     return gulag
@@ -118,31 +119,38 @@ local create_gulag_surface = function()
     if not surface then
         local walls = {}
         local tiles = {}
-        surface =
-            game.create_surface(
-            'gulag',
-            {
-                autoplace_controls = {
-                    ['coal'] = {frequency = 23, size = 3, richness = 3},
-                    ['stone'] = {frequency = 20, size = 3, richness = 3},
-                    ['copper-ore'] = {frequency = 25, size = 3, richness = 3},
-                    ['iron-ore'] = {frequency = 35, size = 3, richness = 3},
-                    ['uranium-ore'] = {frequency = 20, size = 3, richness = 3},
-                    ['crude-oil'] = {frequency = 80, size = 3, richness = 1},
-                    ['trees'] = {frequency = 0.75, size = 2, richness = 0.1},
-                    ['enemy-base'] = {frequency = 15, size = 0, richness = 1}
-                },
-                cliff_settings = {cliff_elevation_0 = 1024, cliff_elevation_interval = 10, name = 'cliff'},
-                height = 64,
-                width = 256,
-                peaceful_mode = false,
-                seed = 1337,
-                starting_area = 'very-low',
-                starting_points = {{x = 0, y = 0}},
-                terrain_segmentation = 'normal',
-                water = 'normal'
-            }
+        pcall(
+            function()
+                surface =
+                    game.create_surface(
+                    'gulag',
+                    {
+                        autoplace_controls = {
+                            ['coal'] = {frequency = 23, size = 3, richness = 3},
+                            ['stone'] = {frequency = 20, size = 3, richness = 3},
+                            ['copper-ore'] = {frequency = 25, size = 3, richness = 3},
+                            ['iron-ore'] = {frequency = 35, size = 3, richness = 3},
+                            ['uranium-ore'] = {frequency = 20, size = 3, richness = 3},
+                            ['crude-oil'] = {frequency = 80, size = 3, richness = 1},
+                            ['trees'] = {frequency = 0.75, size = 2, richness = 0.1},
+                            ['enemy-base'] = {frequency = 15, size = 0, richness = 1}
+                        },
+                        cliff_settings = {cliff_elevation_0 = 1024, cliff_elevation_interval = 10, name = 'cliff'},
+                        height = 64,
+                        width = 256,
+                        peaceful_mode = false,
+                        seed = 1337,
+                        starting_area = 'very-low',
+                        starting_points = {{x = 0, y = 0}},
+                        terrain_segmentation = 'normal',
+                        water = 'normal'
+                    }
+                )
+            end
         )
+        if not surface then
+            surface = game.create_surface('gulag', {width = 40, height = 40})
+        end
         surface.always_day = true
         surface.request_to_generate_chunks({0, 0}, 9)
         surface.force_generate_chunk_requests()
@@ -220,10 +228,15 @@ local on_player_changed_surface = function(event)
     if not player or not player.valid then
         return
     end
-    local p_data = get_player_data(player)
-    if jailed[player.name] and p_data and p_data.locked then
-        local surface = game.surfaces['gulag']
-        if player.surface.index ~= surface.index then
+
+    if not jailed[player.name] then
+        return
+    end
+
+    local surface = game.surfaces['gulag']
+    if player.surface.index ~= surface.index then
+        local p_data = get_player_data(player)
+        if jailed[player.name] and p_data and p_data.locked then
             teleport_player_to_gulag(player, 'jail')
         end
     end
@@ -313,7 +326,7 @@ local vote_to_jail = function(player, griefer, msg)
 end
 
 local vote_to_free = function(player, griefer)
-    if votefree[griefer] and not votefree[griefer] then
+    if not votefree[griefer] then
         votefree[griefer] = {index = 0, actor = player.name}
         local message = player.name .. ' has started a vote to free player ' .. griefer
         Utils.print_to(nil, message)
