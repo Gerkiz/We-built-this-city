@@ -915,7 +915,7 @@ Gui.on_click(
 
         local new = p.frame.new_name.text
         if new ~= '' and new ~= 'Spawn' and new ~= 'Name:' and new ~= 'Warp name:' then
-            if string.len(new) > 15 then
+            if string.len(new) > 30 then
                 player.print('Warp name is too long!', Color.fail)
                 return
             end

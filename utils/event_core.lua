@@ -5,6 +5,7 @@ local Public = {}
 
 local init_event_name = -1
 local load_event_name = -2
+local changed_event_name = -3
 
 -- map of event_name to handlers[]
 local event_handlers = {}
@@ -23,6 +24,7 @@ end ]]
 local pcall = pcall
 local log = log
 local script_on_event = script.on_event
+local script_on_configuration_changed = script.on_configuration_changed
 local script_on_nth_tick = script.on_nth_tick
 
 local call_handlers
@@ -96,6 +98,20 @@ function Public.add(event_name, handler)
         table.insert(handlers, handler)
         if #handlers == 1 then
             script_on_event(event_name, on_event)
+        end
+    end
+end
+
+--- Do not use this function, use Event.on_configuration_changed instead as it has safety checks.
+function Public.on_configuration_changed(handler)
+    local handlers = event_handlers[changed_event_name]
+    if not handlers then
+        event_handlers[changed_event_name] = {handler}
+        script_on_configuration_changed(on_init)
+    else
+        table.insert(handlers, handler)
+        if #handlers == 1 then
+            script_on_configuration_changed(on_init)
         end
     end
 end

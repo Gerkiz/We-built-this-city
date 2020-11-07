@@ -49,8 +49,14 @@ commands.add_command(
             end
         end
         if err or err == false then
-            err = '[ERROR] ' .. err
-            Server.player_return(err, Color.info, player)
+            if type(err) == 'boolean' then
+                if err then
+                    Server.player_return(err, Color.info, player)
+                end
+            else
+                err = '[ERROR] ' .. err
+                Server.player_return(err, Color.info, player)
+            end
         end
     end
 )

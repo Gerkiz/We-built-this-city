@@ -104,6 +104,7 @@ local table_remove = table.remove
 local core_add = EventCore.add
 local core_on_init = EventCore.on_init
 local core_on_load = EventCore.on_load
+local core_on_configuration_changed = EventCore.on_configuration_changed
 local core_on_nth_tick = EventCore.on_nth_tick
 local stage_load = _STAGE.load
 local script_on_event = script.on_event
@@ -164,6 +165,19 @@ function Event.add(event_name, handler)
     end
 
     core_add(event_name, handler)
+end
+
+--- Register a handler for the event_name event.
+-- This function must be called in the control stage or in Event.on_init or Event.on_load.
+-- See documentation at top of file for details on using events.
+-- @param event_name<number>
+-- @param handler<function>
+function Event.on_configuration_changed(handler)
+    if _LIFECYCLE == 8 then
+        error('Calling Event.on_configuration_changed after on_init() or on_load() has run is a desync risk.', 2)
+    end
+
+    core_on_configuration_changed(handler)
 end
 
 --- Register a handler for the script.on_init event.
@@ -505,12 +519,6 @@ function Event.generate_event_name(name)
     end
 
     return event_id
-end
-
-function Event.on_configuration_changed(func)
-    if type(func) == 'function' then
-        script.on_configuration_changed(func)
-    end
 end
 
 function Event.add_event_filter(event, filter)

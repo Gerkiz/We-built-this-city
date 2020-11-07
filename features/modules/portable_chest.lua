@@ -129,6 +129,7 @@ end
 local function update_chest()
     for chest_id, player in pairs(this.inf_chests) do
         if not player.valid then
+            this.inf_chests[chest_id] = nil
             goto continue
         end
         local storage = this.inf_storage[chest_id]

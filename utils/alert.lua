@@ -300,6 +300,9 @@ end
 ---@param message string
 function Public.alert_force(force, duration, message)
     local players = force.connected_players
+    if not players or not next(players) then
+        return
+    end
     for i = 1, #players do
         local player = players[i]
         Public.alert_player(player, duration, message)

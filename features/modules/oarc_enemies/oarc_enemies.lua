@@ -267,8 +267,7 @@ function Public.OarcEnemiesPlayerAttackCharacter(player_name)
 
     -- Validation checks.
     if
-        (not game.players[player_name] or not game.players[player_name].connected or
-            not game.players[player_name].character or
+        (not game.players[player_name] or not game.players[player_name].connected or not game.players[player_name].character or
             not game.players[player_name].character.valid)
      then
         if gd.debug then
@@ -406,22 +405,23 @@ function Public.OarcEnemiesEntityDiedEvent(event)
 
         -- No attacks on offline players??
         -- if (not player or not player.connected) then return end
+        if player and player.character and player.character.valid then
+            death_attack.process_stg = gd.process_find_spawn_path_req
+            death_attack.target_player = player.name
+            death_attack.target_type = gd.type_target_entity
+            death_attack.target_entity = event.cause
+            death_attack.target_chunk = Utils.GetChunkPosFromTilePos(player.character.position)
 
-        death_attack.process_stg = gd.process_find_spawn_path_req
-        death_attack.target_player = player.name
-        death_attack.target_type = gd.type_target_entity
-        death_attack.target_entity = event.cause
-        death_attack.target_chunk = Utils.GetChunkPosFromTilePos(player.character.position)
-
-        death_attack.evo, death_attack.size =
-            Evo.GetEnemyGroup {
-            player = player,
-            force_name = event.force.name,
-            surface = game.surfaces[s_name],
-            target_pos = event.entity.position,
-            min_size = 8,
-            min_evo = 0.25
-        }
+            death_attack.evo, death_attack.size =
+                Evo.GetEnemyGroup {
+                player = player,
+                force_name = event.force.name,
+                surface = game.surfaces[s_name],
+                target_pos = event.entity.position,
+                min_size = 8,
+                min_evo = 0.25
+            }
+        end
     end
 
     insert(gd.attacks, death_attack)
@@ -535,12 +535,7 @@ function Public.CreateEnemyGroup(surface, position, units)
     -- Attempt to spawn all units nearby
     for k, biter_name in pairs(units) do
         local unit_position =
-            surface.find_non_colliding_position(
-            biter_name,
-            {position.x + math.random(-5, 5), position.y + math.random(-5, 5)},
-            32,
-            1
-        )
+            surface.find_non_colliding_position(biter_name, {position.x + math.random(-5, 5), position.y + math.random(-5, 5)}, 32, 1)
         if (unit_position) then
             new_unit = surface.create_entity {name = biter_name, position = unit_position}
             new_enemy_group.add_member(new_unit)
@@ -575,8 +570,7 @@ function Public.OarcEnemiesUnitRemoveFromGroupEvent(event)
         -- Force the unit back into its group if possible, only while that group is navigating/moving
         if
             ((gd.groups[event.group.group_number] ~= nil) and event.group and event.group.valid and
-                ((event.group.state == defines.group_state.moving) or
-                    (event.group.state == defines.group_state.pathfinding)))
+                ((event.group.state == defines.group_state.moving) or (event.group.state == defines.group_state.pathfinding)))
          then
             -- Re-add a unit back if it's on the move.
             event.group.add_member(event.unit)
