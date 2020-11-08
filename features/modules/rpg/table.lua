@@ -31,8 +31,7 @@ Public.points_per_level = 5
 
 Public.experience_levels = {0}
 for a = 1, 9999, 1 do
-    Public.experience_levels[#Public.experience_levels + 1] =
-        Public.experience_levels[#Public.experience_levels] + a * 8
+    Public.experience_levels[#Public.experience_levels + 1] = Public.experience_levels[#Public.experience_levels] + a * 8
 end
 
 Public.die_cause = {

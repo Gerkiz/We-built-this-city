@@ -3,6 +3,7 @@
 
 local Global = require 'utils.global'
 local Event = require 'utils.event'
+local Gui = require 'utils.gui'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
 local math_floor = math.floor
@@ -27,8 +28,7 @@ Global.register(
 
 local function create_floaty_text(surface, position, name, count)
     if this.floating_text_y_offsets[position.x .. '_' .. position.y] then
-        this.floating_text_y_offsets[position.x .. '_' .. position.y] =
-            this.floating_text_y_offsets[position.x .. '_' .. position.y] - 0.5
+        this.floating_text_y_offsets[position.x .. '_' .. position.y] = this.floating_text_y_offsets[position.x .. '_' .. position.y] - 0.5
     else
         this.floating_text_y_offsets[position.x .. '_' .. position.y] = 0
     end
@@ -443,10 +443,10 @@ local function create_gui_button(player)
         tooltip =
             'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
     else
-        tooltip =
-            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.'
+        tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.'
     end
-    mod(player).add(
+    local b =
+        mod(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/wooden-chest',
@@ -455,6 +455,8 @@ local function create_gui_button(player)
             style = m_gui.button_style
         }
     )
+
+    Gui.allow_player_to_toggle(b.name)
 end
 
 local function do_whitelist()

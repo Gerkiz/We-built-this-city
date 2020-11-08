@@ -1,5 +1,6 @@
 local m_gui = require 'mod-gui'
 local Event = require 'utils.event'
+local Gui = require 'utils.gui'
 local Global = require 'utils.global'
 local mod = m_gui.get_button_flow
 
@@ -23,10 +24,7 @@ Global.register(
 )
 
 local function get_config_item(player, index, type)
-    if
-        not this.config_tmp[player.name] or index > #this.config_tmp[player.name] or
-            this.config_tmp[player.name][index][type] == ''
-     then
+    if not this.config_tmp[player.name] or index > #this.config_tmp[player.name] or this.config_tmp[player.name][index][type] == '' then
         return nil
     end
     if not game.item_prototypes[this.config_tmp[player.name][index][type]] then
@@ -363,8 +361,7 @@ local function gui_set_rule(player, type, index, element)
     local name = element.elem_value
     local frame = player.gui.screen.upgrade_planner_config_frame
     local ruleset_grid = frame['upgrade_planner_ruleset_grid']
-    local storage_name =
-        element.parent.parent.upgrade_planner_storage_flow.children[1].get_item(this.storage_index[player.name])
+    local storage_name = element.parent.parent.upgrade_planner_storage_flow.children[1].get_item(this.storage_index[player.name])
     local storage = this.config_tmp[player.name]
     if not frame or not storage then
         return
@@ -624,10 +621,7 @@ local function player_upgrade(player, orig_inv_name, belt, inv_name, upgrade, bo
                         player.cursor_stack.set_stack {name = 'selection-tool', count = 1}
                         return
                     end
-                    script.raise_event(
-                        defines.events.on_built_entity,
-                        {player_index = player.index, created_entity = assembling[1]}
-                    )
+                    script.raise_event(defines.events.on_built_entity, {player_index = player.index, created_entity = assembling[1]})
 
                     for j, items in pairs(inventories) do
                         for l, contents in pairs(items.contents) do
@@ -1087,13 +1081,15 @@ Event.add(
         if mod(player)['upgrade_planner_config_button'] then
             return
         end
-        mod(player).add {
+        local b =
+            mod(player).add {
             type = 'sprite-button',
             sprite = 'item/fast-transport-belt',
             name = 'upgrade_planner_config_button',
             tooltip = 'Upgrade planner',
             style = m_gui.button_style
         }
+        Gui.allow_player_to_toggle(b.name)
     end
 )
 

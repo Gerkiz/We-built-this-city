@@ -15,6 +15,7 @@ local toolbar = {}
 -- @treturn table the button object that was made
 function toolbar.add(name, caption, tooltip, callback)
     local button = Gui.inputs.add {type = 'sprite-button', name = name, caption = caption, tooltip = tooltip}
+    Gui.allow_player_to_toggle(button.name)
     button:on_event(Gui.inputs.events.click, callback)
     Gui.fetch_data('toolbar', name, button)
     return button

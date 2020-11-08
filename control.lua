@@ -35,7 +35,7 @@ end
 
 --! other stuff
 local Event = require 'utils.event'
-local RPG_Settings = require 'features.modules.rpg.table'
+
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
 require 'utils.server_commands'
@@ -71,6 +71,7 @@ require 'utils.gui.score'
 require 'utils.gui.config'
 require 'utils.gui.game_settings'
 require 'utils.gui.warp_system'
+local RPG_Settings = require 'features.modules.rpg.table'
 require 'features.functions.auto_bot'
 require 'features.functions.chatbot'
 require 'features.functions.antigrief'

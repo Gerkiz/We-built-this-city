@@ -3,7 +3,6 @@ local Global = require 'utils.global'
 local Gui = require 'utils.gui'
 local m_gui = require 'mod-gui'
 local Color = require 'utils.color_presets'
-local Public = require 'utils.gui'
 local mod = m_gui.get_button_flow
 local disabled_tabs = {}
 local icons = {
@@ -37,36 +36,130 @@ Global.register(
     end
 )
 
-Public.events = {on_gui_removal = Event.generate_event_name('on_gui_removal')}
+Gui.events = {on_gui_removal = Event.generate_event_name('on_gui_removal')}
 
-Public.classes = {}
-Public.defines = {}
-Public.names = {}
-Public.tabs = {}
+Gui.classes = {}
+Gui.tabs = {}
 
-Public.fetch_data =
+Gui.my_fixed_width_style = {
+    minimal_width = 450,
+    maximal_width = 450
+}
+Gui.my_label_style = {
+    single_line = false,
+    font_color = {r = 1, g = 1, b = 1},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_label_header_style = {
+    single_line = false,
+    font = 'heading-1',
+    font_color = {r = 1, g = 1, b = 1},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_label_header_grey_style = {
+    single_line = false,
+    font = 'heading-1',
+    font_color = {r = 0.6, g = 0.6, b = 0.6},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_note_style = {
+    single_line = false,
+    font = 'default-small-semibold',
+    font_color = {r = 1, g = 0.5, b = 0.5},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_warning_style = {
+    single_line = false,
+    font_color = {r = 1, g = 0.1, b = 0.1},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_spacer_style = {
+    minimal_height = 10,
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_small_button_style = {
+    font = 'default-small-semibold'
+}
+Gui.my_player_list_fixed_width_style = {
+    minimal_width = 200,
+    maximal_width = 400,
+    maximal_height = 200
+}
+Gui.my_player_list_admin_style = {
+    font = 'default-semibold',
+    font_color = {r = 1, g = 0.5, b = 0.5},
+    minimal_width = 200,
+    top_padding = 0,
+    bottom_padding = 0,
+    single_line = false
+}
+Gui.my_player_list_style = {
+    font = 'default-semibold',
+    minimal_width = 200,
+    top_padding = 0,
+    bottom_padding = 0,
+    single_line = false
+}
+Gui.my_player_list_offline_style = {
+    font_color = {r = 0.5, g = 0.5, b = 0.5},
+    minimal_width = 200,
+    top_padding = 0,
+    bottom_padding = 0,
+    single_line = false
+}
+Gui.my_player_list_style_spacer = {
+    minimal_height = 20
+}
+Gui.my_color_red = {r = 1, g = 0.1, b = 0.1}
+
+Gui.my_longer_label_style = {
+    maximal_width = 600,
+    single_line = false,
+    font_color = {r = 1, g = 1, b = 1},
+    top_padding = 0,
+    bottom_padding = 0
+}
+Gui.my_longer_warning_style = {
+    maximal_width = 600,
+    single_line = false,
+    font_color = {r = 1, g = 0.1, b = 0.1},
+    top_padding = 0,
+    bottom_padding = 0
+}
+
+Gui.fetch_data =
     setmetatable(
-    {},
+    Gui._old,
     {
-        __call = function(tbl, location, key, value)
-            if not location then
-                return tbl
+        __call = function(main_table, sub_table, key, value)
+            if not sub_table then
+                return main_table
             end
             if not key then
-                return rawget(tbl, location) or rawset(tbl, location, {}) and rawget(tbl, location)
+                return rawget(main_table, sub_table) or rawset(main_table, sub_table, {}) and rawget(main_table, sub_table)
             end
             if game then
-                error('New guis cannot be added during runtime', 2)
+                error('New guis cannot be added during runtime.', 2)
             end
-            if not rawget(tbl, location) then
-                rawset(tbl, location, {})
+            if not rawget(main_table, sub_table) then
+                rawset(main_table, sub_table, {})
             end
-            rawset(rawget(tbl, location), key, value)
+            rawset(rawget(main_table, sub_table), key, value)
         end
     }
 )
 
-function Public.get_table(key)
+Gui.fetch_data.__index = Gui._mt
+
+global.gui = Gui.fetch_data
+
+function Gui.get_table(key)
     if key == 'tabs' then
         return disabled_tabs
     elseif key == 'icons' then
@@ -75,13 +168,13 @@ function Public.get_table(key)
     return Gui.fetch_data
 end
 
-function Public:_load_parts(parts)
+function Gui:_load_parts(parts)
     for _, part in pairs(parts) do
         self[part] = require('objects.' .. part)
     end
 end
 
-function Public.bar(frame, width)
+function Gui.bar(frame, width)
     local line =
         frame.add {
         type = 'progressbar',
@@ -94,7 +187,7 @@ function Public.bar(frame, width)
     return line
 end
 
-function Public.set_dropdown_index(dropdown, _item)
+function Gui.set_dropdown_index(dropdown, _item)
     if not dropdown and not dropdown.valid and not dropdown.items and not _item then
         return
     end
@@ -109,103 +202,11 @@ function Public.set_dropdown_index(dropdown, _item)
     return dropdown
 end
 
-function Public.get_tabs_table()
-    return Public.tabs
+function Gui.get_tabs_table()
+    return Gui.tabs
 end
 
-Public.my_fixed_width_style = {
-    minimal_width = 450,
-    maximal_width = 450
-}
-Public.my_label_style = {
-    single_line = false,
-    font_color = {r = 1, g = 1, b = 1},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_label_header_style = {
-    single_line = false,
-    font = 'heading-1',
-    font_color = {r = 1, g = 1, b = 1},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_label_header_grey_style = {
-    single_line = false,
-    font = 'heading-1',
-    font_color = {r = 0.6, g = 0.6, b = 0.6},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_note_style = {
-    single_line = false,
-    font = 'default-small-semibold',
-    font_color = {r = 1, g = 0.5, b = 0.5},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_warning_style = {
-    single_line = false,
-    font_color = {r = 1, g = 0.1, b = 0.1},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_spacer_style = {
-    minimal_height = 10,
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_small_button_style = {
-    font = 'default-small-semibold'
-}
-Public.my_player_list_fixed_width_style = {
-    minimal_width = 200,
-    maximal_width = 400,
-    maximal_height = 200
-}
-Public.my_player_list_admin_style = {
-    font = 'default-semibold',
-    font_color = {r = 1, g = 0.5, b = 0.5},
-    minimal_width = 200,
-    top_padding = 0,
-    bottom_padding = 0,
-    single_line = false
-}
-Public.my_player_list_style = {
-    font = 'default-semibold',
-    minimal_width = 200,
-    top_padding = 0,
-    bottom_padding = 0,
-    single_line = false
-}
-Public.my_player_list_offline_style = {
-    font_color = {r = 0.5, g = 0.5, b = 0.5},
-    minimal_width = 200,
-    top_padding = 0,
-    bottom_padding = 0,
-    single_line = false
-}
-Public.my_player_list_style_spacer = {
-    minimal_height = 20
-}
-Public.my_color_red = {r = 1, g = 0.1, b = 0.1}
-
-Public.my_longer_label_style = {
-    maximal_width = 600,
-    single_line = false,
-    font_color = {r = 1, g = 1, b = 1},
-    top_padding = 0,
-    bottom_padding = 0
-}
-Public.my_longer_warning_style = {
-    maximal_width = 600,
-    single_line = false,
-    font_color = {r = 1, g = 0.1, b = 0.1},
-    top_padding = 0,
-    bottom_padding = 0
-}
-
-function Public.apply_direction_button_style(button)
+function Gui.apply_direction_button_style(button)
     local button_style = button.style
     button_style.width = 24
     button_style.height = 24
@@ -216,7 +217,7 @@ function Public.apply_direction_button_style(button)
     button_style.font = 'default-listbox'
 end
 
-function Public.apply_button_style(button)
+function Gui.apply_button_style(button)
     local button_style = button.style
     button_style.font = 'default-semibold'
     button_style.height = 26
@@ -232,14 +233,14 @@ end
 --------------------------------------------------------------------------------
 
 -- Apply a style option to a GUI
-function Public.ApplyStyle(guiIn, styleIn)
+function Gui.ApplyStyle(guiIn, styleIn)
     for k, v in pairs(styleIn) do
         guiIn.style[k] = v
     end
 end
 
 -- Shorter way to add a label with a style
-function Public.AddLabel(guiIn, name, message, style)
+function Gui.AddLabel(guiIn, name, message, style)
     local g =
         guiIn.add {
         name = name,
@@ -247,43 +248,43 @@ function Public.AddLabel(guiIn, name, message, style)
         caption = message
     }
     if (type(style) == 'table') then
-        Public.ApplyStyle(g, style)
+        Gui.ApplyStyle(g, style)
     else
         g.style = style
     end
 end
 
-function Public.AddLabelCaption(guiIn, name, style)
+function Gui.AddLabelCaption(guiIn, name, style)
     local g =
         guiIn.add {
         type = 'label',
         caption = name
     }
     if (type(style) == 'table') then
-        Public.ApplyStyle(g, style)
+        Gui.ApplyStyle(g, style)
     else
         g.style = style
     end
 end
 
 -- Shorter way to add a spacer
-function Public.AddSpacer(guiIn)
-    Public.ApplyStyle(guiIn.add {type = 'label', caption = ' '}, Public.my_spacer_style)
+function Gui.AddSpacer(guiIn)
+    Gui.ApplyStyle(guiIn.add {type = 'label', caption = ' '}, Gui.my_spacer_style)
 end
 
-function Public.AddSpacerLine(guiIn)
-    Public.ApplyStyle(guiIn.add {type = 'line', direction = 'horizontal'}, Public.my_spacer_style)
+function Gui.AddSpacerLine(guiIn)
+    Gui.ApplyStyle(guiIn.add {type = 'line', direction = 'horizontal'}, Gui.my_spacer_style)
 end
 
-function Public.get_tabs()
-    return Public.tabs
+function Gui.get_tabs()
+    return Gui.tabs
 end
 
-function Public.get_disabled_tabs()
+function Gui.get_disabled_tabs()
     return disabled_tabs
 end
 
-function Public.panel_clear_left_gui(player)
+function Gui.panel_clear_left_gui(player)
     local left = player.gui.left
     for _, child in pairs(left.children) do
         if child.name ~= main_button_name and child.name ~= 'mod_gui_frame_flow' then
@@ -292,21 +293,21 @@ function Public.panel_clear_left_gui(player)
     end
 end
 
-function Public.refresh(player)
-    local frame = Public.panel_get_active_frame(player)
+function Gui.refresh(player)
+    local frame = Gui.panel_get_active_frame(player)
     if not frame then
         return
     end
 
-    local t = Public.get_content(player)
+    local t = Gui.get_content(player)
 
     for k, v in pairs(t.tabs) do
         v.content.clear()
     end
-    Public.panel_refresh_active_tab(player)
+    Gui.panel_refresh_active_tab(player)
 end
 
-function Public.get_panel(player)
+function Gui.get_panel(player)
     local left = player.gui.left
     if (left[main_frame_name] == nil) then
         return nil
@@ -315,7 +316,7 @@ function Public.get_panel(player)
     end
 end
 
-function Public.panel_get_active_frame(player)
+function Gui.panel_get_active_frame(player)
     local left = player.gui.left
     if not left[main_frame_name] then
         return false
@@ -326,7 +327,7 @@ function Public.panel_get_active_frame(player)
     return left[main_frame_name].next.tabbed_pane.tabs[left[main_frame_name].next.tabbed_pane.selected_tab_index].content
 end
 
-function Public.get_content(player)
+function Gui.get_content(player)
     local left = player.gui.left
     if not left[main_frame_name] then
         return false
@@ -334,12 +335,12 @@ function Public.get_content(player)
     return left[main_frame_name].next.tabbed_pane
 end
 
-function Public.panel_refresh_active_tab(player)
-    local frame = Public.panel_get_active_frame(player)
+function Gui.panel_refresh_active_tab(player)
+    local frame = Gui.panel_get_active_frame(player)
     if not frame then
         return
     end
-    Public.tabs[frame.name](player, frame)
+    Gui.tabs[frame.name](player, frame)
 end
 
 local function top_button(player)
@@ -371,11 +372,10 @@ end
 
 local function main_frame(player)
     local left = player.gui.left
-    local tabs = Public.tabs
+    local tabs = Gui.tabs
 
-    Public.panel_clear_left_gui(player)
-    local frame =
-        left.add {type = 'frame', name = main_frame_name, direction = 'vertical', style = 'changelog_subheader_frame'}
+    Gui.panel_clear_left_gui(player)
+    local frame = left.add {type = 'frame', name = main_frame_name, direction = 'vertical', style = 'changelog_subheader_frame'}
     frame.style.minimal_height = 400
     frame.style.maximal_height = 700
     frame.style.padding = 5
@@ -383,7 +383,7 @@ local function main_frame(player)
     local inside_frame = frame.add {type = 'frame', name = 'next', style = 'inside_deep_frame', direction = 'vertical'}
     local subhead = inside_frame.add {type = 'frame', name = 'sub_header'}
 
-    Public.AddLabel(subhead, 'scen_info', 'We built this city ', 'subheader_caption_label')
+    Gui.AddLabel(subhead, 'scen_info', 'We built this city ', 'subheader_caption_label')
     for i = 1, 14, 1 do
         local e = subhead.add({type = 'sprite', sprite = icons[i]})
         e.style.maximal_width = 24
@@ -431,10 +431,10 @@ local function main_frame(player)
             t.add_tab(tab, f2)
         end
     end
-    Public.panel_refresh_active_tab(player)
+    Gui.panel_refresh_active_tab(player)
 end
 
-function Public.visible(player)
+function Gui.visible(player)
     local left = player.gui.left
     local frame = left[main_frame_name]
     if (frame ~= nil) then
@@ -442,14 +442,14 @@ function Public.visible(player)
     end
 end
 
-function Public.panel_call_tab(player, name)
+function Gui.panel_call_tab(player, name)
     local left = player.gui.left
     main_frame(player)
     local tabbed_pane = left[main_frame_name].next.tabbed_pane
     for key, v in pairs(tabbed_pane.tabs) do
         if v.tab.caption == name then
             tabbed_pane.selected_tab_index = key
-            Public.panel_refresh_active_tab(player)
+            Gui.panel_refresh_active_tab(player)
         end
     end
 end
@@ -467,11 +467,11 @@ local function on_player_created(event)
     end
 end
 
-function Public.set_tab(player, tab_name, status)
+function Gui.set_tab(player, tab_name, status)
     local left = player.gui.left
     local name = tab_name
-    --Public.panel_call_tab(player, tab_name)
-    local frame = Public.panel_get_active_frame(player)
+    --Gui.panel_call_tab(player, tab_name)
+    local frame = Gui.panel_get_active_frame(player)
     if not frame then
         disabled_tabs[player.index][name] = status
     end
@@ -482,10 +482,10 @@ function Public.set_tab(player, tab_name, status)
         main_frame(player)
         return
     end
-    Public.panel_refresh_active_tab(player)
+    Gui.panel_refresh_active_tab(player)
 end
 
-function Public.close_gui_player(player)
+function Gui.close_gui_player(player)
     local left = player.gui.left
     local menu_frame = left[main_frame_name]
     if (menu_frame) then
@@ -493,17 +493,19 @@ function Public.close_gui_player(player)
     end
 end
 
-function Public.toggle(player)
+function Gui.toggle(player)
     local left = player.gui.left
     local frame = left[main_frame_name]
 
     if frame then
-        Public.close_gui_player(player)
+        Gui.close_gui_player(player)
     else
-        Public.panel_clear_left_gui(player)
+        Gui.panel_clear_left_gui(player)
         main_frame(player)
     end
 end
+
+Gui.allow_player_to_toggle(main_button_name)
 
 local function on_gui_click(event)
     if not (event and event.element and event.element.valid) then
@@ -513,7 +515,7 @@ local function on_gui_click(event)
     local player = game.players[event.player_index]
 
     if name == main_button_name then
-        Public.toggle(player)
+        Gui.toggle(player)
     end
 
     if not event.element.caption then
@@ -522,15 +524,15 @@ local function on_gui_click(event)
     if event.element.type ~= 'tab' then
         return
     end
-    Public.panel_refresh_active_tab(player)
-    Public.refresh(player)
+    Gui.panel_refresh_active_tab(player)
+    Gui.refresh(player)
 end
 
 Event.add(
     defines.events.on_tick,
     function(event)
-        if Public.left and ((event.tick + 10) / (3600 * game.speed)) % 15 == 0 then
-            Public.left.update()
+        if Gui.left and ((event.tick + 10) / (3600 * game.speed)) % 15 == 0 then
+            Gui.left.update()
         end
     end
 )
@@ -556,4 +558,4 @@ Event.add(defines.events.on_player_created, on_player_created)
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
 Event.add(defines.events.on_gui_click, on_gui_click)
 
-return Public
+return Gui

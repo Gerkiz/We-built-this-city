@@ -12,12 +12,4 @@ local Center = require 'utils.gui.templates.center'
 Public.center = Center
 Public.classes.Center = Center
 
-local Left = require 'utils.gui.templates.left'
-Public.left = Left
-Public.classes.Left = Left
-
-local Popup = require 'utils.gui.templates.popup'
-Public.popup = Popup
-Public.classes.Popup = Popup
-
 return Public

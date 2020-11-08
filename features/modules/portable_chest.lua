@@ -165,14 +165,10 @@ local function draw_main_frame(player, target, chest_id)
         return
     end
     local p = target or player
-    local frame =
-        player.gui.screen.add {
-        type = 'frame',
-        caption = p.name .. '´s private portable stash',
-        direction = 'vertical',
-        name = main_frame_name
-    }
-    frame.auto_center = true
+
+    local frame, top_frame =
+        Gui.add_main_frame(player.gui.screen, main_frame_name, p.name .. '´s private portable stash', 'Your personal storage chest.')
+    top_frame.auto_center = true
 
     local data = {}
 
@@ -180,6 +176,7 @@ local function draw_main_frame(player, target, chest_id)
     local items = frame.add {type = 'flow', direction = 'vertical'}
 
     local tbl = controls.add {type = 'table', column_count = 1}
+    tbl.style.cell_padding = 4
     local btn =
         tbl.add {
         type = 'sprite-button',
@@ -252,7 +249,7 @@ local function draw_main_frame(player, target, chest_id)
     end
     this.inf_gui[player.index] = {
         item_frame = items,
-        frame = frame,
+        frame = top_frame,
         updated = false,
         delete_mode = false
     }
@@ -285,6 +282,7 @@ local function update_gui()
         frame.clear()
 
         local tbl = frame.add {type = 'table', column_count = 10, name = 'personal_inventory'}
+        tbl.style.cell_padding = 0
         local total = 0
         local items = {}
 
@@ -662,6 +660,8 @@ commands.add_command(
         end
     end
 )
+
+Gui.allow_player_to_toggle(main_button_name)
 
 function Public.ores_only(value)
     if value then

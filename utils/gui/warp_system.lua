@@ -54,7 +54,6 @@ local global_offset = {x = 0, y = 0}
 local main_button_name = Gui.uid_name()
 local main_frame_name = Gui.uid_name()
 local create_warp_button_name = Gui.uid_name()
-local go_to_warp_name = Gui.uid_name()
 local confirmed_button_name = Gui.uid_name()
 local create_warp_func_name = Gui.uid_name()
 local create_warp_is_shared = Gui.uid_name()
@@ -97,6 +96,89 @@ local function validate_player(player)
     end
     return true
 end
+
+local go_to_warp_name =
+    Gui.new_frame {
+    type = 'sprite-button',
+    name = '123',
+    sprite = 'utility/export_slot',
+    tooltip = 'Warps you over to: '
+}:style(Gui.Styles[20]):on_click(
+    function(_, frame, event)
+        local player = game.get_player(event.player_index)
+        local element = event.element
+        if not element then
+            return
+        end
+        local parent = element.parent
+        if not parent then
+            return
+        end
+
+        if not validate_player(player) then
+            return
+        end
+
+        local p = player_table[player.index]
+
+        if not p then
+            return
+        end
+
+        local warp
+
+        local position
+
+        if not Roles.get_role(player):allowed('always-warp') then
+            if Public.is_spam(p, player) then
+                return
+            end
+
+            warp = warp_table[parent.name]
+
+            position = player.position
+
+            local area = {
+                left_top = {x = position.x - 5, y = position.y - 5},
+                right_bottom = {x = position.x + 5, y = position.y + 5}
+            }
+
+            if not Public.contains_positions(area) then
+                player.print('You are not standing on a warp platform.', Color.warning)
+                return
+            end
+
+            if (warp.position.x - position.x) ^ 2 + (warp.position.y - position.y) ^ 2 < 1024 then
+                player.print('Destination is source warp: ' .. parent.name, Color.fail)
+                return
+            end
+        else
+            warp = warp_table[parent.name]
+        end
+
+        if player.vehicle then
+            player.vehicle.set_driver(nil)
+        end
+        if player.vehicle then
+            player.vehicle.set_passenger(nil)
+        end
+        if player.vehicle then
+            return
+        end
+
+        player.teleport(warp.surface.find_non_colliding_position('character', warp.position, 32, 1), warp.surface)
+        player.print('Warped you over to: ' .. parent.name, Color.success)
+        player.play_sound {path = 'utility/armor_insert', volume_modifier = 1}
+        p.spam = game.tick + 900
+
+        Public.clear_player_table(player)
+
+        Public.refresh_gui_player(player)
+
+        Public.close_gui_player(frame[main_frame_name])
+        return
+    end
+)
 
 function Public.inside(pos, area)
     local lt = area.left_top
@@ -341,8 +423,7 @@ local function draw_remove_warp(parent, player)
             type = 'sprite-button',
             name = confirmed_button_name,
             enabled = 'false',
-            tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' ..
-                player.name .. '.',
+            tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' .. player.name .. '.',
             sprite = 'utility/set_bar_slot'
         }
         btn.style.height = 20
@@ -387,15 +468,9 @@ local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
 
     local bottom_warp_flow = table.add {type = 'flow', name = name}
 
-    local go_to_warp_flow =
-        bottom_warp_flow.add {
-        type = 'sprite-button',
-        name = go_to_warp_name,
-        sprite = 'utility/export_slot',
-        tooltip = 'Warps you over to: ' .. bottom_warp_flow.name
-    }
-    go_to_warp_flow.style.height = 20
-    go_to_warp_flow.style.width = 20
+    local bottom_warp = go_to_warp_name(bottom_warp_flow)
+    bottom_warp.tooltip = bottom_warp.tooltip .. bottom_warp_flow.name
+
     if bottom_warp_flow.name ~= 'Spawn' then
         local remove_warp_flow =
             bottom_warp_flow.add {
@@ -436,19 +511,8 @@ local function draw_main_frame(player, left, are_you_sure)
     local e = are_you_sure
     local p = player_table[player.index]
     local trusted = Session.get_trusted_table()
-    local frame =
-        left.add {
-        type = 'frame',
-        name = main_frame_name,
-        caption = 'Warps',
-        direction = 'vertical',
-        style = 'changelog_subheader_frame'
-    }
-    --frame.style.padding = 5
-    frame.style.horizontally_stretchable = true
-    frame.style.maximal_height = 500
-    frame.style.maximal_width = 500
-    frame.style.minimal_width = 320
+
+    local frame = Gui.add_main_frame(left, main_frame_name, 'Warps', 'Warp to places!')
 
     local tbl = frame.add {type = 'table', column_count = 1, name = '_1'}
     tbl.style.vertical_spacing = 0
@@ -521,8 +585,7 @@ local function draw_main_frame(player, left, are_you_sure)
             name = create_warp_button_name,
             caption = 'Create Warp.',
             enabled = false,
-            tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' ..
-                player.name .. '.'
+            tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' .. player.name .. '.'
         }
         Tabs.apply_button_style(button)
     end
@@ -575,8 +638,7 @@ end
 function Public.is_spam(p, player)
     if p.spam > game.tick then
         player.print(
-            'Please wait ' ..
-                math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.',
+            'Please wait ' .. math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.',
             Color.warning
         )
         return true
@@ -666,8 +728,11 @@ end
 Gui.on_click(
     main_button_name,
     function(event)
-        local player = game.get_player(event.player_index)
-
+        local element = event.element
+        if not element then
+            return
+        end
+        local player = Gui.get_player_from_element(element)
         if not validate_player(player) then
             return
         end
@@ -794,85 +859,7 @@ Gui.on_click(
     end
 )
 
-Gui.on_click(
-    go_to_warp_name,
-    function(event)
-        local player = game.get_player(event.player_index)
-        local gui = player.gui
-        local left = gui.left
-        local element = event.element
-        if not element then
-            return
-        end
-        local parent = element.parent
-        if not parent then
-            return
-        end
-
-        if not validate_player(player) then
-            return
-        end
-
-        local p = player_table[player.index]
-
-        if not p then
-            return
-        end
-
-        local warp
-
-        local position
-
-        if not Roles.get_role(player):allowed('always-warp') then
-            if Public.is_spam(p, player) then
-                return
-            end
-
-            warp = warp_table[parent.name]
-
-            position = player.position
-
-            local area = {
-                left_top = {x = position.x - 5, y = position.y - 5},
-                right_bottom = {x = position.x + 5, y = position.y + 5}
-            }
-
-            if not Public.contains_positions(area) then
-                player.print('You are not standing on a warp platform.', Color.warning)
-                return
-            end
-
-            if (warp.position.x - position.x) ^ 2 + (warp.position.y - position.y) ^ 2 < 1024 then
-                player.print('Destination is source warp: ' .. parent.name, Color.fail)
-                return
-            end
-        else
-            warp = warp_table[parent.name]
-        end
-
-        if player.vehicle then
-            player.vehicle.set_driver(nil)
-        end
-        if player.vehicle then
-            player.vehicle.set_passenger(nil)
-        end
-        if player.vehicle then
-            return
-        end
-
-        player.teleport(warp.surface.find_non_colliding_position('character', warp.position, 32, 1), warp.surface)
-        player.print('Warped you over to: ' .. parent.name, Color.success)
-        player.play_sound {path = 'utility/armor_insert', volume_modifier = 1}
-        p.spam = game.tick + 900
-
-        Public.clear_player_table(player)
-
-        Public.refresh_gui_player(player)
-
-        Public.close_gui_player(left[main_frame_name])
-        return
-    end
-)
+Gui.allow_player_to_toggle(main_button_name)
 
 Gui.on_click(
     create_warp_button_name,

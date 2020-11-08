@@ -1,6 +1,4 @@
 local Gui = require 'utils.gui'
-local Global = require 'utils.global'
-local Token = require 'utils.token'
 local Color = require 'utils.color_presets'
 local Model = require 'utils.debug.model'
 
@@ -16,7 +14,7 @@ local right_panel_name = Gui.uid_name()
 local input_text_box_name = Gui.uid_name()
 local refresh_name = Gui.uid_name()
 
-Public.name = 'Global'
+Public.name = 'Elements'
 
 function Public.show(container)
     local main_flow = container.add {type = 'flow', direction = 'horizontal'}
@@ -25,9 +23,9 @@ function Public.show(container)
     local left_panel_style = left_panel.style
     left_panel_style.width = 300
 
-    for token_id, token_name in pairs(Global.names) do
-        local header = left_panel.add({type = 'flow'}).add {type = 'label', name = header_name, caption = token_name}
-        Gui.set_data(header, token_id)
+    for element_id, file_path in pairs(Gui.file_paths) do
+        local header = left_panel.add({type = 'flow'}).add {type = 'label', name = header_name, caption = element_id .. ' - ' .. file_path}
+        Gui.set_data(header, element_id)
     end
 
     local right_flow = main_flow.add {type = 'flow', direction = 'vertical'}
@@ -70,7 +68,7 @@ Gui.on_click(
     header_name,
     function(event)
         local element = event.element
-        local token_id = Gui.get_data(element)
+        local element_id = Gui.get_data(element)
 
         local left_panel = element.parent.parent
         local data = Gui.get_data(left_panel)
@@ -85,11 +83,10 @@ Gui.on_click(
         element.style.font_color = Color.orange
         data.selected_header = element
 
-        input_text_box.text = concat {'global.tokens[', token_id, ']'}
+        input_text_box.text = concat {'Gui.defines[', element_id, ']'}
         input_text_box.style.font_color = Color.black
 
-        local id = Token.get_global(token_id)
-        local content = dump(id) or 'Could not load data.'
+        local content = dump(Gui.debug_info[element_id]) or 'nil'
         right_panel.text = content
     end
 )

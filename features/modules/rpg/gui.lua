@@ -55,9 +55,7 @@ end
 local function get_class(player)
     local rpg_t = RPG.get('rpg_t')
     local average =
-        (rpg_t[player.index].strength + rpg_t[player.index].magicka + rpg_t[player.index].dexterity +
-        rpg_t[player.index].vitality) /
-        4
+        (rpg_t[player.index].strength + rpg_t[player.index].magicka + rpg_t[player.index].dexterity + rpg_t[player.index].vitality) / 4
     local high_attribute = 0
     local high_attribute_name = ''
     for _, attribute in pairs({'strength', 'magicka', 'dexterity', 'vitality'}) do
@@ -166,20 +164,9 @@ local function draw_main_frame(player, location)
         return
     end
 
-    local main_frame =
-        player.gui.screen.add(
-        {
-            type = 'frame',
-            name = main_frame_name,
-            caption = 'RPG',
-            direction = 'vertical'
-        }
-    )
-    if location then
-        main_frame.location = location
-    else
-        main_frame.location = {x = 1, y = 40}
-    end
+    local main_frame, top_frame = Gui.add_main_frame(player.gui.screen, main_frame_name, 'RPG', 'Choose your class!', 800)
+
+    top_frame.location = location or {x = 1, y = 40}
 
     local data = {}
     local rpg_extra = RPG.get('rpg_extra')
@@ -221,15 +208,7 @@ local function draw_main_frame(player, location)
     local rank = add_gui_stat(main_table, get_class(player), 200, ({'rpg_gui.class_info', get_class(player)}))
     rank.style.font = 'default-large-bold'
 
-    add_elem_stat(
-        main_table,
-        ({'rpg_gui.settings_name'}),
-        200,
-        35,
-        nil,
-        ({'rpg_gui.settings_frame'}),
-        settings_button_name
-    )
+    add_elem_stat(main_table, ({'rpg_gui.settings_name'}), 200, 35, nil, ({'rpg_gui.settings_frame'}), settings_button_name)
 
     add_separator(scroll_pane, 400)
 
@@ -291,14 +270,11 @@ local function draw_main_frame(player, location)
     add_gui_description(left_bottom_table, ' ', 40)
 
     add_gui_description(left_bottom_table, ({'rpg_gui.life_name'}), w1, ({'rpg_gui.life_tooltip'}))
-    local health_gui =
-        add_gui_stat(left_bottom_table, math.floor(player.character.health), w2, ({'rpg_gui.life_increase'}))
+    local health_gui = add_gui_stat(left_bottom_table, math.floor(player.character.health), w2, ({'rpg_gui.life_increase'}))
     data.health = health_gui
     add_gui_stat(
         left_bottom_table,
-        math.floor(
-            player.character.prototype.max_health + player.character_health_bonus + player.force.character_health_bonus
-        ),
+        math.floor(player.character.prototype.max_health + player.character_health_bonus + player.force.character_health_bonus),
         w2,
         ({'rpg_gui.life_maximum'})
     )
@@ -355,14 +331,12 @@ local function draw_main_frame(player, location)
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.mining_name'}), w1)
     local mining_speed_value =
-        math.round((player.force.manual_mining_speed_modifier + player.character_mining_speed_modifier + 1) * 100) ..
-        '%'
+        math.round((player.force.manual_mining_speed_modifier + player.character_mining_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, mining_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.slot_name'}), w1)
-    local slot_bonus_value =
-        '+ ' .. math.round(player.force.character_inventory_slots_bonus + player.character_inventory_slots_bonus)
+    local slot_bonus_value = '+ ' .. math.round(player.force.character_inventory_slots_bonus + player.character_inventory_slots_bonus)
     add_gui_stat(right_bottom_table, slot_bonus_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
@@ -384,8 +358,7 @@ local function draw_main_frame(player, location)
     add_gui_description(right_bottom_table, '', w0, '', nil, 5)
     add_gui_description(right_bottom_table, '', w0, '', nil, 5)
 
-    local reach_distance_value =
-        '+ ' .. (player.force.character_reach_distance_bonus + player.character_reach_distance_bonus)
+    local reach_distance_value = '+ ' .. (player.force.character_reach_distance_bonus + player.character_reach_distance_bonus)
     local reach_bonus_tooltip = ({
         'rpg_gui.bonus_tooltip',
         player.character_reach_distance_bonus,
@@ -408,15 +381,13 @@ local function draw_main_frame(player, location)
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.crafting_speed'}), w1)
     local crafting_speed_value =
-        math.round((player.force.manual_crafting_speed_modifier + player.character_crafting_speed_modifier + 1) * 100) ..
-        '%'
+        math.round((player.force.manual_crafting_speed_modifier + player.character_crafting_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, crafting_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.running_speed'}), w1)
     local running_speed_value =
-        math.round((player.force.character_running_speed_modifier + player.character_running_speed_modifier + 1) * 100) ..
-        '%'
+        math.round((player.force.character_running_speed_modifier + player.character_running_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, running_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
@@ -440,9 +411,9 @@ local function draw_main_frame(player, location)
     add_separator(scroll_pane, 400)
 
     Public.update_char_button(player)
-    data.frame = main_frame
+    data.frame = top_frame
 
-    Gui.set_data(main_frame, data)
+    Gui.set_data(top_frame, data)
 end
 
 function Public.draw_level_text(player)
@@ -518,8 +489,7 @@ function Public.update_player_stats(player)
     player_modifiers[player.index].character_running_speed_modifier['rpg'] = math.round(dexterity * 0.0015, 3)
     player_modifiers[player.index].character_crafting_speed_modifier['rpg'] = math.round(dexterity * 0.015, 3)
 
-    player_modifiers[player.index].character_health_bonus['rpg'] =
-        math.round((rpg_t[player.index].vitality - 10) * 6, 3)
+    player_modifiers[player.index].character_health_bonus['rpg'] = math.round((rpg_t[player.index].vitality - 10) * 6, 3)
 
     P.update_player_modifiers(player)
 end
@@ -711,6 +681,8 @@ Gui.on_click(
         end
     end
 )
+
+Gui.allow_player_to_toggle(draw_main_frame_name)
 
 Gui.on_click(
     settings_button_name,

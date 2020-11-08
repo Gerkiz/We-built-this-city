@@ -1,18 +1,18 @@
 local Gui = require 'utils.gui'
 local Color = require 'utils.color_presets'
-local Event = require 'utils.event'
 
 local Public = {}
 
 local pages = {
     require 'utils.debug.public_global_view',
-    require 'utils.debug.global_view'
+    require 'utils.debug.global_view',
+    require 'utils.debug.custom_data_view'
 }
 
 if _DEBUG then
     pages[#pages + 1] = require 'utils.debug.gui_data_view'
-    pages[#pages + 1] = require 'utils.debug.package_view'
     pages[#pages + 1] = require 'utils.debug._g_view'
+    pages[#pages + 1] = require 'utils.debug.package_view'
     pages[#pages + 1] = require 'utils.debug.event_view'
 end
 
