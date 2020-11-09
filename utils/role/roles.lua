@@ -85,9 +85,7 @@ Public.standard_roles {
     ['gerkiz'] = 'Owner',
     ['cko6o4ku'] = 'Moderator',
     ['userguide'] = 'Moderator',
-    ['panterh3art'] = 'Moderator',
-    ['mewmew'] = 'Moderator',
-    ['redlabel'] = 'Moderator'
+    ['panterh3art'] = 'Moderator'
 }
 
 return Public

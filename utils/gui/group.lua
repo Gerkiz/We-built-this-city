@@ -1,6 +1,6 @@
 -- this script adds a group button to create groups for your players --
 
-local Gui = require 'utils.gui.main'
+local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 

@@ -3,7 +3,7 @@
 
 local Global = require 'utils.global'
 local Event = require 'utils.event'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
 local math_floor = math.floor
@@ -428,23 +428,13 @@ local function auto_stash(player, event)
     end
 end
 
+Gui.toolbar_button('item/wooden-chest', )
+
 local function create_gui_button(player)
     if mod(player).auto_stash then
         return
     end
-    local tooltip
-    if this.insert_into_furnace and this.insert_into_wagon then
-        tooltip =
-            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
-    elseif this.insert_into_furnace then
-        tooltip =
-            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.'
-    elseif this.insert_into_wagon then
-        tooltip =
-            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
-    else
-        tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.'
-    end
+
     local b =
         mod(player).add(
         {

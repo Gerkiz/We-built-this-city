@@ -133,7 +133,7 @@ Gui.my_longer_warning_style = {
     bottom_padding = 0
 }
 
-Gui.fetch_data =
+Gui.store_meta =
     setmetatable(
     Gui._old,
     {
@@ -155,9 +155,9 @@ Gui.fetch_data =
     }
 )
 
-Gui.fetch_data.__index = Gui._mt
+Gui.store_meta.__index = Gui._mt
 
-global.gui = Gui.fetch_data
+global.gui = Gui.store_meta
 
 function Gui.get_table(key)
     if key == 'tabs' then
@@ -165,7 +165,7 @@ function Gui.get_table(key)
     elseif key == 'icons' then
         return icons
     end
-    return Gui.fetch_data
+    return Gui.store_meta
 end
 
 function Gui:_load_parts(parts)

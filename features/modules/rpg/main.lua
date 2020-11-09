@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local AntiGrief = require 'features.functions.antigrief'
 local Color = require 'utils.color_presets'
@@ -499,8 +499,7 @@ local function on_entity_damaged(event)
     event.cause.health = event.cause.health + Functions.get_life_on_hit(event.cause.player)
 
     --Calculate modified damage.
-    local damage =
-        event.original_damage_amount + event.original_damage_amount * Functions.get_melee_modifier(event.cause.player)
+    local damage = event.original_damage_amount + event.original_damage_amount * Functions.get_melee_modifier(event.cause.player)
     if event.entity.prototype.resistances then
         if event.entity.prototype.resistances.physical then
             damage = damage - event.entity.prototype.resistances.physical.decrease
@@ -876,9 +875,7 @@ local function floaty_hearts(entity, c)
             (position.x + 0.4) + (b * -1 + math.random(0, b * 20) * 0.1),
             position.y + (b * -1 + math.random(0, b * 20) * 0.1)
         }
-        entity.surface.create_entity(
-            {name = 'flying-text', position = p, text = '♥', color = {math.random(150, 255), 0, 255}}
-        )
+        entity.surface.create_entity({name = 'flying-text', position = p, text = '♥', color = {math.random(150, 255), 0, 255}})
     end
 end
 
@@ -1016,10 +1013,7 @@ local function on_player_used_capsule(event)
         p(({'rpg_main.suicidal_comfylatron', object_name}), Color.success)
         rpg_t[player.index].mana = rpg_t[player.index].mana - object.mana_cost
     elseif object.obj_to_create == 'warp-gate' then
-        player.teleport(
-            surface.find_non_colliding_position('character', game.forces.player.get_spawn_position(surface), 3, 0, 5),
-            surface
-        )
+        player.teleport(surface.find_non_colliding_position('character', game.forces.player.get_spawn_position(surface), 3, 0, 5), surface)
         rpg_t[player.index].mana = 0
         player.character.health = 10
         player.character.surface.create_entity({name = 'water-splash', position = player.position})

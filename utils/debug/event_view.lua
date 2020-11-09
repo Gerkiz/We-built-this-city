@@ -1,6 +1,6 @@
 local Event = require 'utils.event'
 local table = require 'utils.table'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Model = require 'utils.debug.model'
 
 local format = string.format

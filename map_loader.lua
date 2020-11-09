@@ -6,7 +6,7 @@
 --require "map_gen.custom_maps.main"
 require 'map_gen.multiplayer_spawn.main'
 -- require 'map_gen.towny.main'
-require 'features.modules.oarc_enemies.main'
+-- require 'features.modules.oarc_enemies.main'
 --require "map_gen.scrapyard.main"
 -- require "map_gen.dangOreus"
 -- require "map_gen.heximaze"

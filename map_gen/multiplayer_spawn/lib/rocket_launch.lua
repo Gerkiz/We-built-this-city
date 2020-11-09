@@ -5,7 +5,7 @@
 
 local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
 local Config = require 'map_gen.multiplayer_spawn.config'
-local Tabs = require 'utils.gui.main'
+local Tabs = require 'utils.gui.core'
 
 local Public = {}
 --------------------------------------------------------------------------------
@@ -38,8 +38,7 @@ function Public.RocketLaunchEvent(event)
         -- First sat launch for this force.
         global.satellite_sent[force.name] = global.satellite_sent[force.name] + 1
         Utils.SendBroadcastMsg(
-            'Team ' ..
-                event.rocket.force.name .. ' launched another rocket. Total ' .. global.satellite_sent[force.name]
+            'Team ' .. event.rocket.force.name .. ' launched another rocket. Total ' .. global.satellite_sent[force.name]
         )
     else
         -- game.set_game_state{game_finished=true, player_won=true, can_continue=true}

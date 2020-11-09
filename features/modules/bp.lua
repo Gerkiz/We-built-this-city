@@ -1,6 +1,6 @@
 local m_gui = require 'mod-gui'
 local Event = require 'utils.event'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
 local mod = m_gui.get_button_flow
 

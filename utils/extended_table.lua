@@ -44,8 +44,11 @@ function Public.filter(tbl, func, ...)
     local insert = #tbl > 0
     for k, v in pairs(tbl) do
         if func(v, k, ...) then
-            if insert then table.insert(newtbl, v)
-            else newtbl[k] = v end
+            if insert then
+                table.insert(newtbl, v)
+            else
+                newtbl[k] = v
+            end
         end
     end
     return newtbl
@@ -115,9 +118,10 @@ end
 -- @treturn array a new array that represents the flattened contents of the given array
 function Public.flatten(tbl, level)
     local flattened = {}
-    table.each(tbl,
+    table.each(
+        tbl,
         function(value)
-            if type(value) == "table" and #value > 0 then
+            if type(value) == 'table' and #value > 0 then
                 if level then
                     if level > 0 then
                         table.merge(flattened, table.flatten(value, level - 1), true)
@@ -147,7 +151,9 @@ end
 -- @treturn ?|nil|Mixed the last element or nil
 function Public.last(tbl)
     local size = #tbl
-    if size == 0 then return nil end
+    if size == 0 then
+        return nil
+    end
     return tbl[size]
 end
 
@@ -155,7 +161,9 @@ end
 -- @tparam {number,...} tbl the array with only numeric values
 -- @treturn ?|nil|number the minimum value
 function Public.min(tbl)
-    if #tbl == 0 then return nil end
+    if #tbl == 0 then
+        return nil
+    end
 
     local min = tbl[1]
     for _, num in pairs(tbl) do
@@ -168,7 +176,9 @@ end
 -- @tparam {number,...} tbl the array with only numeric values
 -- @treturn ?|nil|number the maximum value
 function Public.max(tbl)
-    if #tbl == 0 then return nil end
+    if #tbl == 0 then
+        return nil
+    end
 
     local max = tbl[1]
     for _, num in pairs(tbl) do
@@ -216,7 +226,6 @@ function Public.merge(tblA, tblB, array_merge)
         for _, v in pairs(tblB) do
             table.insert(tblA, v)
         end
-
     else
         for k, v in pairs(tblB) do
             tblA[k] = v
@@ -234,7 +243,7 @@ end
 function Public.deepcopy(object)
     local lookup_table = {}
     local function _copy(this_object)
-        if type(this_object) ~= "table" then
+        if type(this_object) ~= 'table' then
             return this_object
         elseif this_object.__self then
             return this_object
@@ -257,7 +266,9 @@ end
 -- @tparam[opt] boolean as_string whether to try and parse the values as strings, or leave them as their existing type
 -- @treturn array an array with a copy of all the values in the table
 function Public.values(tbl, sorted, as_string)
-    if not tbl then return {} end
+    if not tbl then
+        return {}
+    end
     local valueset = {}
     local n = 0
     if as_string then --checking as_string /before/ looping is faster
@@ -272,7 +283,8 @@ function Public.values(tbl, sorted, as_string)
         end
     end
     if sorted then
-        table.sort(valueset,
+        table.sort(
+            valueset,
             function(x, y) --sorts tables with mixed index types.
                 local tx = type(x) == 'number'
                 local ty = type(y) == 'number'
@@ -295,7 +307,9 @@ end
 -- @tparam[opt] boolean as_string whether to try and parse the keys as strings, or leave them as their existing type
 -- @treturn array an array with a copy of all the keys in the table
 function Public.keys(tbl, sorted, as_string)
-    if not tbl then return {} end
+    if not tbl then
+        return {}
+    end
     local keyset = {}
     local n = 0
     if as_string then --checking as_string /before/ looping is faster
@@ -310,7 +324,8 @@ function Public.keys(tbl, sorted, as_string)
         end
     end
     if sorted then
-        table.sort(keyset,
+        table.sort(
+            keyset,
             function(x, y) --sorts tables with mixed index types.
                 local tx = type(x) == 'number'
                 local ty = type(y) == 'number'
@@ -353,7 +368,9 @@ end
 -- @usage local a = {1, 2, 3, 4, 5}
 -- table.count_keys(a, function(v, k) return k % 2 == 1 end) -- produces: 3, 5
 function Public.count_keys(tbl, func, ...)
-    if type(tbl) ~= 'table' then return 0, 0 end
+    if type(tbl) ~= 'table' then
+        return 0, 0
+    end
     local count, total = 0, 0
     for k, v in pairs(tbl) do
         total = total + 1
@@ -397,7 +414,7 @@ table.size = table_size
 function Public.arr_to_bool(tbl)
     local newtbl = {}
     for _, v in pairs(tbl) do
-        if type(v) == "string" or type(v) == "number" then
+        if type(v) == 'string' or type(v) == 'number' then
             newtbl[v] = true
         end
     end
@@ -409,11 +426,11 @@ end
 -- Public.key_to_str(a) -- return '["key"]'
 -- @param k key to convert
 -- @treturn string the converted key
-function Public.key_to_str (k)
-    if "string" == type(k) and string.match(k,"^[_%player][_%player%d]*$") then
+function Public.key_to_str(k)
+    if 'string' == type(k) and string.match(k, '^[_%player][_%player%d]*$') then
         return k
     else
-        return "["..Public.val_to_str(k).."]"
+        return '[' .. Public.val_to_str(k) .. ']'
     end
 end
 
@@ -425,16 +442,15 @@ end
 function Public.to_string(tbl)
     local result, done = {}, {}
     for k, v in ipairs(tbl) do
-      table.insert(result,Public.val_to_str(v))
-      done[k] = true
+        table.insert(result, Public.val_to_str(v))
+        done[k] = true
     end
     for k, v in pairs(tbl) do
-      if not done[k] then
-        table.insert(result,
-          Public.key_to_str(k).."="..Public.val_to_str(v))
-      end
+        if not done[k] then
+            table.insert(result, Public.key_to_str(k) .. '=' .. Public.val_to_str(v))
+        end
     end
-    return "{"..table.concat(result,",") .."}"
+    return '{' .. table.concat(result, ',') .. '}'
 end
 
 --- Simmilar to table.to_string but converts a lua table to a json one
@@ -444,49 +460,65 @@ end
 -- @treturn string the table in a json format
 function Public.json(lua_table)
     local result, done, only_indexs = {}, {}, true
-    for key,value in ipairs(lua_table) do
+    for key, value in ipairs(lua_table) do
         done[key] = true
-        if type(value) == 'table' then table.insert(result,Public.json(value,true))
-        elseif type(value) == 'string' then table.insert(result,'"'..value..'"')
-        elseif type(value) == 'number' then table.insert(result,value)
-        elseif type(value) == 'boolean' then table.insert(result,tostring(value))
-        else table.insert(result,'null') 
+        if type(value) == 'table' then
+            table.insert(result, Public.json(value, true))
+        elseif type(value) == 'string' then
+            table.insert(result, '"' .. value .. '"')
+        elseif type(value) == 'number' then
+            table.insert(result, value)
+        elseif type(value) == 'boolean' then
+            table.insert(result, tostring(value))
+        else
+            table.insert(result, 'null')
         end
     end
-    for key,value in pairs(lua_table) do
-      if not done[key] then
-        only_indexs = false
-        if type(value) == 'table' then table.insert(result,'"'..key..'":'..Public.json(value,true))
-        elseif type(value) == 'string' then table.insert(result,'"'..key..'":"'..value..'"')
-        elseif type(value) == 'number' then table.insert(result,'"'..key..'":'..value)
-        elseif type(value) == 'boolean' then table.insert(result,'"'..key..'":'..tostring(value))
-        else table.insert(result,'"'..key..'":null') 
+    for key, value in pairs(lua_table) do
+        if not done[key] then
+            only_indexs = false
+            if type(value) == 'table' then
+                table.insert(result, '"' .. key .. '":' .. Public.json(value, true))
+            elseif type(value) == 'string' then
+                table.insert(result, '"' .. key .. '":"' .. value .. '"')
+            elseif type(value) == 'number' then
+                table.insert(result, '"' .. key .. '":' .. value)
+            elseif type(value) == 'boolean' then
+                table.insert(result, '"' .. key .. '":' .. tostring(value))
+            else
+                table.insert(result, '"' .. key .. '":null')
+            end
         end
-      end
     end
-    if only_indexs then return "["..table.concat(result,",").."]"
-    else return "{"..table.concat(result,",").."}" 
+    if only_indexs then
+        return '[' .. table.concat(result, ',') .. ']'
+    else
+        return '{' .. table.concat(result, ',') .. '}'
     end
 end
 
 --- Returns the closest match to a key
 -- @usage tbl = {foo=1,bar=2}
--- table.autokey(tbl,'f') -- return 1 
-function Public.autokey(tbl,str)
+-- table.autokey(tbl,'f') -- return 1
+function Public.autokey(tbl, str)
     local _return = {}
-    for key,value in pairs(tbl) do
-        if string.match(string.lower(key),string.lower(str)) then table.insert(_return,value) end
+    for key, value in pairs(tbl) do
+        if string.match(string.lower(key), string.lower(str)) then
+            table.insert(_return, value)
+        end
     end
     return _return[1] or false
 end
 
 function Public.sizeof(tbl)
-  if not tbl then return 0 end
-  local len = 0
-  for k, v in pairs(tbl) do
-    len = len + 1
-  end
-  return len
+    if not tbl then
+        return 0
+    end
+    local len = 0
+    for k, v in pairs(tbl) do
+        len = len + 1
+    end
+    return len
 end
 
 return Public

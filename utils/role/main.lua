@@ -324,8 +324,7 @@ function Public._group:add_role(obj)
         return
     end
     if
-        not Server.is_type(obj.name, 'string') or not Server.is_type(obj.short_hand, 'string') or
-            not Server.is_type(obj.tag, 'string') or
+        not Server.is_type(obj.name, 'string') or not Server.is_type(obj.short_hand, 'string') or not Server.is_type(obj.tag, 'string') or
             not Server.is_type(obj.colour, 'table')
      then
         return
@@ -335,10 +334,7 @@ function Public._group:add_role(obj)
     obj.group = self
     obj.allow = obj.allow or {}
     obj.disallow = obj.disallow or {}
-    obj.power =
-        obj.power and self.highest and self.highest.power + obj.power or obj.power or
-        self.lowest and self.lowest.power + 1 or
-        nil
+    obj.power = obj.power and self.highest and self.highest.power + obj.power or obj.power or self.lowest and self.lowest.power + 1 or nil
     setmetatable(obj.allow, {__index = self.allow})
     setmetatable(obj.disallow, {__index = self.disallow})
     if obj.power then

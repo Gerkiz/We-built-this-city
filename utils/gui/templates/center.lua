@@ -1,5 +1,5 @@
 local Event = require 'utils.event'
-local Core = require 'utils.gui.main'
+local Core = require 'utils.gui'
 local Color = require 'utils.color_presets'
 local m_gui = require 'mod-gui'
 
@@ -24,14 +24,16 @@ function center.add(obj)
     setmetatable(obj, {__index = center._center})
     obj.tabs = {}
     obj._tabs = {}
-    Core.fetch_data('center', obj.name, obj)
+    Core.store_meta('center', obj.name, obj)
     Core.toolbar.add(obj.name, obj.caption, obj.tooltip, obj.open)
     return obj
 end
 
 -- used to get the center frame of the player, used mainly in script
 function center.get_flow(player)
-    return player.gui.center.wbtc_center or player.gui.center.add {name = 'wbtc_center', type = 'flow'}
+    local gui = player.gui
+    local c = gui.center
+    return c.wbtc_center or c.add {name = 'wbtc_center', type = 'flow'}
 end
 
 -- used to clear the center frame of the player, used mainly in script
@@ -42,32 +44,32 @@ end
 -- used on the button press when the toolbar button is press, can be overriden
 function center._center.open(event)
     local player = game.players[event.player_index]
-    local _center = Core.fetch_data('center')[event.element.name]
-    local center_flow = center.get_flow(player)
-    if center_flow[_center.name] then
+    local frame = Core.store_meta('center')[event.element.name]
+    local parent = center.get_flow(player)
+    if parent[frame.name] then
         center.clear(player)
         return
     end
-    local center_frame =
-        center_flow.add {
-        name = _center.name,
+    local child =
+        parent.add {
+        name = frame.name,
         type = 'frame',
-        caption = _center.caption,
+        caption = frame.caption,
         direction = 'vertical',
         style = m_gui.frame_style
     }
-    if is_type(center_frame.caption, 'string') and player.gui.is_valid_sprite_path(center_frame.caption) then
-        center_frame.caption = ''
+    if is_type(child.caption, 'string') and player.gui.is_valid_sprite_path(child.caption) then
+        child.caption = ''
     end
-    if is_type(_center.draw, 'function') then
-        local success, err = pcall(_center.draw, _center, center_frame)
+    if is_type(frame.draw, 'function') then
+        local success, err = pcall(frame.draw, frame, child)
         if not success then
             error(err)
         end
     else
-        error('No Callback on center frame ' .. _center.name)
+        error('No Callback on center frame ' .. frame.name)
     end
-    player.opened = center_frame
+    player.opened = child
 end
 
 -- this is the default draw function if one is not provided
@@ -158,9 +160,9 @@ function center._center:add_tab(name, caption, tooltip, callback)
             local tab = event.element.parent.parent.parent.parent.tab.tab_scroll.tab_scroll_flow
             tab.clear()
             local frame_name = tab.parent.parent.parent.name
-            local _center = Core.fetch_data('center')[frame_name]
-            local _tab = _center._tabs[event.element.name]
-            if is_type(_tab, 'function') then
+            local _center = Core.store_meta('center')[frame_name]
+            local handler = _center._tabs[event.element.name]
+            if is_type(handler, 'function') then
                 for _, button in pairs(event.element.parent.children) do
                     if button.name == event.element.name then
                         button.style.font_color = Color.red
@@ -168,7 +170,7 @@ function center._center:add_tab(name, caption, tooltip, callback)
                         button.style.font_color = Color.white
                     end
                 end
-                local success, err = pcall(_tab, tab)
+                local success, err = pcall(handler, tab)
                 if not success then
                     error(err)
                 end

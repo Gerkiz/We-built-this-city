@@ -1,6 +1,6 @@
 -- config tab --
 
-local Gui = require 'utils.gui.main'
+local Gui = require 'utils.gui.core'
 
 local functions = {
     ['panel_spectator_switch'] = function(event)
@@ -111,13 +111,7 @@ local build_config_gui = (function(player, frame)
         if global.auto_hotbar_enabled[player.index] then
             switch_state = 'left'
         end
-        add_switch(
-            frame,
-            switch_state,
-            'panel_auto_hotbar_switch',
-            'AutoHotbar',
-            'Automatically fills your hotbar with placeable items.'
-        )
+        add_switch(frame, switch_state, 'panel_auto_hotbar_switch', 'AutoHotbar', 'Automatically fills your hotbar with placeable items.')
         line_elements[#line_elements + 1] = frame.add({type = 'line'})
     end
 

@@ -1,10 +1,10 @@
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Surface = require 'utils.surface'
-local Tabs = require 'utils.gui.main'
+local Tabs = require 'utils.gui.core'
 local Color = require 'utils.color_presets'
 local Session = require 'utils.datastore.session_data'
 local Roles = require 'utils.role.table'
@@ -61,6 +61,7 @@ local remove_warp_button_name = Gui.uid_name()
 local close_main_frame_name = Gui.uid_name()
 local cancel_button_name = Gui.uid_name()
 local show_only_player_warps = Gui.uid_name()
+local warp_icon_name = Gui.uid_name()
 
 local warp_table = {}
 local player_table = {}
@@ -97,88 +98,18 @@ local function validate_player(player)
     return true
 end
 
-local go_to_warp_name =
-    Gui.new_frame {
-    type = 'sprite-button',
-    name = '123',
-    sprite = 'utility/export_slot',
-    tooltip = 'Warps you over to: '
-}:style(Gui.Styles[20]):on_click(
-    function(_, frame, event)
-        local player = game.get_player(event.player_index)
-        local element = event.element
-        if not element then
-            return
-        end
-        local parent = element.parent
-        if not parent then
-            return
-        end
-
-        if not validate_player(player) then
-            return
-        end
-
-        local p = player_table[player.index]
-
-        if not p then
-            return
-        end
-
-        local warp
-
-        local position
-
-        if not Roles.get_role(player):allowed('always-warp') then
-            if Public.is_spam(p, player) then
-                return
-            end
-
-            warp = warp_table[parent.name]
-
-            position = player.position
-
-            local area = {
-                left_top = {x = position.x - 5, y = position.y - 5},
-                right_bottom = {x = position.x + 5, y = position.y + 5}
-            }
-
-            if not Public.contains_positions(area) then
-                player.print('You are not standing on a warp platform.', Color.warning)
-                return
-            end
-
-            if (warp.position.x - position.x) ^ 2 + (warp.position.y - position.y) ^ 2 < 1024 then
-                player.print('Destination is source warp: ' .. parent.name, Color.fail)
-                return
-            end
-        else
-            warp = warp_table[parent.name]
-        end
-
-        if player.vehicle then
-            player.vehicle.set_driver(nil)
-        end
-        if player.vehicle then
-            player.vehicle.set_passenger(nil)
-        end
-        if player.vehicle then
-            return
-        end
-
-        player.teleport(warp.surface.find_non_colliding_position('character', warp.position, 32, 1), warp.surface)
-        player.print('Warped you over to: ' .. parent.name, Color.success)
-        player.play_sound {path = 'utility/armor_insert', volume_modifier = 1}
-        p.spam = game.tick + 900
-
-        Public.clear_player_table(player)
-
-        Public.refresh_gui_player(player)
-
-        Public.close_gui_player(frame[main_frame_name])
-        return
+local function get_player_data(player)
+    if not player_table[player.index] then
+        player_table[player.index] = {
+            creating = false,
+            removing = false,
+            frame = nil,
+            spam = 100,
+            only_my_warps = false
+        }
     end
-)
+    return player_table[player.index]
+end
 
 function Public.inside(pos, area)
     local lt = area.left_top
@@ -233,7 +164,7 @@ function Public.remove_warp_point(name)
     warp_table[name] = nil
 end
 
-function Public.make_warp_point(player, position, surface, force, name, shared)
+function Public.make_warp_point(player, position, surface, icon, force, name, shared)
     local warp = warp_table[name]
     if warp then
         return
@@ -273,19 +204,22 @@ function Public.make_warp_point(player, position, surface, force, name, shared)
         entity.minable = false
         entity.rotatable = false
     end
+
     local tag =
         force.add_chart_tag(
         surface,
         {
             position = {offset.x + 0.5, offset.y + 0.5},
             text = 'Warp: ' .. name,
-            icon = {type = 'item', name = warp_item}
+            icon = {type = icon.type, name = icon.name}
         }
     )
     warp_table[name] = {
         tag = tag,
         position = tag.position,
         surface = surface,
+        icon = icon,
+        name = name,
         old_tile = old_tile,
         created_by = created_by,
         shared = _shared
@@ -312,7 +246,16 @@ function Public.make_tag(name, pos, shared)
             icon = {type = 'item', name = warp_item}
         }
     )
-    warp_table[name] = {tag = v, position = pos, surface = surface, created_by = created_by, shared = shared}
+
+    warp_table[name] = {
+        tag = v,
+        position = pos,
+        name = name,
+        icon = {type = 'item', name = warp_item},
+        surface = surface,
+        created_by = created_by,
+        shared = shared
+    }
     return data
 end
 
@@ -339,11 +282,12 @@ function Public.create_warp_button(player, raise_event)
     }
 end
 
-local function draw_create_warp(parent, player, p)
+local function draw_create_warp(parent, player)
     local position = player.position
     local posx = position.x
     local posy = position.y
     local dist2 = 100 ^ 2
+    local p = get_player_data(player)
     if not Roles.get_role(player):allowed('always-warp') then
         for name, warp in pairs(warp_table) do
             local pos = warp.position
@@ -359,8 +303,20 @@ local function draw_create_warp(parent, player, p)
         parent.add {
         type = 'table',
         name = 'wp_table',
-        column_count = 2
+        column_count = 4
     }
+
+    local elem =
+        x.add {
+        name = warp_icon_name,
+        type = 'choose-elem-button',
+        elem_type = 'signal',
+        signal = {type = 'item', name = warp_item},
+        tooltip = 'Choose the tag-icon'
+    }
+    local elem_style = elem.style
+    elem_style.height = 32
+    elem_style.width = 32
 
     local textfield =
         x.add {
@@ -372,7 +328,8 @@ local function draw_create_warp(parent, player, p)
         allow_negative = false
     }
     p.shared = true
-    textfield.style.minimal_width = 10
+    textfield.style.minimal_width = 150
+    textfield.style.maximal_width = 150
     textfield.style.height = 24
     p.frame = {new_name = textfield}
 
@@ -380,7 +337,8 @@ local function draw_create_warp(parent, player, p)
         x.add {
         type = 'flow'
     }
-    Tabs.AddSpacerLine(_flow)
+    _flow.style.horizontal_align = 'right'
+    _flow.style.horizontally_stretchable = true
 
     local checkbox =
         _flow.add {
@@ -389,18 +347,19 @@ local function draw_create_warp(parent, player, p)
         tooltip = 'Do you want to share this warp?',
         state = true
     }
-    checkbox.style.height = 20
-    checkbox.style.width = 20
+    checkbox.style.top_margin = 5
 
     local btn =
         _flow.add {
         type = 'sprite-button',
         name = create_warp_func_name,
         tooltip = 'Creates a new warp point.',
-        sprite = 'utility/downloaded'
+        sprite = 'utility/confirm_slot',
+        style = 'shortcut_bar_button_green'
     }
-    btn.style.height = 20
-    btn.style.width = 20
+    btn.style.height = 23
+    btn.style.width = 23
+    btn.style.padding = -2
 end
 
 local function draw_remove_warp(parent, player)
@@ -412,11 +371,12 @@ local function draw_remove_warp(parent, player)
             type = 'sprite-button',
             name = confirmed_button_name,
             tooltip = 'Do you really want to remove: ' .. parent.name,
+            style = 'shortcut_bar_button_red',
             sprite = 'utility/confirm_slot'
         }
-        btn.style.height = 20
-        btn.style.width = 20
-        btn.focus()
+        btn.style.height = 23
+        btn.style.width = 23
+        btn.style.padding = -2
     else
         local btn =
             parent.add {
@@ -424,22 +384,27 @@ local function draw_remove_warp(parent, player)
             name = confirmed_button_name,
             enabled = 'false',
             tooltip = 'You have not grown accustomed to this technology yet. Ask and admin to /trust ' .. player.name .. '.',
-            sprite = 'utility/set_bar_slot'
+            style = 'shortcut_bar_button_red',
+            sprite = 'utility/confirm_slot'
         }
-        btn.style.height = 20
-        btn.style.width = 20
+        btn.style.height = 23
+        btn.style.width = 23
+        btn.style.padding = -2
     end
     local btn =
         parent.add {
         type = 'sprite-button',
         name = cancel_button_name,
-        tooltip = 'Cancel deletion of : ' .. parent.name,
+        tooltip = 'Cancel deletion of: ' .. parent.name,
+        style = 'shortcut_bar_button_blue',
         sprite = 'utility/reset'
     }
-    btn.style.height = 20
-    btn.style.width = 20
-    btn.focus()
+    btn.style.height = 23
+    btn.style.width = 23
+    btn.style.padding = -2
 end
+
+local warp_icon_button
 
 local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
     if not warp.tag or not warp.tag then
@@ -454,22 +419,25 @@ local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
             )
         end
     end
+    local flow =
+        table.add {
+        type = 'flow',
+        caption = warp.name
+    }
+    warp_icon_button(flow, warp)
+
     table.add {
         type = 'label',
         caption = name,
         style = 'caption_label',
         tooltip = 'Created by: ' .. warp.created_by .. '\nShared: ' .. tostring(warp.shared)
     }
-    --lb.style.minimal_width = 120
 
     local _flows3 = table.add {type = 'flow'}
-    _flows3.style.minimal_width = 125
-    Tabs.AddSpacerLine(_flows3)
+    _flows3.style.horizontal_align = 'right'
+    _flows3.style.horizontally_stretchable = true
 
     local bottom_warp_flow = table.add {type = 'flow', name = name}
-
-    local bottom_warp = go_to_warp_name(bottom_warp_flow)
-    bottom_warp.tooltip = bottom_warp.tooltip .. bottom_warp_flow.name
 
     if bottom_warp_flow.name ~= 'Spawn' then
         local remove_warp_flow =
@@ -477,25 +445,16 @@ local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
             type = 'sprite-button',
             name = remove_warp_button_name,
             tooltip = 'Removes warp: ' .. bottom_warp_flow.name,
+            style = m_gui.button_style,
             sprite = 'utility/trash'
         }
-        remove_warp_flow.style.height = 20
-        remove_warp_flow.style.width = 20
-    else
-        local remove_warp_flow =
-            bottom_warp_flow.add {
-            type = 'sprite-button',
-            name = remove_warp_button_name,
-            enabled = 'false',
-            tooltip = "Default spawn can't be removed.",
-            sprite = 'utility/trash'
-        }
-        remove_warp_flow.style.height = 20
-        remove_warp_flow.style.width = 20
+        remove_warp_flow.style.padding = -2
+        remove_warp_flow.style.height = 23
+        remove_warp_flow.style.width = 23
     end
 
     if p.creating == true then
-        draw_create_warp(sub_table, player, p)
+        draw_create_warp(sub_table, player)
         p.creating = false
     end
 
@@ -509,15 +468,14 @@ end
 
 local function draw_main_frame(player, left, are_you_sure)
     local e = are_you_sure
-    local p = player_table[player.index]
+    local p = get_player_data(player)
     local trusted = Session.get_trusted_table()
 
     local frame = Gui.add_main_frame(left, main_frame_name, 'Warps', 'Warp to places!')
 
-    local tbl = frame.add {type = 'table', column_count = 1, name = '_1'}
-    tbl.style.vertical_spacing = 0
+    local tbl = frame.add {type = 'table', column_count = 1}
 
-    local _flows1 = tbl.add {type = 'flow', name = '_2'}
+    local _flows1 = tbl.add {type = 'flow'}
     --_flows1.style.minimal_width = 150
     _flows1.style.horizontally_stretchable = true
 
@@ -525,19 +483,20 @@ local function draw_main_frame(player, left, are_you_sure)
         _flows1.add {
         type = 'scroll-pane',
         direction = 'vertical',
-        vertical_scroll_policy = 'always',
         horizontal_scroll_policy = 'never',
-        name = '_3'
+        vertical_scroll_policy = 'auto',
+        style = 'scroll_pane_under_subheader'
     }
-    warp_list.style.maximal_height = 200
-    warp_list.style.horizontally_stretchable = true
+    local scroll_style = warp_list.style
+    scroll_style.padding = {1, 3}
+    scroll_style.maximal_height = 200
     warp_list.style.minimal_height = 200
-    warp_list.style.right_padding = 0
+    scroll_style.horizontally_stretchable = true
 
-    local table = warp_list.add {type = 'table', column_count = 3, name = '_4'}
-    --table.style.vertical_spacing = 0
+    local table = warp_list.add {type = 'table', column_count = 4}
 
-    local sub_table = warp_list.add {type = 'table', column_count = 3, name = '_5'}
+    local sub_table = warp_list.add {type = 'table', column_count = 4}
+    sub_table.style.cell_padding = 4
 
     for name, warp in pairs(warp_table) do
         if p.only_my_warps then
@@ -609,7 +568,7 @@ function Public.toggle(player)
     end
 end
 
-function Public.refresh_gui_player(player, are_you_sure)
+function Public.refresh_gui_player(player, are_you_sure, close)
     local e = are_you_sure
     local gui = player.gui
     local left = gui.left
@@ -621,16 +580,14 @@ function Public.refresh_gui_player(player, are_you_sure)
 
     if main_frame then
         Public.close_gui_player(main_frame)
-        draw_main_frame(player, left, e)
+        if not close then
+            draw_main_frame(player, left, e)
+        end
     end
 end
 
 function Public.close_gui_player(frame)
-    if not frame then
-        return
-    end
-
-    if frame then
+    if frame and frame.valid then
         frame.destroy()
     end
 end
@@ -647,7 +604,7 @@ function Public.is_spam(p, player)
 end
 
 function Public.clear_player_table(player)
-    local p = player_table[player.index]
+    local p = get_player_data(player)
     if p.removing == true then
         p.removing = false
     end
@@ -686,15 +643,7 @@ local function on_player_joined_game(event)
         return
     end
 
-    if not player_table[player.index] then
-        player_table[player.index] = {
-            creating = false,
-            removing = false,
-            frame = nil,
-            spam = 100,
-            only_my_warps = false
-        }
-    end
+    get_player_data(player)
 
     Public.create_warp_button(player, false)
 end
@@ -767,7 +716,7 @@ Gui.on_click(
 
         local are_you_sure = event.element.parent.name
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         if not p then
             return
@@ -789,7 +738,7 @@ Gui.on_click(
             return
         end
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         if not p then
             return
@@ -808,7 +757,7 @@ Gui.on_click(
             return
         end
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         if not p then
             return
@@ -842,7 +791,7 @@ Gui.on_click(
             return
         end
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         if not p then
             return
@@ -870,7 +819,7 @@ Gui.on_click(
             return
         end
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         Public.clear_player_table(player)
 
@@ -879,6 +828,87 @@ Gui.on_click(
         end
 
         Public.refresh_gui_player(player)
+        return
+    end
+)
+
+warp_icon_button =
+    Gui.new_frame(
+    function(event_trigger, parent, warp)
+        local warp_position = warp.position
+        -- Draw the element
+        local sprite = warp.icon.type .. '/' .. warp.icon.name
+        if warp.icon.type == 'virtual' then
+            sprite = 'virtual-signal/' .. warp.icon.name
+        end
+
+        return parent.add {
+            name = event_trigger,
+            type = 'sprite-button',
+            sprite = sprite,
+            tooltip = 'Go to: x:' .. warp_position.x .. ' y: ' .. warp_position.y,
+            style = 'slot_button'
+        }
+    end
+):style(Gui.Styles[32]):on_click(
+    function(player, element, _)
+        local p = get_player_data(player)
+
+        if not p then
+            return
+        end
+
+        element = element.parent.caption
+
+        local warp
+
+        local position
+
+        if not Roles.get_role(player):allowed('always-warp') then
+            if Public.is_spam(p, player) then
+                return
+            end
+
+            warp = warp_table[element]
+
+            position = player.position
+
+            local area = {
+                left_top = {x = position.x - 5, y = position.y - 5},
+                right_bottom = {x = position.x + 5, y = position.y + 5}
+            }
+
+            if not Public.contains_positions(area) then
+                player.print('You are not standing on a warp platform.', Color.warning)
+                return
+            end
+
+            if (warp.position.x - position.x) ^ 2 + (warp.position.y - position.y) ^ 2 < 1024 then
+                player.print('Destination is source warp: ' .. element, Color.fail)
+                return
+            end
+        else
+            warp = warp_table[element]
+        end
+
+        if player.vehicle then
+            player.vehicle.set_driver(nil)
+        end
+        if player.vehicle then
+            player.vehicle.set_passenger(nil)
+        end
+        if player.vehicle then
+            return
+        end
+
+        player.teleport(warp.surface.find_non_colliding_position('character', warp.position, 32, 1), warp.surface)
+        player.print('Warped you over to: ' .. element, Color.success)
+        player.play_sound {path = 'utility/armor_insert', volume_modifier = 1}
+        p.spam = game.tick + 900
+
+        Public.clear_player_table(player)
+
+        Public.refresh_gui_player(player, nil, true)
         return
     end
 )
@@ -892,36 +922,76 @@ Gui.on_click(
             return
         end
 
-        local p = player_table[player.index]
+        local p = get_player_data(player)
 
         if not Roles.get_role(player):allowed('always-warp') then
-            Public.is_spam(p, player)
+            local success = Public.is_spam(p, player)
+            if not success then
+                return
+            end
+
+            local position = player.position
+
+            local area = {
+                left_top = {x = position.x - 100, y = position.y - 100},
+                right_bottom = {x = position.x + 100, y = position.y + 100}
+            }
+
+            if Public.contains_positions(area) then
+                player.print('You are too close to another warp!', Color.warning)
+                return
+            end
         end
 
         local shared = p.shared
+        local icon = p.icon
+        if not icon then
+            icon = {type = 'item', name = warp_item}
+        end
 
         local new = p.frame.new_name.text
-        if new ~= '' and new ~= 'Spawn' and new ~= 'Name:' and new ~= 'Warp name:' then
-            if string.len(new) > 30 then
-                player.print('Warp name is too long!', Color.fail)
-                return
-            end
-            local position = player.position
-            if warp_table[new] then
-                player.print('Warp name already exists!', Color.fail)
-                return
-            end
-            p.spam = game.tick + 900
-            Public.make_warp_point(player, position, player.surface, player.force, new, shared)
-            if p.shared == true then
-                game.print(player.name .. ' created warp: ' .. new, Color.success)
-            elseif p.shared == false then
-                player.print('Created warp: ' .. new, Color.success)
-            end
-            Public.refresh_gui()
-            p.frame = nil
+        if new == '' or new == 'Spawn' or new == 'Name:' or new == 'Warp name:' then
+            return player.print('Warp name is not valid.', Color.fail)
         end
+        if string.len(new) > 30 then
+            player.print('Warp name is too long!', Color.fail)
+            return
+        end
+        local position = player.position
+        if warp_table[new] then
+            player.print('Warp name already exists!', Color.fail)
+            return
+        end
+        p.spam = game.tick + 900
+        Public.make_warp_point(player, position, player.surface, icon, player.force, new, shared)
+        if p.shared == true then
+            game.print(player.name .. ' created warp: ' .. new, Color.success)
+        elseif p.shared == false then
+            player.print('Created warp: ' .. new, Color.success)
+        end
+        Public.refresh_gui()
+        Public.clear_player_table(player)
         return
+    end
+)
+
+Gui.on_elem_changed(
+    warp_icon_name,
+    function(event)
+        local player = game.get_player(event.player_index)
+
+        if not validate_player(player) then
+            return
+        end
+
+        local element = event.element
+
+        if not (element and element.valid) then
+            return
+        end
+
+        local p = get_player_data(player)
+        p.icon = {type = element.elem_value.type, name = element.elem_value.name}
     end
 )
 

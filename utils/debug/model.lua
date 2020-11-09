@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local table = require 'utils.table'
 
 local gui_names = Gui.names

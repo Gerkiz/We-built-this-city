@@ -1,5 +1,5 @@
 local Server = require 'utils.server'
-local GUI = require 'utils.gui'
+local GUI = require 'utils.gui.core'
 local Event = require 'utils.event'
 local Color = require 'utils.color_presets'
 

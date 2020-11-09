@@ -1,6 +1,6 @@
 local Event = require 'utils.event'
 local Global = require 'utils.global'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Token = require 'utils.token'
 local Color = require 'utils.color_presets'
 
@@ -75,8 +75,7 @@ end
 local function alert_to(player, duration, sound, volume)
     local frame_holder = player.gui.left.add({type = 'flow'})
 
-    local frame =
-        frame_holder.add({type = 'frame', name = alert_frame_name, direction = 'vertical', style = 'captionless_frame'})
+    local frame = frame_holder.add({type = 'frame', name = alert_frame_name, direction = 'vertical', style = 'captionless_frame'})
     frame.style.width = 300
 
     local container = frame.add({type = 'flow', name = alert_container_name, direction = 'horizontal'})

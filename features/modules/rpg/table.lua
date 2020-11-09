@@ -2,7 +2,7 @@
 local Global = require 'utils.global'
 local Spells = require 'features.modules.rpg.spells'
 local Event = require 'utils.event'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 
 local this = {
     rpg_extra = {},

@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Color = require 'utils.color_presets'
 local Model = require 'utils.debug.model'
 
@@ -211,8 +211,7 @@ Gui.on_click(
         local selected_player_index = data.selected_player_index
 
         if selected_player_index then
-            input_text_box.text =
-                concat {'global.tokens[', Gui.token, '].data[', selected_player_index, '][', element_index, ']'}
+            input_text_box.text = concat {'global.tokens[', Gui.token, '].data[', selected_player_index, '][', element_index, ']'}
         else
             input_text_box.text = 'missing player'
         end

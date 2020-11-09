@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Model = require 'utils.debug.model'
 local Color = require 'utils.color_presets'
 
@@ -69,8 +69,7 @@ function Public.show(container)
 
     for key, value in pairs(_G) do
         if not ignore[key] then
-            local header =
-                left_panel.add({type = 'flow'}).add {type = 'label', name = header_name, caption = tostring(key)}
+            local header = left_panel.add({type = 'flow'}).add {type = 'label', name = header_name, caption = tostring(key)}
             Gui.set_data(header, value)
         end
     end

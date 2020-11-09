@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Color = require 'utils.color_presets'
 
 local Public = {}

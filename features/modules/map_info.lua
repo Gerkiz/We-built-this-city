@@ -1,6 +1,6 @@
 local Global = require 'utils.global'
-local Gui = require 'utils.gui.main'
-local Tabs = require 'utils.gui.main'
+local Gui = require 'utils.gui.core'
+local Tabs = require 'utils.gui.core'
 local Validate = require 'utils.validate_player'
 
 local map_info = {

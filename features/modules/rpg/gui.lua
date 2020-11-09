@@ -1,6 +1,6 @@
-local Tabs = require 'utils.gui.main'
+local Tabs = require 'utils.gui.core'
 local P = require 'utils.player_modifiers'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow

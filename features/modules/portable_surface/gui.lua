@@ -1,6 +1,6 @@
 local ICT = require 'features.modules.portable_surface.table'
 local Color = require 'utils.color_presets'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow

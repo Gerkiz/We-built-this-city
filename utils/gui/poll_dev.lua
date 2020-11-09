@@ -1,10 +1,10 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 local Server = require 'utils.server'
 local Game = require 'utils.game'
 local session = require 'utils.datastore.session_data'
-local Guis = require 'utils.gui.main'
+local Guis = require 'utils.gui.core'
 
 local insert = table.insert
 
@@ -381,8 +381,7 @@ local function draw_main_frame(player, left)
     right_flow.style.vertical_align = 'bottom'
 
     if trusted[player.name] or player.admin then
-        local create_poll_button =
-            right_flow.add {type = 'button', name = create_poll_button_name, caption = 'Create Poll'}
+        local create_poll_button = right_flow.add {type = 'button', name = create_poll_button_name, caption = 'Create Poll'}
         apply_button_style(create_poll_button)
     else
         local create_poll_button =
@@ -481,11 +480,9 @@ local function redraw_create_poll_content(data)
     update_duration(duration_slider)
 
     grid.add {type = 'flow'}
-    local question_label =
-        grid.add({type = 'flow'}).add {type = 'label', name = create_poll_label_name, caption = 'Question:'}
+    local question_label = grid.add({type = 'flow'}).add {type = 'label', name = create_poll_label_name, caption = 'Question:'}
 
-    local question_textfield =
-        grid.add({type = 'flow'}).add {type = 'textfield', name = create_poll_question_name, text = data.question}
+    local question_textfield = grid.add({type = 'flow'}).add {type = 'textfield', name = create_poll_question_name, text = data.question}
     question_textfield.style.width = 180
 
     Gui.set_data(question_label, question_textfield)
@@ -570,8 +567,7 @@ local function draw_create_poll_frame(player, parent, previous_data)
         confirm_name = create_poll_confirm_name
     end
 
-    local frame =
-        parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical'}
+    local frame = parent.add {type = 'frame', name = create_poll_frame_name, caption = title_text, direction = 'vertical'}
     frame.style.maximal_width = 320
 
     local scroll_pane = frame.add {type = 'scroll-pane', vertical_scroll_policy = 'always'}
@@ -632,8 +628,7 @@ local function draw_create_poll_frame(player, parent, previous_data)
 end
 
 local function show_new_poll(poll_data)
-    local message =
-        table.concat {poll_data.created_by.name, ' has created a new Poll #', poll_data.id, ': ', poll_data.question}
+    local message = table.concat {poll_data.created_by.name, ' has created a new Poll #', poll_data.id, ': ', poll_data.question}
 
     for _, p in pairs(game.connected_players) do
         if block_notify[p.index] then

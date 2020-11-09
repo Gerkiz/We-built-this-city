@@ -1,10 +1,10 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 local Game = require 'utils.game'
 local Server = require 'utils.server'
 local session = require 'utils.datastore.session_data'
-local Tabs = require 'utils.gui.main'
+local Tabs = require 'utils.gui.core'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
 
@@ -584,7 +584,14 @@ local function draw_create_poll_frame(parent, player, previous_data)
 
     local frame, main_frame = Gui.add_main_frame(parent, create_poll_frame_name, title_text)
 
-    local scroll_pane = frame.add {type = 'scroll-pane', vertical_scroll_policy = 'always'}
+    local scroll_pane =
+        frame.add {
+        type = 'scroll-pane',
+        direction = 'vertical',
+        horizontal_scroll_policy = 'never',
+        vertical_scroll_policy = 'auto',
+        style = 'scroll_pane_under_subheader'
+    }
     scroll_pane.style.maximal_height = 250
     scroll_pane.style.maximal_width = 300
 

@@ -1,10 +1,10 @@
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Game = require 'utils.game'
-local Tabs = require 'utils.gui.main'
+local Tabs = require 'utils.gui.core'
 local Session = require 'utils.datastore.session_data'
 
 local default_verb = 'expanded'
@@ -218,8 +218,7 @@ end
 local function draw_main_frame(player)
     local trusted = Session.get_trusted_table()
     local left = player.gui.left
-    local main_frame =
-        left.add {type = 'frame', name = main_frame_name, caption = 'Choose your tag', direction = 'vertical'}
+    local main_frame = left.add {type = 'frame', name = main_frame_name, caption = 'Choose your tag', direction = 'vertical'}
 
     main_frame.style.maximal_height = 500
     main_frame.style.maximal_width = 500

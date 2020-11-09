@@ -1,4 +1,4 @@
-require 'utils.gui.main'
+require 'utils.gui.core'
 require 'features.modules.launch_fish_to_win'
 require 'features.modules.spawn_ent.main'
 require 'features.modules.biters_yield_coins'
@@ -361,8 +361,7 @@ Event.add(
         local research = event.research
         local force_name = research.force.name
         if research.name == 'rocket-silo' then
-            local message =
-                'Note! Rocket-silos can only be built on designated areas! You can find these on the mini-map.'
+            local message = 'Note! Rocket-silos can only be built on designated areas! You can find these on the mini-map.'
             Alert.alert_force(force_name, 10, message, {r = 0, g = 255, b = 171})
 
             game.forces[force_name].play_sound {path = 'utility/new_objective', volume_modifier = 0.75}

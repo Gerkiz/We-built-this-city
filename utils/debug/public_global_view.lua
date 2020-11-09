@@ -1,4 +1,4 @@
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
 local Token = require 'utils.token'
 local Color = require 'utils.color_presets'

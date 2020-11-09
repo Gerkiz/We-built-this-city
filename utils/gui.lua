@@ -7,7 +7,6 @@ local mod = mod_gui.get_button_flow
 local tostring = tostring
 local next = next
 local insert = table.insert
-local top_elements = {}
 local on_visible_handlers = {}
 local on_pre_hidden_handlers = {}
 
@@ -15,16 +14,19 @@ local Gui = {
     uid = 0,
     events = {},
     defines = {},
+    _old = {},
     core_defines = {},
     file_paths = {},
-    _old = {},
     debug_info = {},
+    top_elements = {},
     _mt = {},
     _mt_execute = {
         __call = function(self, parent, ...)
             local element = self.draw(self.name, parent, ...)
             if self.style then
-                self.style(element.style, element, ...)
+                if element.valid then
+                    self.style(element.style, element, ...)
+                end
             end
             return element
         end
@@ -85,13 +87,17 @@ function Gui._mt:raise_custom_event(event)
 
     local success, err = pcall(handler, player, element, event)
     if not success then
-        error('There was an error for GUI element:\n\t' .. err)
+        print('###########################################################')
+        print('There was an error for GUI element (check below):')
+        print('###########################################################')
+        error(serpent.block(err))
     end
     return self
 end
 
-function Gui._mt.allow_player_to_toggle(element_name)
-    top_elements[#top_elements + 1] = element_name
+function Gui._mt:allow_player_to_toggle(handler)
+    Gui.top_elements[self.name] = handler or true
+    return self
 end
 
 function Gui.new_frame(object)
@@ -121,10 +127,17 @@ function Gui.new_frame(object)
     return element
 end
 
+function Gui.new_metaframe()
+    return setmetatable({}, Gui._mt_execute)
+end
+
 function Gui.uid_name()
     local uid = Gui.new_frame()
     return uid.name
 end
+
+Gui.get_top_flow = mod_gui.get_button_flow
+Gui.get_left_flow = mod_gui.get_frame_flow
 
 -- Associates data with the LuaGuiElement. If data is nil then removes the data
 function Gui.set_data(element, value)
@@ -267,8 +280,18 @@ end
 Gui.Styles = {
     [20] = Gui.sprite_style(20, 0),
     [22] = Gui.sprite_style(20, nil, {right_margin = -3}),
+    [23] = Gui.sprite_style(23, nil, {right_margin = -3}),
     [32] = {height = 32, width = 32, left_margin = 1},
-    [40] = {height = 40, width = 40, left_margin = 1}
+    [40] = {height = 40, width = 40, left_margin = 1},
+    ['button'] = {
+        font = 'default-semibold',
+        height = 26,
+        minimal_width = 26,
+        top_padding = 0,
+        bottom_padding = 0,
+        left_padding = 2,
+        right_padding = 2
+    }
 }
 
 function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, max_height)
@@ -279,14 +302,14 @@ function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, 
             name = main_frame_name,
             caption = frame_name,
             tooltip = frame_tooltip,
-            style = 'subheader_frame'
+            style = 'connect_gui_frame'
         }
     )
     main_frame.style.padding = 9
     main_frame.style.use_header_filler = true
     main_frame.style.maximal_height = max_height or 500
     main_frame.style.maximal_width = 500
-    main_frame.style.minimal_width = 320
+    main_frame.style.minimal_width = 250
 
     local frame =
         main_frame.add {
@@ -294,10 +317,11 @@ function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, 
         direction = 'vertical',
         style = 'window_content_frame_packed'
     }
+    frame.style.padding = 4
     frame.style.horizontally_stretchable = true
     frame.style.maximal_height = max_height or 500
     frame.style.maximal_width = 500
-    frame.style.minimal_width = 320
+    frame.style.minimal_width = 250
 
     return frame, main_frame
 end
@@ -433,6 +457,19 @@ Gui._mt.on_text_changed = event_handler_factory(defines.events.on_gui_text_chang
 --end)
 Gui._mt.on_value_changed = event_handler_factory(defines.events.on_gui_value_changed)
 
+function Gui.toolbar_button(sprite, tooltip, authenticator)
+    return Gui.element {
+        type = 'sprite-button',
+        sprite = sprite,
+        tooltip = tooltip,
+        style = Gui.top_flow_button_style
+    }:style {
+        minimal_width = 36,
+        height = 36,
+        padding = -2
+    }:allow_player_to_toggle(authenticator)
+end
+
 local function handler_factory(event_name)
     return function(element_name, handler)
         local element = Gui.defines[element_name]
@@ -510,6 +547,33 @@ Gui.on_value_changed = handler_factory('on_value_changed')
 
 local main_button_name = Gui.uid_name()
 
+Event.add(
+    defines.events.on_player_created,
+    function(event)
+        local player = game.get_player(event.player_index)
+
+        if not player or not player.valid then
+            return
+        end
+
+        local left_flow = Gui.get_left_flow(player)
+        local button_flow = left_flow.add {type = 'flow', name = 'gui_core_buttons', direction = 'vertical'}
+
+        local b =
+            button_flow.add(
+            {
+                type = 'sprite-button',
+                name = main_button_name,
+                sprite = 'utility/preset',
+                style = mod_gui.button_style,
+                tooltip = 'Click to toggle hide top buttons!'
+            }
+        )
+        b.style.padding = 2
+        b.style.width = 20
+    end
+)
+
 Gui.on_click(
     main_button_name,
     function(event)
@@ -517,7 +581,7 @@ Gui.on_click(
         local player = event.player
         local top = mod(player)
 
-        if button.sprite == 'utility/expand_dots_white' then
+        if button.sprite == 'utility/preset' then
             for i = 1, #top_elements do
                 local name = top_elements[i]
                 local ele = top[name]
@@ -529,7 +593,8 @@ Gui.on_click(
                 end
             end
 
-            button.sprite = 'utility/expand_dots'
+            button.sprite = 'utility/expand_dots_white'
+            button.tooltip = 'Click to toggle show top buttons!'
         else
             for i = 1, #top_elements do
                 local name = top_elements[i]
@@ -542,12 +607,11 @@ Gui.on_click(
                 end
             end
 
-            button.sprite = 'utility/expand_dots_white'
+            button.sprite = 'utility/preset'
+            button.tooltip = 'Click to toggle show top buttons!'
         end
     end
 )
-
-Gui.main_button_name = main_button_name
 
 if _DEBUG then
     local concat = table.concat

@@ -1,6 +1,6 @@
 local Event = require 'utils.event'
 local play_time = require 'utils.datastore.session_data'
-local Gui = require 'utils.gui.main'
+local Gui = require 'utils.gui.core'
 local Roles = require 'utils.role.main'
 
 local symbol_asc = '▲'
@@ -458,8 +458,7 @@ local function player_list_show(player, frame, sort_by)
     }
     player_list_panel_table.style.maximal_height = 400
 
-    player_list_panel_table =
-        player_list_panel_table.add {type = 'table', name = 'player_list_panel_table', column_count = 6}
+    player_list_panel_table = player_list_panel_table.add {type = 'table', name = 'player_list_panel_table', column_count = 6}
 
     local player_list = get_sorted_list(sort_by)
     for i = 1, #player_list, 1 do
@@ -543,8 +542,7 @@ local function player_list_show(player, frame, sort_by)
         -- Poke
         local flow = player_list_panel_table.add {type = 'flow', name = 'button_flow_' .. i, direction = 'horizontal'}
         flow.add {type = 'label', name = 'button_spacer_' .. i, caption = ''}
-        local button =
-            flow.add {type = 'button', name = 'poke_player_' .. player_list[i].name, caption = player_list[i].pokes}
+        local button = flow.add {type = 'button', name = 'poke_player_' .. player_list[i].name, caption = player_list[i].pokes}
         button.style.font = 'default'
         label.style.font_color = {r = 0.83, g = 0.83, b = 0.83}
         button.style.minimal_height = 30

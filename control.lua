@@ -5,32 +5,14 @@ _DEBUG = false
 _DUMP_ENV = false
 
 local loaded = _G.package.loaded
-local require_return_err = false
-local _require = require
+local r = require
 function require(path)
-    local _path = path
-    local _return = {pcall(_require, path)}
-    if not table.remove(_return, 1) then
-        local __return = {pcall(_require, path)}
-        if not table.remove(__return, 1) then
-            if _DEBUG then
-                log('Failed to load: ' .. _path .. ' (' .. _return[1] .. ')')
-            end
-            if require_return_err then
-                error(unpack(_return))
-            end
-        else
-            if _DEBUG then
-                log('Loaded: ' .. _path)
-                return unpack(__return)
-            end
-        end
+    local success, err = pcall(r, path)
+    if not success then
+        log(err)
     else
-        if _DEBUG then
-            log('Loaded: ' .. _path)
-        end
+        return loaded[path] or log('Can only require files at runtime that have been required in the control stage.', 2)
     end
-    return unpack(_return) and loaded[path] or error(unpack(_return))
 end
 
 --! other stuff
@@ -62,7 +44,7 @@ require 'utils.role.roles'
 Role.adjust_permission()
 
 --! gui and modules
-require 'utils.gui.main'
+require 'utils.gui.core'
 require 'utils.gui.player_list'
 require 'utils.gui.admin'
 require 'utils.gui.group'

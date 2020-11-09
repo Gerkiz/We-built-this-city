@@ -1,7 +1,7 @@
 local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Color = require 'utils.color_presets'
-local Gui = require 'utils.gui'
+local Gui = require 'utils.gui.core'
 local m_gui = require 'mod-gui'
 local mod = m_gui.get_button_flow
 
@@ -166,7 +166,7 @@ local function draw_main_frame(player, target, chest_id)
     end
     local p = target or player
 
-    local frame, top_frame =
+    frame, top_frame =
         Gui.add_main_frame(player.gui.screen, main_frame_name, p.name .. '´s private portable stash', 'Your personal storage chest.')
     top_frame.auto_center = true
 
@@ -282,6 +282,7 @@ local function update_gui()
         frame.clear()
 
         local tbl = frame.add {type = 'table', column_count = 10, name = 'personal_inventory'}
+
         tbl.style.cell_padding = 0
         local total = 0
         local items = {}
@@ -309,6 +310,7 @@ local function update_gui()
                 number = item_count,
                 name = item_name
             }
+
             btn.enabled = true
             btn.style.height = size
             btn.style.width = size

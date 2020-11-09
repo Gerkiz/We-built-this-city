@@ -1,34 +1,34 @@
 local Public = {}
-local Gui = require 'utils.gui.main'
+local Gui = require 'utils.gui.core'
 
-local function get_sorted_score() 
+local function get_sorted_score()
 	local list = {}
 	for player_index, score_points in pairs(global.custom_highscore.score_list) do
 		table.insert(list, {name = game.players[player_index].name, points = score_points})
 	end
-	local list_size = #list 
-	if list_size == 0 then return list end	
-	table.sort(list, function (a, b) return a.points > b.points end)	
+	local list_size = #list
+	if list_size == 0 then return list end
+	table.sort(list, function (a, b) return a.points > b.points end)
 	return list
 end
 
 local score_list = (function (player, frame)
 	local highscore = global.custom_highscore
-	
+
 	frame.clear()
 	frame.style.padding = 4
 	frame.style.margin = 0
-	
+
 	local line = frame.add { type = "line"}
 	line.style.top_margin = 4
 	line.style.bottom_margin = 4
-	
+
 	local label = frame.add ({ type = "label", caption = highscore.caption})
 	label.style.font = "heading-1"
 	label.style.minimal_width = 780
 	label.style.horizontal_align = "center"
 	label.style.vertical_align = "center"
-	
+
 	local line = frame.add { type = "line"}
 	line.style.top_margin = 4
 	line.style.bottom_margin = 4
@@ -37,9 +37,9 @@ local score_list = (function (player, frame)
 	scroll_pane.style.minimal_width = 780
 	scroll_pane.style.maximal_height = 360
 	scroll_pane.style.minimal_height = 360
-	
+
 	local t = scroll_pane.add {type = "table", column_count = 3}
-	
+
 	local label = t.add ({ type = "label", caption = "#"})
 	label.style.minimal_width = 30
 	label.style.font = "heading-2"
@@ -52,7 +52,7 @@ local score_list = (function (player, frame)
 	label.style.minimal_width = 160
 	label.style.font = "heading-2"
 	label.style.padding = 3
-	
+
 	for key, score in pairs(get_sorted_score()) do
 		local label = t.add ({ type = "label", caption = key})
 		label.style.font = "heading-2"
