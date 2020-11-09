@@ -9,6 +9,7 @@ local next = next
 local insert = table.insert
 local on_visible_handlers = {}
 local on_pre_hidden_handlers = {}
+local top_elements = {}
 
 local Gui = {
     uid = 0,
@@ -18,7 +19,6 @@ local Gui = {
     core_defines = {},
     file_paths = {},
     debug_info = {},
-    top_elements = {},
     _mt = {},
     _mt_execute = {
         __call = function(self, parent, ...)
@@ -95,9 +95,9 @@ function Gui._mt:raise_custom_event(event)
     return self
 end
 
-function Gui._mt:allow_player_to_toggle(handler)
-    Gui.top_elements[self.name] = handler or true
-    return self
+function Gui.allow_player_to_toggle(elem)
+    top_elements[#top_elements + 1] = elem
+    return top_elements
 end
 
 function Gui.new_frame(object)
@@ -125,10 +125,6 @@ function Gui.new_frame(object)
     Gui.defines[name] = element
 
     return element
-end
-
-function Gui.new_metaframe()
-    return setmetatable({}, Gui._mt_execute)
 end
 
 function Gui.uid_name()
@@ -457,19 +453,6 @@ Gui._mt.on_text_changed = event_handler_factory(defines.events.on_gui_text_chang
 --end)
 Gui._mt.on_value_changed = event_handler_factory(defines.events.on_gui_value_changed)
 
-function Gui.toolbar_button(sprite, tooltip, authenticator)
-    return Gui.element {
-        type = 'sprite-button',
-        sprite = sprite,
-        tooltip = tooltip,
-        style = Gui.top_flow_button_style
-    }:style {
-        minimal_width = 36,
-        height = 36,
-        padding = -2
-    }:allow_player_to_toggle(authenticator)
-end
-
 local function handler_factory(event_name)
     return function(element_name, handler)
         local element = Gui.defines[element_name]
@@ -556,11 +539,8 @@ Event.add(
             return
         end
 
-        local left_flow = Gui.get_left_flow(player)
-        local button_flow = left_flow.add {type = 'flow', name = 'gui_core_buttons', direction = 'vertical'}
-
         local b =
-            button_flow.add(
+            mod(player).add(
             {
                 type = 'sprite-button',
                 name = main_button_name,
