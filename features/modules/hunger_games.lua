@@ -5,7 +5,6 @@
 
 require 'features.modules.custom_death_messages'
 require 'features.modules.dynamic_player_spawn'
-local Score = require 'utils.gui.score'
 --require "maps.modules.hunger_games_balance"
 
 local event = require 'utils.event'
@@ -14,9 +13,7 @@ local message_color = {r = 0.98, g = 0.66, b = 0.22}
 local function anarchy_gui_button(player)
     if not player.gui.top['anarchy_group_button'] then
         local b =
-            player.gui.top.add(
-            {type = 'button', name = 'anarchy_group_button', caption = '[Group]', tooltip = 'Join / Create a group'}
-        )
+            player.gui.top.add({type = 'button', name = 'anarchy_group_button', caption = '[Group]', tooltip = 'Join / Create a group'})
         b.style.font_color = {r = 0.77, g = 0.77, b = 0.77}
         b.style.font = 'default-bold'
         b.style.minimal_height = 38
@@ -347,8 +344,7 @@ local function on_gui_click(event)
 
         if requesting_player.tag then
             if requesting_player.tag ~= '' then
-                local requesting_player_group =
-                    string.sub(requesting_player.tag, 2, string.len(requesting_player.tag) - 1)
+                local requesting_player_group = string.sub(requesting_player.tag, 2, string.len(requesting_player.tag) - 1)
                 global.alliance_groups[requesting_player_group].members[tostring(requesting_player.name)] = nil
             end
         end
@@ -370,10 +366,7 @@ local function on_gui_click(event)
         local group = frame.children[1].name
         local requesting_player = game.players[tonumber(frame.children[2].name)]
 
-        game.print(
-            tostring(requesting_player.name) .. ' has been rejected to join group "' .. group .. '"',
-            message_color
-        )
+        game.print(tostring(requesting_player.name) .. ' has been rejected to join group "' .. group .. '"', message_color)
 
         for _, member in pairs(global.alliance_groups[group].members) do
             local p = game.players[member]
@@ -414,10 +407,7 @@ local function on_gui_click(event)
             if event.element.type == 'button' and event.element.caption == 'Leave' then
                 destroy_request_guis(player)
                 global.alliance_groups[event.element.parent.name].members[tostring(player.name)] = nil
-                game.print(
-                    tostring(player.name) .. ' has left group "' .. event.element.parent.name .. '"',
-                    message_color
-                )
+                game.print(tostring(player.name) .. ' has left group "' .. event.element.parent.name .. '"', message_color)
                 refresh_alliances()
                 return
             end
@@ -530,7 +520,6 @@ local function on_player_respawned(event)
 end
 
 local function on_built_entity(event)
-    local get_score = Score.get_table().score_table
     local entity = event.created_entity
     if not entity.valid then
         return
@@ -550,14 +539,6 @@ local function on_built_entity(event)
     )
     local player = game.players[event.player_index]
     player.insert({name = entity.name, count = 1})
-    if get_score then
-        if get_score[player.force.name] then
-            if get_score[player.force.name].players[player.name] then
-                get_score[player.force.name].players[player.name].built_entities =
-                    get_score[player.force.name].players[player.name].built_entities - 1
-            end
-        end
-    end
     entity.destroy()
 end
 

@@ -111,7 +111,7 @@ local function on_gui_click(event)
         return
     end
     if event.element.name == 'close_map_intro' then
-        Gui.panel_clear_left_gui(player)
+        Gui.toggle_visibility(player, event.element)
         return
     end
 end

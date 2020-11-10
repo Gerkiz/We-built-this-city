@@ -4,7 +4,6 @@
 local Event = require 'utils.event'
 local Token = require 'utils.token'
 local Task = require 'utils.task'
-local Score = require 'utils.gui.score'
 local floor = math.floor
 local sqrt = math.sqrt
 local insert = table.insert
@@ -165,7 +164,6 @@ local function create_reward_button(player)
 end
 
 local function show_rewards(player)
-    local get_score = Score.get_table().score_table
     if player.gui.left['rewards_panel'] then
         player.gui.left['rewards_panel'].destroy()
     end
@@ -173,7 +171,6 @@ local function show_rewards(player)
 
     local current_level = global.rewards[player.name].level
     local next_level = current_level + 1
-    local kill_score = get_score[player.force.name].players[player.name].killscore
 
     local next_level_score = ((3.5 + next_level) ^ 2.7 / 10) * 100
     local min_score = ((3.5 + current_level) ^ 2.7 / 10) * 100
@@ -313,14 +310,11 @@ local function reward_messages(data)
 end
 
 local function kill_rewards(event)
-    local get_score = Score.get_table().score_table
     if not event.cause then
         return
     end
     local player = event.cause.player
     local pinsert = player.insert
-    local score = get_score[player.force.name]
-    local kill_score = score.players[player.name].killscore
 
     -- If kill score isn't found don't run the other stuff
     if not kill_score then

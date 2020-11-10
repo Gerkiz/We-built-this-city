@@ -10,7 +10,6 @@ local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local surface_name = require 'utils.surface'.get_surface_name()
 local surface_index = require 'utils.surface'.get_surface()
-local Score = require 'utils.gui.score'
 local Config = require 'map_gen.multiplayer_spawn.config'
 local Gui = require 'utils.gui.core'
 
@@ -1391,8 +1390,8 @@ function Public.SpawnOptsGuiClick(event)
         if player and player.character and player.character.valid then
             player.character.active = true
         end
-        Score.init_player_table(player)
     elseif ((elemName == 'isolated_spawn_near') or (elemName == 'isolated_spawn_far')) then
+        --game.permissions.get_group("Default").add_player(player)
         -- Create a new spawn point
         local newSpawn = {x = 0, y = 0}
 
@@ -1441,8 +1440,6 @@ function Public.SpawnOptsGuiClick(event)
 
         -- Unlock spawn control gui tab
         Gui.set_tab(player, 'Spawn Controls', true)
-        --game.permissions.get_group("Default").add_player(player)
-        Score.init_player_table(player)
     elseif (elemName == 'join_other_spawn') then
         -- Provide a way to refresh the gui to check if people have shared their
         -- bases.
@@ -1555,7 +1552,6 @@ function Public.SharedSpwnOptsGuiClick(event)
                     if joiningPlayer and joiningPlayer.character and joiningPlayer.character.valid then
                         joiningPlayer.character.active = true
                     end
-                    Score.init_player_table(joiningPlayer)
                     return
                 else
                     -- Add the player to that shared spawns join queue.
@@ -1916,7 +1912,6 @@ function Public.SpawnCtrlGuiClick(event)
                 if joiningPlayer and joiningPlayer.character and joiningPlayer.character.valid then
                     joiningPlayer.character.active = true
                 end
-                Score.init_player_table(joiningPlayer)
             else
                 Utils.SendBroadcastMsg({'oarc-player-left-while-joining', joinQueuePlayerChoice})
             end
@@ -2109,7 +2104,6 @@ function Public.BuddySpawnOptsGuiClick(event)
     -- Handle the spawn request button clicks
     if ((elemName == 'buddy_spawn_request_near') or (elemName == 'buddy_spawn_request_far')) then
         local buddySpawnGui = player.gui.screen.buddy_spawn_opts.spawn_buddy_flow
-        Score.init_player_table(player)
 
         local dropDownIndex = buddySpawnGui.waiting_buddies_dropdown.selected_index
         if ((dropDownIndex > 0) and (dropDownIndex <= #buddySpawnGui.waiting_buddies_dropdown.items)) then
@@ -2410,10 +2404,8 @@ function Public.BuddySpawnRequestMenuClick(event)
         -- Unlock spawn control gui tab
         Gui.set_tab(player, 'Spawn Controls', true)
         Gui.set_tab(game.players[requesterName], 'Spawn Controls', true)
-        --game.permissions.get_group("Default").add_player(player)
-        --game.permissions.get_group("Default").add_player(requesterName)
-        Score.init_player_table(player)
-    --Score.init_player_table(requesterName)
+    --game.permissions.get_group("Default").add_player(player)
+    --game.permissions.get_group("Default").add_player(requesterName)
     end
 
     -- Check if player is cancelling the request.

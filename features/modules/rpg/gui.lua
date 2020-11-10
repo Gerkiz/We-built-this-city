@@ -505,9 +505,9 @@ function Public.toggle(player, recreate)
         return
     end
     if main_frame then
-        remove_main_frame(main_frame, screen)
+        Tabs.toggle_visibility(player, main_frame)
     else
-        Tabs.panel_clear_left_gui(player)
+        Tabs.toggle_visibility(player, main_frame)
         draw_main_frame(player)
     end
 end
@@ -700,7 +700,11 @@ Gui.on_click(
         end
 
         if frame and frame.valid then
-            frame.destroy()
+            if frame.visible then
+                frame.visible = false
+            elseif not frame.visible then
+                frame.visible = true
+            end
         else
             Settings.extra_settings(player)
         end

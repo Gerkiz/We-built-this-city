@@ -97,10 +97,11 @@ local function gui_open_frame(player)
 
     local frame = flow.upgrade_planner_config_frame
 
-    if frame then
-        frame.destroy()
-
-        this.config_tmp[player.name] = nil
+    if frame and frame.visible then
+        frame.visible = false
+        return
+    elseif frame and not frame.visible then
+        frame.visible = true
         return
     end
 

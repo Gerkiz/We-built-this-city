@@ -118,7 +118,7 @@ function inputs._input:remove(root)
     local player = game.get_player(root.player_index)
     local gui = mod(player)
     if gui[self.draw_data.name] then
-        gui[self.draw_data.name].destroy()
+        Core.toggle_visible_state(gui[self.draw_data.name])
     end
 end
 

@@ -90,7 +90,7 @@ function Gui._mt:raise_custom_event(event)
         print('###########################################################')
         print('There was an error for GUI element (check below):')
         print('###########################################################')
-        error(serpent.block(err))
+        error(err)
     end
     return self
 end
@@ -246,15 +246,16 @@ function Gui.toggle_enabled_state(element, state)
     return state
 end
 
-function Gui.toggle_visible_state(element, state)
+function Gui.toggle_visible_state(element)
     if not element or not element.valid then
         return
     end
-    if state == nil then
-        state = not element.visible
+    if element.visible then
+        element.visible = false
+    elseif not element.visible then
+        element.visible = true
     end
-    element.visible = state
-    return state
+    return element
 end
 
 function Gui.destroy_if_valid(element)
@@ -290,8 +291,12 @@ Gui.Styles = {
     }
 }
 
-function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, max_height)
-    local main_frame =
+function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, max_height, min_width)
+    local main_frame = parent[main_frame_name]
+    if main_frame then
+        return main_frame
+    end
+    main_frame =
         parent.add(
         {
             type = 'frame',
@@ -305,7 +310,7 @@ function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, 
     main_frame.style.use_header_filler = true
     main_frame.style.maximal_height = max_height or 500
     main_frame.style.maximal_width = 500
-    main_frame.style.minimal_width = 250
+    main_frame.style.minimal_width = min_width or 250
 
     local frame =
         main_frame.add {
@@ -317,7 +322,7 @@ function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, 
     frame.style.horizontally_stretchable = true
     frame.style.maximal_height = max_height or 500
     frame.style.maximal_width = 500
-    frame.style.minimal_width = 250
+    frame.style.minimal_width = min_width or 250
 
     return frame, main_frame
 end

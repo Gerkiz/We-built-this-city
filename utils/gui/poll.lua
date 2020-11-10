@@ -419,28 +419,18 @@ local function remove_create_poll_frame(create_poll_frame, player_index)
     create_poll_frame.destroy()
 end
 
-local function remove_main_frame(main_frame, left, player)
-    local player_index = player.index
-    local data = Gui.get_data(main_frame)
-    player_poll_index[player_index] = data.poll_index
-
-    Gui.remove_data_recursively(main_frame)
-    main_frame.destroy()
-
-    local create_poll_frame = left[create_poll_frame_name]
-    if create_poll_frame and create_poll_frame.valid then
-        remove_create_poll_frame(create_poll_frame, player_index)
-    end
-end
-
 local function toggle(event)
     local left = event.player.gui.left
     local main_frame = left[main_frame_name]
 
     if main_frame then
-        remove_main_frame(main_frame, left, event.player)
+        Gui.toggle_visibility(event.player, main_frame)
+        local create_poll_frame = left[create_poll_frame_name]
+        if create_poll_frame and create_poll_frame.valid then
+            Gui.toggle_visibility(event.player, create_poll_frame)
+        end
     else
-        Tabs.panel_clear_left_gui(event.player)
+        Tabs.toggle_visibility(event.player, main_frame)
         draw_main_frame(left, event.player)
     end
 end
@@ -588,8 +578,6 @@ local function draw_create_poll_frame(parent, player, previous_data)
         frame.add {
         type = 'scroll-pane',
         direction = 'vertical',
-        horizontal_scroll_policy = 'never',
-        vertical_scroll_policy = 'auto',
         style = 'scroll_pane_under_subheader'
     }
     scroll_pane.style.maximal_height = 250
@@ -607,9 +595,9 @@ local function draw_create_poll_frame(parent, player, previous_data)
         edit_mode = edit_mode
     }
 
-    Gui.set_data(frame, data)
-
     redraw_create_poll_content(data)
+
+    Gui.set_data(frame, data)
 
     local add_answer_button =
         scroll_pane.add {
@@ -864,7 +852,11 @@ Gui.on_click(
         local left = player.gui.left
         local frame = left[create_poll_frame_name]
         if frame and frame.valid then
-            remove_create_poll_frame(frame, player.index)
+            if frame.visible then
+                frame.visible = false
+            elseif not frame.visible then
+                frame.visible = true
+            end
         else
             draw_create_poll_frame(left, player)
         end

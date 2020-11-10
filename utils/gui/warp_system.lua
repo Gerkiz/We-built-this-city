@@ -490,7 +490,7 @@ local function draw_main_frame(player, left, are_you_sure)
     local scroll_style = warp_list.style
     scroll_style.padding = {1, 3}
     scroll_style.maximal_height = 200
-    warp_list.style.minimal_height = 200
+    scroll_style.minimal_height = 200
     scroll_style.horizontally_stretchable = true
 
     local table = warp_list.add {type = 'table', column_count = 4}
@@ -560,10 +560,9 @@ function Public.toggle(player)
     end
 
     if main_frame then
-        Public.close_gui_player(main_frame)
-        Tabs.panel_clear_left_gui(player)
+        Tabs.toggle_visibility(player, main_frame)
     else
-        Tabs.panel_clear_left_gui(player)
+        Tabs.toggle_visibility(player, main_frame)
         draw_main_frame(player, left)
     end
 end
@@ -655,7 +654,7 @@ local function on_player_left_game(event)
         return
     end
 
-    Tabs.panel_clear_left_gui(player)
+    Tabs.toggle_visibility(player)
 end
 
 local function on_player_died(event)

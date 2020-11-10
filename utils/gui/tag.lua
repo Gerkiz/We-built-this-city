@@ -267,9 +267,9 @@ local function toggle(event)
     local frame = left[main_frame_name]
 
     if frame then
-        close_gui_player(event.player)
+        Tabs.toggle_visibility(event.player, frame)
     else
-        Tabs.panel_clear_left_gui(event.player)
+        Tabs.toggle_visibility(event.player, frame)
         draw_main_frame(event.player)
     end
 end

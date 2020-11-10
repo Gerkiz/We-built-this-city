@@ -70,12 +70,12 @@ function Public.create_surface()
         --map_gen_settings.height = 128
         map_gen_settings.cliff_settings = {cliff_elevation_interval = 35, cliff_elevation_0 = 35}
         map_gen_settings.autoplace_controls = {
-            ['coal'] = {frequency = 0.33, size = 1, richness = 1},
-            ['stone'] = {frequency = 0.33, size = 1, richness = 1},
-            ['copper-ore'] = {frequency = 0.33, size = 1, richness = 1},
-            ['iron-ore'] = {frequency = 0.33, size = 1, richness = 1},
-            ['crude-oil'] = {frequency = 0.33, size = 1, richness = 1},
-            ['uranium-ore'] = {frequency = 0.33, size = 1, richness = 1},
+            ['coal'] = {frequency = 0.33, size = 2, richness = 2},
+            ['stone'] = {frequency = 0.33, size = 2, richness = 2},
+            ['copper-ore'] = {frequency = 0.33, size = 2, richness = 2},
+            ['iron-ore'] = {frequency = 0.33, size = 2, richness = 2},
+            ['crude-oil'] = {frequency = 0.33, size = 2, richness = 2},
+            ['uranium-ore'] = {frequency = 0.33, size = 2, richness = 2},
             ['trees'] = {frequency = 1, size = 1, richness = 1},
             ['enemy-base'] = {frequency = 0.33, size = 0.33, richness = 1}
         }
@@ -166,8 +166,7 @@ Event.add(
         Validate(player)
 
         -- Move the player to the game surface immediately.
-        local pos =
-            game.surfaces[global_data.surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
+        local pos = game.surfaces[global_data.surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
         player.teleport(pos, global_data.surface_name)
 
         if global_data.modded then

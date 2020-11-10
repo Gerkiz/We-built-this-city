@@ -573,8 +573,9 @@ Gui.on_click(
         local screen = player.gui.screen
         local main_frame = screen[main_frame_name]
         if main_frame and main_frame.valid then
-            clear_gui(player)
+            Gui.toggle_visibility(player, main_frame)
         else
+            Gui.toggle_visibility(player, main_frame)
             draw_main_frame(player)
         end
     end

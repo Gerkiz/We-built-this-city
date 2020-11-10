@@ -428,8 +428,6 @@ local function auto_stash(player, event)
     end
 end
 
-Gui.toolbar_button('item/wooden-chest', )
-
 local function create_gui_button(player)
     if mod(player).auto_stash then
         return

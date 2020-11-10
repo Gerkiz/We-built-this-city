@@ -284,11 +284,25 @@ function Gui.get_disabled_tabs()
     return disabled_tabs
 end
 
-function Gui.panel_clear_left_gui(player)
+function Gui.toggle_visibility(player, main_frame)
     local left = player.gui.left
+    local screen = player.gui.screen
     for _, child in pairs(left.children) do
-        if child.name ~= main_button_name and child.name ~= 'mod_gui_frame_flow' then
-            child.destroy()
+        if child.visible and child ~= main_frame then
+            child.visible = false
+        elseif child.visible and child == main_frame then
+            child.visible = false
+        elseif not child.visible and child == main_frame then
+            child.visible = true
+        end
+    end
+    for _, child in pairs(screen.children) do
+        if child.visible and child ~= main_frame then
+            child.visible = false
+        elseif child.visible and child == main_frame then
+            child.visible = false
+        elseif not child.visible and child == main_frame then
+            child.visible = true
         end
     end
 end
@@ -374,8 +388,8 @@ local function main_frame(player)
     local left = player.gui.left
     local tabs = Gui.tabs
 
-    Gui.panel_clear_left_gui(player)
     local frame = left.add {type = 'frame', name = main_frame_name, direction = 'vertical', style = 'changelog_subheader_frame'}
+
     frame.style.minimal_height = 400
     frame.style.maximal_height = 700
     frame.style.padding = 5
@@ -498,9 +512,9 @@ function Gui.toggle(player)
     local frame = left[main_frame_name]
 
     if frame then
-        Gui.close_gui_player(player)
+        Gui.toggle_visibility(player, frame)
     else
-        Gui.panel_clear_left_gui(player)
+        Gui.toggle_visibility(player, frame)
         main_frame(player)
     end
 end
