@@ -157,8 +157,6 @@ Gui.store_meta =
 
 Gui.store_meta.__index = Gui._mt
 
-global.gui = Gui.store_meta
-
 function Gui.get_table(key)
     if key == 'tabs' then
         return disabled_tabs

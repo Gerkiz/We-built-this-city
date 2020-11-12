@@ -8,7 +8,7 @@ local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
 local UtilsGui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
 local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
-local surface_name = require 'utils.surface'.get_surface_name()
+local Surface = require 'utils.surface'
 local surface_index = require 'utils.surface'.get_surface()
 local Config = require 'map_gen.multiplayer_spawn.config'
 local Gui = require 'utils.gui.core'
@@ -98,6 +98,7 @@ end
 
 function Public.Init_remove()
     local data = Public.removal
+    local surface_name = Surface.get_surface_name()
     while (#data > 0) do
         local c_remove = table.remove(data)
         local c_pos = c_remove.pos
@@ -108,6 +109,7 @@ end
 -- Call this if a player leaves the game or is reset
 function Public.FindUnusedSpawns(player, remove_player)
     local global_data = MPS.get()
+    local surface_name = Surface.get_surface_name()
     if not player then
         log('ERROR - FindUnusedSpawns on NIL Player!')
         return
@@ -644,6 +646,8 @@ function Public.InitSpawnGlobalsAndForces()
         global.siloPosition = {}
     end
 
+    local surface_name = Surface.get_surface_name()
+
     -- Name a new force to be the default force.
     -- This is what any new player is assigned to when they join, even before they spawn.
     local main_force_name = Public.CreateForce(global.main_force_name)
@@ -727,6 +731,7 @@ end
 
 function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
     -- DOUBLE CHECK and make sure the area is super safe.
+    local surface_name = Surface.get_surface_name()
     Utils.ClearNearbyEnemies(delayedSpawn.pos, global.scenario_config.safe_area.safe_radius, game.surfaces[surface_name])
     local water_data
     if delayedSpawn.layout == 'classic' then
@@ -813,6 +818,8 @@ function Public.SendPlayerToRandomSpawn(player)
     local rndSpawn = math.random(0, numSpawns)
     local counter = 0
 
+    local surface_name = Surface.get_surface_name()
+
     if (rndSpawn == 0) then
         player.teleport(game.forces[global.main_force_name].get_spawn_position(surface_name), surface_name)
         if player and player.character and player.character.valid then
@@ -836,6 +843,7 @@ end
 function Public.CreateForce(force_name)
     local global_data = MPS.get()
     local newForce = nil
+    local surface_name = Surface.get_surface_name()
 
     -- Check if force already exists
     if (game.forces[force_name] ~= nil) then
@@ -1321,6 +1329,7 @@ function Public.SpawnOptsGuiClick(event)
     local player = game.players[event.player_index]
     local elemName = event.element.name
     local layout
+    local surface_name = Surface.get_surface_name()
 
     if not player then
         log('Another gui click happened with no valid player...')

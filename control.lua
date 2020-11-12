@@ -82,10 +82,26 @@ Event.add(
     end
 )
 
+local function is_game_modded()
+    local i = 0
+    for k, _ in pairs(game.active_mods) do
+        i = i + 1
+        if i > 1 then
+            return true
+        end
+    end
+    return false
+end
+
 Event.on_init(
     function()
+        local is_modded = is_game_modded()
         game.forces.player.research_queue_enabled = true
-        RPG_Settings.set_surface_name('wbtc')
+        if is_modded then
+            RPG_Settings.set_surface_name('nauvis')
+        else
+            RPG_Settings.set_surface_name('wbtc')
+        end
         RPG_Settings.enable_health_and_mana_bars(true)
         RPG_Settings.enable_wave_defense(false)
         RPG_Settings.enable_mana(true)

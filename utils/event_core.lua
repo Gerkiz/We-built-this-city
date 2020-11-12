@@ -54,6 +54,17 @@ local function on_init()
     _LIFECYCLE = 8 -- Runtime
 end
 
+local function on_configuration_changed()
+    _LIFECYCLE = 3 -- migrations
+    local handlers = event_handlers[changed_event_name]
+    call_handlers(handlers)
+
+    event_handlers[changed_event_name] = nil
+    event_handlers[changed_event_name] = nil
+
+    _LIFECYCLE = 8 -- Runtime
+end
+
 local function on_load()
     _LIFECYCLE = 6 -- on_load
     local handlers = event_handlers[load_event_name]
@@ -89,11 +100,11 @@ function Public.on_configuration_changed(handler)
     local handlers = event_handlers[changed_event_name]
     if not handlers then
         event_handlers[changed_event_name] = {handler}
-        script_on_configuration_changed(on_init)
+        script_on_configuration_changed(on_configuration_changed)
     else
         table.insert(handlers, handler)
         if #handlers == 1 then
-            script_on_configuration_changed(on_init)
+            script_on_configuration_changed(on_configuration_changed)
         end
     end
 end

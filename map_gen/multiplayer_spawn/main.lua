@@ -26,7 +26,7 @@ local Map = require 'features.modules.map_info'
 local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
 local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
 local R_launch = require 'map_gen.multiplayer_spawn.lib.rocket_launch'
-local Surface = require 'utils.surface'.get_surface_name()
+local Surface = require 'utils.surface'
 local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
 local Alert = require 'utils.alert'
 local math_random = math.random
@@ -202,10 +202,11 @@ Event.add(
     defines.events.on_player_created,
     function(event)
         local player = game.players[event.player_index]
+        local surface_name = Surface.get_surface_name()
 
         -- Move the player to the game surface immediately.
-        local pos = game.surfaces[Surface].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
-        player.teleport(pos, Surface)
+        local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
+        player.teleport(pos, surface_name)
 
         if global.enable_longreach then
             Utils.GivePlayerLongReach(player)
@@ -268,17 +269,18 @@ Event.add(
     defines.events.on_tick,
     function()
         SS.DelayedSpawnOnTick()
+        local surface_name = Surface.get_surface_name()
 
         if global.frontier_rocket_silo_mode then
-            Silo.DelayedSiloCreationOnTick(game.surfaces[Surface])
+            Silo.DelayedSiloCreationOnTick(game.surfaces[surface_name])
         end
 
         if global.enable_market then
             if game.tick == 150 then
-                local surface = game.surfaces[Surface]
+                local surface = game.surfaces[surface_name]
                 local pos = {{x = -10, y = -10}, {x = 10, y = 10}, {x = -10, y = -10}, {x = 10, y = -10}}
                 local _pos = Utils.shuffle(pos)
-                local p = game.surfaces[Surface].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
+                local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
 
                 global.market = surface.create_entity {name = 'market', position = p, force = 'player'}
 

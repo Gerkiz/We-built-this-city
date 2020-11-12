@@ -2,7 +2,7 @@
 _STAGE = {
     --settings = 1,
     --data = 2,
-    --migration = 3,
+    migration = 3,
     control = 4,
     init = 5,
     load = 6,
