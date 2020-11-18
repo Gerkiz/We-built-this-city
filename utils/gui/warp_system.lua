@@ -259,15 +259,11 @@ function Public.make_tag(name, pos, shared)
     return data
 end
 
-function Public.create_warp_button(player, raise_event)
-    if raise_event == nil then
-        if Roles.events.on_role_change then
-            if mod(player)[main_button_name] then
-                mod(player)[main_button_name].destroy()
-            end
-        end
-    end
+function Public.create_warp_button(player)
     if not Roles.get_role(player):allowed('show-warp') then
+        if mod(player)[main_button_name] then
+            mod(player)[main_button_name].destroy()
+        end
         return
     end
     if mod(player)[main_button_name] then
@@ -644,7 +640,7 @@ local function on_player_joined_game(event)
 
     get_player_data(player)
 
-    Public.create_warp_button(player, false)
+    Public.create_warp_button(player)
 end
 
 local function on_player_left_game(event)

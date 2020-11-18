@@ -49,6 +49,9 @@ function inputs._input:draw(root)
     local player = game.get_player(root.player_index)
     if is_type(self.draw_data.caption, 'string') and player.gui.is_valid_sprite_path(self.draw_data.caption) then
         local data = table.deepcopy(self.draw_data)
+        if root[data.name] then
+            return
+        end
         data.type = 'sprite-button'
         data.sprite = data.caption
         data.caption = nil

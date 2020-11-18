@@ -9,21 +9,13 @@ local Task = require 'utils.task'
 
 local session_data_set = 'sessions'
 
--- @usage _log('something')
-local function _log(string)
-    if not _DEBUG then
-        return
-    end
-    return log('RAW: ' .. serpent.block(string))
-end
-
-function Public.output_roles(player)
-    local this = Public.config
+function Public.get_all_roles(player)
+    local r = Public.getConfigRole()
     local _player = player or game.player or game.player.name
     if not _player then
         return
     end
-    for power, role in pairs(this.role) do
+    for power, role in pairs(r) do
         local output = power .. ') ' .. role.name
         output = output .. ' ' .. role.tag
         local admin = 'No'
@@ -39,43 +31,43 @@ function Public.output_roles(player)
     end
 end
 
-function Public.get()
-    return {}
-end
-
 function Public.standard_roles(table)
     Public.config.current = table
 end
 
 function Public.get_role(player)
-    local this = Public.config
+    local this = Public.getConfig()
     if not player then
         return false
     end
-    local _roles = Public.add_roles()
-    local _return
+    local _roles = Public.get_roles()
+    local r
     if Server.is_type(player, 'table') then
         if player.index then
-            _return = game.players[player.index] and _roles[player.permission_group.name] or nil
+            if not player.permission_group then
+                r = nil
+            else
+                r = game.players[player.index] and _roles[player.permission_group.name] or nil
+            end
         else
-            _return = player.group and player or nil
+            r = player.group and player or nil
         end
     else
-        _return =
+        r =
             game.players[player] and _roles[game.players[player].permission_group.name] or
             Table.autokey(_roles, player) and Table.autokey(_roles, player) or
             Table.string_contains(player, 'server') and Public.get_role(this.meta.root) or
             Table.string_contains(player, 'root') and Public.get_role(this.meta.root) or
             nil
     end
-    return _return
+    return r
 end
 
 function Public.get_group(mixed)
     if not mixed then
         return false
     end
-    local _groups = Public.add_groups()
+    local _groups = Public.get_groups()
     local role = Public.get_role(mixed)
     return role and role.group or Server.is_type(mixed, 'table') and mixed.roles and mixed or
         Server.is_type(mixed, 'string') and Table.autokey(_groups, mixed) and Table.autokey(_groups, mixed) or
@@ -117,26 +109,24 @@ function Public.give_role(player, role, by_player, tick, raise_event)
     end
     player.admin = this_role.is_admin or false
     player.spectator = this_role.is_spectator or false
-    if raise_event == nil then
-        if Public.events.on_role_change then
-            script.raise_event(
-                Public.events.on_role_change,
-                {
-                    tick = _tick,
-                    player_index = player.index,
-                    by_player_name = by_player_name,
-                    new_role = this_role,
-                    old_role = old_role
-                }
-            )
-        end
+    if raise_event then
+        script.raise_event(
+            Public.events.on_role_change,
+            {
+                tick = _tick,
+                player_index = player.index,
+                by_player_name = by_player_name,
+                new_role = this_role,
+                old_role = old_role
+            }
+        )
     end
 end
 
 function Public.revert(player, by_player)
     local this = Public.config
-    local _player = game.get_player(player)
-    Public.give_role(_player, this.old[_player.index], by_player)
+    player = player or game.get_player(player)
+    Public.give_role(player, this.old[player.index], by_player)
 end
 
 function Public.update_role(player, tick)
@@ -191,13 +181,14 @@ function Public.update_role(player, tick)
             player.tag = _role.tag
             player.permission_group = game.permissions.get_group(_role.name)
         else
-            Public.give_role(player, _role, 'Script', tick, false)
+            Public.give_role(player, _role, 'Script', tick, true)
         end
     end
 end
 
-function Public._set_role_power()
-    for power, role in pairs(Public.config.role) do
+function Public.set_highest_power()
+    local r = Public.getConfigRole()
+    for power, role in pairs(r) do
         role.power = power
     end
 end
@@ -217,24 +208,24 @@ function Public.adjust_permission()
     end
 end
 
-function Public.add_groups()
-    local _return = {}
+function Public.get_groups()
+    local r = {}
     for _, group in pairs(Public.config.group) do
-        _return[group.name] = group
+        r[group.name] = group
     end
-    return _return
+    return r
 end
 
-function Public.add_roles()
-    local _return = {}
+function Public.get_roles()
+    local r = {}
     for _, role in pairs(Public.config.role) do
-        _return[role.name] = role
+        r[role.name] = role
     end
-    return _return
+    return r
 end
 
-function Public._metadata()
-    local meta = Public.config.meta
+function Public.fix_roles()
+    local meta = Public.getConfigMeta()
     if not meta.next_role_name then
         meta.next_role_name = {}
     end
@@ -259,127 +250,11 @@ function Public._metadata()
     return meta
 end
 
-function Public._role:allowed(action)
-    return self.allow[action] or self.is_root or false
-end
-
-function Public._role:disallowed(action)
-    return not self.allow[action] or false
-end
-
-function Public._role:get_players(online)
-    local players = game.permissions.get_group(self.name).players
-    local _return = {}
-    if online then
-        for _, player in pairs(players) do
-            if player.connected then
-                table.insert(_return, player)
-            end
-        end
-    else
-        _return = players
-    end
-    return _return
-end
-
-function Public._role:edit(key, set_value, value)
-    if game then
-        return
-    end
-    _log('Edited role: ' .. self.name .. '/' .. key)
-    if set_value then
-        self[key] = value
-        return
-    end
-    if key == 'disallow' then
-        if value ~= {} then
-            self.disallow = Table.merge(self.disallow, value)
-        end
-    elseif key == 'allow' then
-        self.allow = Table.merge(self.allow, value)
-    end
-    Public.config.role[self.power] = self
-end
-
-function Public._group:create(obj)
-    local this = Public.config
-    if game then
-        return
-    end
-    if not Server.is_type(obj.name, 'string') then
-        return
-    end
-    _log('Created Group: ' .. obj.name)
-    setmetatable(obj, {__index = Public._group})
-    self.index = #this.group + 1
-    obj.roles = {}
-    obj.allow = obj.allow or {}
-    obj.disallow = obj.disallow or {}
-    table.insert(Public.config.group, obj)
-    return obj
-end
-
-function Public._group:add_role(obj)
-    if game then
-        return
-    end
-    if
-        not Server.is_type(obj.name, 'string') or not Server.is_type(obj.short_hand, 'string') or not Server.is_type(obj.tag, 'string') or
-            not Server.is_type(obj.colour, 'table')
-     then
-        return
-    end
-    _log('Created role: ' .. obj.name)
-    setmetatable(obj, {__index = Public._role})
-    obj.group = self
-    obj.allow = obj.allow or {}
-    obj.disallow = obj.disallow or {}
-    obj.power = obj.power and self.highest and self.highest.power + obj.power or obj.power or self.lowest and self.lowest.power + 1 or nil
-    setmetatable(obj.allow, {__index = self.allow})
-    setmetatable(obj.disallow, {__index = self.disallow})
-    if obj.power then
-        table.insert(Public.config.role, obj.power, obj)
-    else
-        table.insert(Public.config.role, obj)
-    end
-    Public._set_role_power()
-    if not self.highest or obj.power < self.highest.power then
-        self.highest = obj
-    end
-    if not self.lowest or obj.power > self.lowest.power then
-        self.lowest = obj
-    end
-end
-
-function Public._group:edit(key, set_value, value)
-    if game then
-        return
-    end
-    _log('Edited Group: ' .. self.name .. '/' .. key)
-    if set_value then
-        self[key] = value
-        return
-    end
-    if key == 'disallow' then
-        self.disallow = Table.merge(self.disallow, value, true)
-    elseif key == 'allow' then
-        self.allow = Table.merge(self.allow, value)
-    end
-    Public.config.group[self.index] = self
-end
-
 local fetch_player =
     Token.register(
     function(data)
         local player = data.player
         Public.update_role(player)
-    end
-)
-
-Server.on_data_set_changed(
-    session_data_set,
-    function(data)
-        Public.update_role(data.key)
     end
 )
 
@@ -397,39 +272,43 @@ Event.add(
     function(event)
         local player = game.players[event.player_index]
         Public.update_role(player)
-        local data = {
-            player = player
-        }
-        Task.set_timeout_in_ticks(10, fetch_player, data)
+        Task.set_timeout_in_ticks(10, fetch_player, {player = player})
     end
 )
 
 Event.on_init(
     function()
-        Public._metadata()
-        local this = Public.config
-        for _, role in pairs(this.role) do
+        Public.fix_roles()
+        local r = Public.getConfigRole()
+        for _, role in pairs(r) do
             local perm = game.permissions.create_group(role.name)
-            for _, toRemove in pairs(role.disallow) do
+            for _, remove in pairs(role.disallow) do
                 if role ~= nil then
-                    perm.set_allows_action(defines.input_action[toRemove], false)
+                    perm.set_allows_action(defines.input_action[remove], false)
                 end
             end
         end
     end
 )
 
-Event.add(
-    defines.events.on_tick,
-    function(event)
-        if (((event.tick + 10) / (3600)) + (15 / 2)) % 15 == 0 then
-            for _, player in pairs(game.connected_players) do
-                local data = {
-                    player = player
-                }
-                Task.set_timeout_in_ticks(5, fetch_player, data)
-            end
+Event.on_nth_tick(
+    3600,
+    function()
+        local players = game.connected_players
+        for i = 1, #players do
+            local player = players[i]
+            local data = {
+                player = player
+            }
+            Task.set_timeout_in_ticks(5, fetch_player, data)
         end
+    end
+)
+
+Server.on_data_set_changed(
+    session_data_set,
+    function(data)
+        Public.update_role(data.key)
     end
 )
 

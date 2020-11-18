@@ -4,15 +4,17 @@ _LIFECYCLE = _STAGE.control -- Control stage
 _DEBUG = false
 _DUMP_ENV = false
 
-local loaded = _G.package.loaded
 local r = require
+local loaded = _G.package.loaded
 function require(path)
-    local success, err = pcall(r, path)
-    if not success then
-        log(err)
-    else
+    if loaded[path] then
         return loaded[path] or log('Can only require files at runtime that have been required in the control stage.', 2)
     end
+    local s, e = pcall(r, path)
+    if not s then
+        log(e)
+    end
+    return e
 end
 
 --! other stuff
@@ -38,9 +40,10 @@ require 'features.modules.rpg.main'
 require 'utils.biter_corpse_remover'
 
 --! Role system
-require 'utils.role.main'
-local Role = require 'utils.role.permissions'
+local Role = require 'utils.role.main'
 require 'utils.role.roles'
+require 'utils.role.set_permissions'
+require 'utils.role.set_roles'
 Role.adjust_permission()
 
 --! gui and modules

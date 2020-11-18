@@ -129,6 +129,10 @@ local function level_up(player)
         RPG_GUI.update_player_stats(player)
     end
     if player.gui.screen[main_frame_name] then
+        if not player.gui.screen[main_frame_name].visible then
+            RPG_GUI.toggle(player, true)
+            player.gui.screen[main_frame_name].visible = false
+        end
         if player.gui.screen[main_frame_name].visible then
             RPG_GUI.toggle(player, true)
         end

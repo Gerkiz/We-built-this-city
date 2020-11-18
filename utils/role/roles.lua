@@ -1,91 +1,92 @@
-local Public = require 'utils.role.main'
+local Table = require 'utils.extended_table'
+local Server = require 'utils.server'
+local Public = require 'utils.role.table'
 
-local groups = Public.add_groups()
+local Roles = {}
+local insert = table.insert
 
-groups['Root']:add_role {
-    name = 'Owner',
-    short_hand = 'Owner',
-    tag = '',
-    time = nil,
-    colour = {r = 170, g = 0, b = 0},
-    disallow = {},
-    is_admin = true,
-    is_spectator = true,
-    base_afk_time = false
-}
-groups['Admin']:add_role {
-    name = 'Moderator',
-    short_hand = 'Mod',
-    tag = '',
-    colour = {r = 0, g = 170, b = 0},
-    disallow = {},
-    is_admin = true,
-    is_spectator = true,
-    base_afk_time = false
-}
+-- @usage debugStr('something')
+local function debugStr(string)
+    if not _DEBUG then
+        return
+    end
+    return log('RAW: ' .. serpent.block(string))
+end
 
-local roles = Public.add_roles()
+function Roles:allowed(action)
+    return self.allow[action] or self.is_root or false
+end
 
-roles['Owner']:edit(
-    'allow',
-    false,
-    {
-        ['debugger'] = true,
-        ['game-settings'] = true,
-        ['always-warp'] = true,
-        ['admin-items'] = true,
-        ['admin-commands'] = true,
-        ['interface'] = true,
-        ['warp-list'] = true,
-        ['pregen_map'] = true,
-        ['dump_layout'] = true,
-        ['creative'] = true
-    }
-)
+function Roles:disallowed(action)
+    return not self.allow[action] or self.is_root or false
+end
 
-roles['Moderator']:edit(
-    'allow',
-    false,
-    {
-        ['repair'] = true,
-        ['spaghetti'] = true,
-        ['tree-decon'] = true
-    }
-)
+function Roles:get_players(online)
+    local players = game.permissions.get_group(self.name).players
+    local r = {}
+    if online then
+        for _, player in pairs(players) do
+            if player.connected then
+                insert(r, player)
+            end
+        end
+    else
+        r = players
+    end
+    return r
+end
 
-roles['Veteran']:edit(
-    'allow',
-    false,
-    {
-        ['bonus'] = true,
-        ['bonus-respawn'] = true,
-        ['clear_corpses'] = true
-    }
-)
+function Roles:edit(key, set_value, value)
+    if game then
+        return
+    end
+    local Config = Public.getConfig()
+    debugStr('Edited role: ' .. self.name .. '/' .. key)
+    if set_value then
+        self[key] = value
+        return
+    end
+    if key == 'disallow' then
+        if value ~= {} then
+            self.disallow = Table.merge(self.disallow, value)
+        end
+    elseif key == 'allow' then
+        self.allow = Table.merge(self.allow, value)
+    end
+    Config.role[self.power] = self
+end
 
-roles['Casual']:edit(
-    'allow',
-    false,
-    {
-        ['trust'] = true,
-        ['untrust'] = true,
-        ['show-warp'] = true
-    }
-)
+function Roles:add_role(obj)
+    if game then
+        return
+    end
+    local this = Public.getConfig()
+    if
+        not Server.is_type(obj.name, 'string') or not Server.is_type(obj.short_hand, 'string') or not Server.is_type(obj.tag, 'string') or
+            not Server.is_type(obj.colour, 'table')
+     then
+        return
+    end
+    debugStr('Created role: ' .. obj.name)
+    setmetatable(obj, {__index = Roles})
+    obj.group = self
+    obj.allow = obj.allow or {}
+    obj.disallow = obj.disallow or {}
+    obj.power = obj.power and self.highest and self.highest.power + obj.power or obj.power or self.lowest and self.lowest.power + 1 or nil
+    setmetatable(obj.allow, {__index = self.allow})
+    setmetatable(obj.disallow, {__index = self.disallow})
+    if obj.power then
+        insert(this.role, obj.power, obj)
+    else
+        insert(this.role, obj)
+    end
+    Public.set_highest_power()
+    if not self.highest or obj.power < self.highest.power then
+        self.highest = obj
+    end
+    if not self.lowest or obj.power > self.lowest.power then
+        self.lowest = obj
+    end
+end
 
-roles['Rookie']:edit(
-    'allow',
-    false,
-    {
-        ['global-chat'] = true
-    }
-)
-
-Public.standard_roles {
-    ['gerkiz'] = 'Owner',
-    ['cko6o4ku'] = 'Moderator',
-    ['userguide'] = 'Moderator',
-    ['panterh3art'] = 'Moderator'
-}
-
-return Public
+return Roles

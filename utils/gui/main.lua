@@ -5,6 +5,7 @@ local m_gui = require 'mod-gui'
 local Color = require 'utils.color_presets'
 local mod = m_gui.get_button_flow
 local disabled_tabs = {}
+local ignored_visibility = {}
 local icons = {
     'entity/small-biter',
     'entity/character',
@@ -166,6 +167,14 @@ function Gui.get_table(key)
     return Gui.store_meta
 end
 
+function Gui.ignored_visibility(elem)
+    if not ignored_visibility[elem] then
+        ignored_visibility[elem] = true
+    elseif ignored_visibility[elem] then
+        ignored_visibility[#ignored_visibility + 1] = elem
+    end
+end
+
 function Gui:_load_parts(parts)
     for _, part in pairs(parts) do
         self[part] = require('objects.' .. part)
@@ -295,12 +304,14 @@ function Gui.toggle_visibility(player, main_frame)
         end
     end
     for _, child in pairs(screen.children) do
-        if child.visible and child ~= main_frame then
-            child.visible = false
-        elseif child.visible and child == main_frame then
-            child.visible = false
-        elseif not child.visible and child == main_frame then
-            child.visible = true
+        if not ignored_visibility[child.name] then
+            if child.visible and child ~= main_frame then
+                child.visible = false
+            elseif child.visible and child == main_frame then
+                child.visible = false
+            elseif not child.visible and child == main_frame then
+                child.visible = true
+            end
         end
     end
 end

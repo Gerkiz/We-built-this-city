@@ -1,13 +1,13 @@
 local Color = require 'utils.color_presets'
-local Public = require 'utils.role.main'
+local Groups = require 'utils.role.groups'
 
 local root =
-    Public._group:create {
+    Groups:create {
     name = 'Root',
     disallow = {}
 }
 local admin =
-    Public._group:create {
+    Groups:create {
     name = 'Admin',
     allow = {},
     disallow = {
@@ -17,7 +17,7 @@ local admin =
     }
 }
 local trusted =
-    Public._group:create {
+    Groups:create {
     name = 'Trusted',
     allow = {},
     disallow = {
@@ -27,7 +27,7 @@ local trusted =
     }
 }
 local user =
-    Public._group:create {
+    Groups:create {
     name = 'User',
     allow = {},
     disallow = {
@@ -37,7 +37,7 @@ local user =
     }
 }
 local jail =
-    Public._group:create {
+    Groups:create {
     name = 'Jail',
     allow = {},
     disallow = {
@@ -134,5 +134,3 @@ jail:add_role {
     disallow = {},
     base_afk_time = false
 }
-
-return Public

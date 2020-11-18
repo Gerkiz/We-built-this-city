@@ -12,8 +12,8 @@ local session = {}
 local online_track = {}
 local trusted = {}
 local settings = {
-    -- local trusted_value = 2592000 -- 12h
-    trusted_value = 5184000, -- 24h
+    trusted_value = 2592000, -- 12h
+    -- trusted_value = 5184000, -- 24h
     nth_tick = 18000 -- nearest prime to 5 minutes in ticks
 }
 local set_data = Server.set_data

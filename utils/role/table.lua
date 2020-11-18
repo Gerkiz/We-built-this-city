@@ -2,17 +2,13 @@ local Global = require 'utils.global'
 local Event = require 'utils.event'
 
 local Public = {
-    _role = {},
-    _group = {},
     config = {
         role = {},
         group = {},
         meta = {},
         old = {},
-        current = {},
-        last_jail = nil
+        current = {}
     },
-    order = {},
     events = {
         on_role_change = Event.generate_event_name('on_role_change')
     }
@@ -21,19 +17,25 @@ local Public = {
 Global.register(
     Public.config,
     function(tbl)
+        local Roles = package.loaded['utils.role.roles']
         Public.config = tbl
-        for _, role in pairs(Public.config.role) do
-            setmetatable(role, {__index = Public._role})
-            local parent = Public.config.role[role.parent]
-            if parent then
-                setmetatable(role.actions, {__index = parent.actions})
-            end
+        local roles = Public.config.role
+        for _, role in pairs(roles) do
+            setmetatable(role, {__index = Roles})
         end
     end
 )
 
-function Public.get_table()
+function Public.getConfig()
     return Public.config
+end
+
+function Public.getConfigRole()
+    return Public.config.role
+end
+
+function Public.getConfigMeta()
+    return Public.config.meta
 end
 
 return Public

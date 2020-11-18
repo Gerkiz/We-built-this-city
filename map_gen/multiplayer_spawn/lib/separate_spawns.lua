@@ -1035,6 +1035,7 @@ function Public.DisplayWelcomeTextGui(player)
         caption = global.welcome_msg_title,
         style = main_style
     }
+    Gui.ignored_visibility(wGui.name)
     wGui.auto_center = true
     wGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     wGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -1097,13 +1098,15 @@ function Public.DisplaySpawnOptions(player)
         log('Tried to display spawn options when it was already displayed!')
         return
     end
-    player.gui.screen.add {
+    local elem =
+        player.gui.screen.add {
         name = 'spawn_opts',
         type = 'frame',
         direction = 'vertical',
         caption = {'oarc-spawn-options'},
         style = main_style
     }
+    Gui.ignored_visibility(elem.name)
     local sGui = player.gui.screen.spawn_opts
     sGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     sGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -1466,13 +1469,15 @@ end
 
 -- Display the spawn options and explanation
 function Public.DisplaySharedSpawnOptions(player)
-    player.gui.screen.add {
+    local elem =
+        player.gui.screen.add {
         name = 'shared_spawn_opts',
         type = 'frame',
         direction = 'vertical',
         caption = {'oarc-avail-bases-join'},
         style = main_style
     }
+    Gui.ignored_visibility(elem.name)
 
     local shGuiFrame = player.gui.screen.shared_spawn_opts
     shGuiFrame.style.minimal_height = 300
@@ -1596,6 +1601,7 @@ function Public.DisplaySharedSpawnJoinWaitMenu(player)
         caption = {'oarc-waiting-for-spawn-owner'},
         style = main_style
     }
+    Gui.ignored_visibility(sGui.name)
     sGui.auto_center = true
     sGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     sGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -1938,6 +1944,7 @@ function Public.DisplayBuddySpawnOptions(player)
         caption = {'oarc-buddy-spawn-options'},
         style = main_style
     }
+    Gui.ignored_visibility(buddyGui.name)
     buddyGui.auto_center = true
     buddyGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     buddyGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -2192,6 +2199,7 @@ function Public.DisplayBuddySpawnWaitMenu(player)
         caption = {'oarc-waiting-for-buddy'},
         style = main_style
     }
+    Gui.ignored_visibility(sGui.name)
     sGui.auto_center = true
     sGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     sGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -2256,6 +2264,7 @@ function Public.DisplayBuddySpawnRequestMenu(player, requestingBuddyName)
         caption = 'Buddy Request!',
         style = main_style
     }
+    Gui.ignored_visibility(sGui.name)
     sGui.auto_center = true
     sGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     sGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
@@ -2444,6 +2453,7 @@ function Public.DisplayPleaseWaitForSpawnDialog(player, delay_seconds)
         direction = 'vertical',
         caption = {'oarc-spawn-wait'}
     }
+    Gui.ignored_visibility(pleaseWaitGui.name)
     pleaseWaitGui.auto_center = true
     pleaseWaitGui.style.maximal_width = SPAWN_GUI_MAX_WIDTH
     pleaseWaitGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
