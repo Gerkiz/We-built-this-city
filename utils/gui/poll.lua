@@ -5,8 +5,6 @@ local Game = require 'utils.game'
 local Server = require 'utils.server'
 local session = require 'utils.datastore.session_data'
 local Tabs = require 'utils.gui.core'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 
 local insert = table.insert
 
@@ -804,19 +802,19 @@ local function player_joined(event)
         return
     end
 
-    if mod(player)[main_button_name] ~= nil then
-        local frame = mod(player)[main_frame_name]
+    if Gui.get_button_flow(player)[main_button_name] ~= nil then
+        local frame = Gui.get_button_flow(player)[main_frame_name]
         if frame and frame.valid then
             local data = Gui.get_data(frame)
             update_poll_viewer(data)
         end
     else
-        mod(player).add {
+        Gui.get_button_flow(player).add {
             type = 'sprite-button',
             name = main_button_name,
             sprite = 'item/programmable-speaker',
             tooltip = 'Let your question be heard!',
-            style = m_gui.button_style
+            style = Gui.button_style
         }
     end
 end

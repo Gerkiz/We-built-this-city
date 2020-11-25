@@ -2,8 +2,6 @@ local ICT = require 'features.modules.portable_surface.table'
 local Color = require 'utils.color_presets'
 local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 
 local Public = {}
 
@@ -243,23 +241,23 @@ end
 
 local function add_toolbar(player, remove)
     if remove then
-        if mod(player)[main_toolbar_name] then
-            mod(player)[main_toolbar_name].destroy()
+        if Gui.get_button_flow(player)[main_toolbar_name] then
+            Gui.get_button_flow(player)[main_toolbar_name].destroy()
             return
         end
     end
-    if mod(player)[main_toolbar_name] then
+    if Gui.get_button_flow(player)[main_toolbar_name] then
         return
     end
 
     local tooltip = 'Control who may enter your vehicle.'
-    mod(player).add(
+    Gui.get_button_flow(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/spidertron',
             name = main_toolbar_name,
             tooltip = tooltip,
-            style = m_gui.button_style
+            style = Gui.button_style
         }
     )
 end
@@ -272,8 +270,8 @@ local function remove_toolbar(player)
         remove_main_frame(main_frame)
     end
 
-    if mod(player)[main_toolbar_name] then
-        mod(player)[main_toolbar_name].destroy()
+    if Gui.get_button_flow(player)[main_toolbar_name] then
+        Gui.get_button_flow(player)[main_toolbar_name].destroy()
         return
     end
 end

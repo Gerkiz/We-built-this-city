@@ -1,8 +1,6 @@
 local Token = require 'utils.token'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
-local mod_gui = require 'mod-gui'
-local mod = mod_gui.get_button_flow
 
 local tostring = tostring
 local next = next
@@ -34,6 +32,9 @@ local Gui = {
 }
 
 Gui._mt_execute.__index = Gui._mt
+
+Gui.button_style = 'mod_gui_button'
+Gui.frame_style = 'non_draggable_frame'
 
 local element_data = {}
 local element_map = {}
@@ -132,8 +133,8 @@ function Gui.uid_name()
     return uid.name
 end
 
-Gui.get_top_flow = mod_gui.get_button_flow
-Gui.get_left_flow = mod_gui.get_frame_flow
+Gui.get_top_flow = Gui.get_button_flow
+Gui.get_left_flow = Gui.get_frame_flow
 
 -- Associates data with the LuaGuiElement. If data is nil then removes the data
 function Gui.set_data(element, value)
@@ -327,7 +328,7 @@ function Gui.add_main_frame(parent, main_frame_name, frame_name, frame_tooltip, 
     return frame, main_frame
 end
 
-Gui.top_flow_button_style = mod_gui.button_style
+Gui.top_flow_button_style = Gui.button_style
 Gui.top_flow_button_visible_style = 'menu_button_continue'
 
 function Gui.toolbar_button_style(button, state)
@@ -535,6 +536,30 @@ Gui.on_value_changed = handler_factory('on_value_changed')
 
 local main_button_name = Gui.uid_name()
 
+function Gui.get_button_flow(player)
+    local gui = player.gui.top
+    local button_flow = gui.mod_gui_button_flow
+    if not button_flow then
+        button_flow =
+            gui.add {type = 'flow', name = 'mod_gui_button_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
+        button_flow.style.left_padding = 4
+        button_flow.style.top_padding = 4
+    end
+    return button_flow
+end
+
+function Gui.get_frame_flow(player)
+    local gui = player.gui.left
+    local frame_flow = gui.mod_gui_frame_flow
+    if not frame_flow then
+        frame_flow =
+            gui.add {type = 'flow', name = 'mod_gui_frame_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
+        frame_flow.style.left_padding = 4
+        frame_flow.style.top_padding = 4
+    end
+    return frame_flow
+end
+
 Event.add(
     defines.events.on_player_created,
     function(event)
@@ -545,17 +570,19 @@ Event.add(
         end
 
         local b =
-            mod(player).add(
+            Gui.get_button_flow(player).add(
             {
                 type = 'sprite-button',
                 name = main_button_name,
                 sprite = 'utility/preset',
-                style = mod_gui.button_style,
+                style = Gui.button_style,
                 tooltip = 'Click to toggle hide top buttons!'
             }
         )
         b.style.padding = 2
         b.style.width = 20
+
+        Gui.get_button_flow(player).style = 'slot_table_spacing_horizontal_flow'
     end
 )
 
@@ -564,7 +591,7 @@ Gui.on_click(
     function(event)
         local button = event.element
         local player = event.player
-        local top = mod(player)
+        local top = Gui.get_button_flow(player)
 
         if button.sprite == 'utility/preset' then
             for i = 1, #top_elements do

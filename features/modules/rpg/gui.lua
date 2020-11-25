@@ -2,9 +2,6 @@ local Tabs = require 'utils.gui.core'
 local P = require 'utils.player_modifiers'
 local Gui = require 'utils.gui.core'
 
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
-
 --RPG Modules
 local Functions = require 'features.modules.rpg.functions'
 local RPG = require 'features.modules.rpg.table'
@@ -28,27 +25,27 @@ local save_button_name = RPG.save_button_name
 local sub = string.sub
 
 function Public.draw_gui_char_button(player)
-    if mod(player)[draw_main_frame_name] then
+    if Gui.get_button_flow(player)[draw_main_frame_name] then
         return
     end
-    mod(player).add {
+    Gui.get_button_flow(player).add {
         type = 'sprite-button',
         name = draw_main_frame_name,
         caption = '[RPG]',
         tooltip = 'Which class are you?',
-        style = m_gui.button_style
+        style = Gui.button_style
     }
 end
 
 function Public.update_char_button(player)
     local rpg_t = RPG.get('rpg_t')
-    if not mod(player)[draw_main_frame_name] then
+    if not Gui.get_button_flow(player)[draw_main_frame_name] then
         Public.draw_gui_char_button(player)
     end
     if rpg_t[player.index].points_to_distribute > 0 then
-        mod(player)[draw_main_frame_name].style.font_color = {245, 0, 0}
+        Gui.get_button_flow(player)[draw_main_frame_name].style.font_color = {245, 0, 0}
     else
-        mod(player)[draw_main_frame_name].style.font_color = {175, 175, 175}
+        Gui.get_button_flow(player)[draw_main_frame_name].style.font_color = {175, 175, 175}
     end
 end
 

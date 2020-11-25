@@ -1,9 +1,7 @@
 local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui'
-local m_gui = require 'mod-gui'
 local Color = require 'utils.color_presets'
-local mod = m_gui.get_button_flow
 local disabled_tabs = {}
 local ignored_visibility = {}
 local icons = {
@@ -367,16 +365,16 @@ function Gui.panel_refresh_active_tab(player)
 end
 
 local function top_button(player)
-    if mod(player)[main_button_name] then
+    if Gui.get_button_flow(player)[main_button_name] then
         return
     end
     local b =
-        mod(player).add(
+        Gui.get_button_flow(player).add(
         {
             type = 'sprite-button',
             name = main_button_name,
             sprite = 'utility/expand_dots',
-            style = m_gui.button_style,
+            style = Gui.button_style,
             tooltip = 'The panel of all the goodies!'
         }
     )
@@ -564,12 +562,12 @@ Event.add(
     Gui.events.on_gui_removal,
     function(player)
         local b =
-            mod(player).add(
+            Gui.get_button_flow(player).add(
             {
                 type = 'sprite-button',
                 name = main_button_name,
                 sprite = 'utility/expand_dots',
-                style = m_gui.button_style,
+                style = Gui.button_style,
                 tooltip = 'The panel of all the goodies!'
             }
         )

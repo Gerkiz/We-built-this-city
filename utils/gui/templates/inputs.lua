@@ -1,7 +1,5 @@
 local Event = require 'utils.event'
 local Core = require 'utils.gui'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 
 local inputs = {}
 inputs._input = {}
@@ -119,7 +117,7 @@ end
 
 function inputs._input:remove(root)
     local player = game.get_player(root.player_index)
-    local gui = mod(player)
+    local gui = Core.get_button_flow(player)
     if gui[self.draw_data.name] then
         Core.toggle_visible_state(gui[self.draw_data.name])
     end
@@ -147,7 +145,7 @@ function inputs.add(obj)
         return
     end
     if obj.type == 'button' or obj.type == 'sprite-button' then
-        obj.style = m_gui.button_style
+        obj.style = Core.button_style
     end
     obj.draw_data = table.deepcopy(obj)
     obj.data = {}

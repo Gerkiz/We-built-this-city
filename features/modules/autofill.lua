@@ -562,6 +562,9 @@ Event.on_init(
 Event.on_configuration_changed(
     function()
         log('[Autofill] - Called Configuration Changed.')
+        this.valid_ammo = {}
+        this.valid_fuel = {}
+        this.valid_turrets = {}
         get_priorities()
         get_fuel_items()
         get_valid_turrets()

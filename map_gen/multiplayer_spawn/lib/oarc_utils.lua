@@ -7,7 +7,6 @@ local Surface = require 'utils.surface'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local Gui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
 local Alert = require 'utils.alert'
-require('mod-gui')
 local table_insert = table.insert
 local table_remove = table.remove
 local math_random = math.random
@@ -281,10 +280,7 @@ end
 function Public.ShareChatBetweenForces(player, msg)
     for _, force in pairs(game.forces) do
         if (force ~= nil) then
-            if
-                ((force.name ~= 'enemy') and (force.name ~= 'neutral') and (force.name ~= player) and
-                    (force ~= player.force))
-             then
+            if ((force.name ~= 'enemy') and (force.name ~= 'neutral') and (force.name ~= player) and (force ~= player.force)) then
                 force.print(player.name .. ': ' .. msg)
             end
         end
@@ -561,8 +557,7 @@ function Public.CreateGameSurface()
 
     if global.enable_vanilla_spawns then
         Surface.set_island(true)
-        nauvis_settings.starting_points =
-            Public.CreateVanillaSpawns(global.vanilla_spawn_count, global.vanilla_spawn_distance)
+        nauvis_settings.starting_points = Public.CreateVanillaSpawns(global.vanilla_spawn_count, global.vanilla_spawn_distance)
 
         -- ENFORCE ISLAND MAP GEN
         if (global.silo_island_mode) then
@@ -729,7 +724,7 @@ function Public.DropGravestoneChests(player)
     local count = 0
 
     -- Make sure we save stuff we're holding in our hands.
-    player.clean_cursor()
+    player.clear_cursor()
 
     -- Loop through a players different inventories
     -- Put it all into a chest.
@@ -905,22 +900,12 @@ function Public.AutoFillVehicle(player, vehicle)
 
     -- Attempt to transfer some fuel
     if ((vehicle.name == 'car') or (vehicle.name == 'tank') or (vehicle.name == 'locomotive')) then
-        Public.TransferItemMultipleTypes(
-            mainInv,
-            vehicle,
-            {'nuclear-fuel', 'rocket-fuel', 'solid-fuel', 'coal', 'wood'},
-            50
-        )
+        Public.TransferItemMultipleTypes(mainInv, vehicle, {'nuclear-fuel', 'rocket-fuel', 'solid-fuel', 'coal', 'wood'}, 50)
     end
 
     -- Attempt to transfer some ammo
     if ((vehicle.name == 'car') or (vehicle.name == 'tank')) then
-        Public.TransferItemMultipleTypes(
-            mainInv,
-            vehicle,
-            {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'},
-            100
-        )
+        Public.TransferItemMultipleTypes(mainInv, vehicle, {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'}, 100)
     end
 
     -- Attempt to transfer some tank shells
@@ -952,8 +937,7 @@ function Public.CreateCropCircle(surface, centerPos, chunkArea, tileRadius, fill
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
                 if
-                    (surface.get_tile(i, j).collides_with('water-tile') or
-                        global.scenario_config.gen_settings.force_grass or
+                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
                         (game.active_mods['oarc-restricted-build']))
                  then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
@@ -985,8 +969,7 @@ function Public.CreateCropCircleNoTrees(surface, centerPos, chunkArea, tileRadiu
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
                 if
-                    (surface.get_tile(i, j).collides_with('water-tile') or
-                        global.scenario_config.gen_settings.force_grass or
+                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
                         (game.active_mods['oarc-restricted-build']))
                  then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
@@ -1013,10 +996,7 @@ function Public.CreateCropSquare(surface, centerPos, area, tileRadius, fillTile)
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius) then
-                if
-                    (surface.get_tile(i, j).collides_with('water-tile') or
-                        global.scenario_config.gen_settings.force_grass)
-                 then
+                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
@@ -1046,8 +1026,7 @@ function Public.CreateCropOctagon(surface, centerPos, chunkArea, tileRadius, fil
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius + 2) then
                 if
-                    (surface.get_tile(i, j).collides_with('water-tile') or
-                        global.scenario_config.gen_settings.force_grass or
+                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
                         (game.active_mods['oarc-restricted-build']))
                  then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
@@ -1075,10 +1054,7 @@ function Public.CreateMoat(surface, centerPos, chunkArea, tileRadius)
             local distVar = math_floor((centerPos.x - i) ^ 2 + (centerPos.y - j) ^ 2)
 
             -- Create a circle of water
-            if
-                ((distVar < tileRadSqr + (1500 * global.scenario_config.gen_settings.moat_size_modifier)) and
-                    (distVar > tileRadSqr))
-             then
+            if ((distVar < tileRadSqr + (1500 * global.scenario_config.gen_settings.moat_size_modifier)) and (distVar > tileRadSqr)) then
                 table_insert(waterTiles, {name = 'water', position = {i, j}})
             end
         end
@@ -1164,15 +1140,11 @@ function Public.CreateHoldingPen(surface, chunkArea, sizeTiles, sizeMoat)
             for j = chunkArea.left_top.y, chunkArea.right_bottom.y, 1 do
                 -- Are we within the moat area?
                 if
-                    ((i > -(sizeTiles + sizeMoat)) and (i < ((sizeTiles + sizeMoat) - 1)) and
-                        (j > -(sizeTiles + sizeMoat)) and
+                    ((i > -(sizeTiles + sizeMoat)) and (i < ((sizeTiles + sizeMoat) - 1)) and (j > -(sizeTiles + sizeMoat)) and
                         (j < ((sizeTiles + sizeMoat) - 1)))
                  then
                     -- Are we within the land area? Place land.
-                    if
-                        ((i > -(sizeTiles)) and (i < ((sizeTiles) - 1)) and (j > -(sizeTiles)) and
-                            (j < ((sizeTiles) - 1)))
-                     then
+                    if ((i > -(sizeTiles)) and (i < ((sizeTiles) - 1)) and (j > -(sizeTiles)) and (j < ((sizeTiles) - 1))) then
                         -- Else, surround with water.
                         table_insert(grassTiles, {name = 'grass-1', position = {i, j}})
                     else

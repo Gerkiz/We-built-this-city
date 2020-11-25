@@ -1,5 +1,3 @@
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
@@ -138,11 +136,11 @@ local function player_joined(event)
         return
     end
 
-    if mod(player)[main_button_name] ~= nil then
+    if Gui.get_button_flow(player)[main_button_name] ~= nil then
         return
     end
 
-    mod(player).add {
+    Gui.get_button_flow(player).add {
         name = main_button_name,
         type = 'sprite-button',
         sprite = 'entity/medium-biter',
@@ -291,7 +289,7 @@ local function redraw_main_frame()
 end
 
 local function redraw_main_button(player, path)
-    local main_button = mod(player)[main_button_name]
+    local main_button = Gui.get_button_flow(player)[main_button_name]
 
     if path == '' or path == nil then
         main_button.sprite = 'utility/pump_cannot_connect_icon'

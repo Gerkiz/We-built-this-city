@@ -20,8 +20,6 @@ end
 --! other stuff
 local Event = require 'utils.event'
 
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
@@ -76,14 +74,6 @@ require 'features.modules.bp'
 ---! load from config/map
 require 'map_loader'
 --require 'map_builder'
-
-Event.add(
-    defines.events.on_player_created,
-    function(e)
-        local player = game.get_player(e.player_index)
-        mod(player).style = 'slot_table_spacing_horizontal_flow'
-    end
-)
 
 local function is_game_modded()
     local i = 0

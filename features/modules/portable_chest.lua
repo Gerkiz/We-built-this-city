@@ -2,8 +2,6 @@ local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Color = require 'utils.color_presets'
 local Gui = require 'utils.gui.core'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 
 local this = {
     inf_chests = {},
@@ -63,13 +61,13 @@ local function clear_gui(player)
 end
 
 local function create_button(player)
-    mod(player).add(
+    Gui.get_button_flow(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/logistic-chest-requester',
             name = main_button_name,
             tooltip = 'Portable inventory stash!',
-            style = m_gui.button_style
+            style = Gui.button_style
         }
     )
 end
@@ -166,7 +164,7 @@ local function draw_main_frame(player, target, chest_id)
     end
     local p = target or player
 
-    frame, top_frame =
+    local frame, top_frame =
         Gui.add_main_frame(player.gui.screen, main_frame_name, p.name .. '´s private portable stash', 'Your personal storage chest.')
     top_frame.auto_center = true
 
@@ -532,7 +530,7 @@ local function on_player_joined_game(event)
         this.total_slots[player.index] = 50
     end
 
-    if not mod(player)[main_button_name] then
+    if not Gui.get_button_flow(player)[main_button_name] then
         create_button(player)
     end
 end

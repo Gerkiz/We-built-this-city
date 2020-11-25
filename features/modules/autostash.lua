@@ -4,16 +4,14 @@
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 local math_floor = math.floor
 local print_color = {r = 120, g = 255, b = 0}
 
 local this = {
     floating_text_y_offsets = {},
     whitelist = {},
-    insert_into_furnace = false,
-    insert_into_wagon = false,
+    insert_into_furnace = true,
+    insert_into_wagon = true,
     small_radius = 2
 }
 
@@ -429,18 +427,32 @@ local function auto_stash(player, event)
 end
 
 local function create_gui_button(player)
-    if mod(player).auto_stash then
+    if Gui.get_button_flow(player).auto_stash then
         return
     end
 
+    local tooltip
+    if this.insert_into_furnace and this.insert_into_wagon then
+        tooltip =
+            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
+    elseif this.insert_into_furnace then
+        tooltip =
+            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.'
+    elseif this.insert_into_wagon then
+        tooltip =
+            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
+    else
+        tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.'
+    end
+
     local b =
-        mod(player).add(
+        Gui.get_button_flow(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/wooden-chest',
             name = 'auto_stash',
             tooltip = tooltip,
-            style = m_gui.button_style
+            style = Gui.button_style
         }
     )
 

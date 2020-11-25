@@ -1,7 +1,6 @@
 local Event = require 'utils.event'
 local Core = require 'utils.gui'
 local Color = require 'utils.color_presets'
-local m_gui = require 'mod-gui'
 
 local center = {}
 center._center = {}
@@ -56,7 +55,7 @@ function center._center.open(event)
         type = 'frame',
         caption = frame.caption,
         direction = 'vertical',
-        style = m_gui.frame_style
+        style = Core.frame_style
     }
     if is_type(child.caption, 'string') and player.gui.is_valid_sprite_path(child.caption) then
         child.caption = ''

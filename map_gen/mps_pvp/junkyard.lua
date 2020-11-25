@@ -182,8 +182,6 @@ local function create_shipwreck(surface, position)
             evolution_min = 0.5,
             evolution_max = 1
         },
-        {{name = 'railgun', count = 1}, weight = 1, evolution_min = 0.2, evolution_max = 1},
-        {{name = 'railgun-dart', count = math_random(16, 32)}, weight = 3, evolution_min = 0.2, evolution_max = 0.7},
         {{name = 'defender-capsule', count = math_random(8, 16)}, weight = 2, evolution_min = 0.0, evolution_max = 0.7},
         {{name = 'distractor-capsule', count = math_random(8, 16)}, weight = 2, evolution_min = 0.2, evolution_max = 1},
         {{name = 'destroyer-capsule', count = math_random(8, 16)}, weight = 2, evolution_min = 0.3, evolution_max = 1},
@@ -438,10 +436,7 @@ end
 local function place_random_scrap_entity(surface, position)
     local r = math.random(1, 100)
     if r < 15 then
-        local e =
-            surface.create_entity(
-            {name = scrap_buildings[math.random(1, #scrap_buildings)], position = position, force = 'scrap'}
-        )
+        local e = surface.create_entity({name = scrap_buildings[math.random(1, #scrap_buildings)], position = position, force = 'scrap'})
         e.destructible = false
         e.active = false
         return
@@ -464,10 +459,7 @@ local function place_random_scrap_entity(surface, position)
         return
     end
 
-    local e =
-        surface.create_entity(
-        {name = 'storage-tank', position = position, force = 'scrap', direction = math.random(0, 3)}
-    )
+    local e = surface.create_entity({name = 'storage-tank', position = position, force = 'scrap', direction = math.random(0, 3)})
     e.destructible = false
     local fluids = {'crude-oil', 'lubricant', 'heavy-oil', 'light-oil', 'petroleum-gas', 'sulfuric-acid', 'water'}
     e.fluidbox[1] = {name = fluids[math.random(1, #fluids)], amount = math.random(15000, 25000)}
@@ -748,10 +740,7 @@ local function show_mvps(player)
         local l = t.add({type = 'label', caption = 'Builder >> '})
         l.style.font = 'default-listbox'
         l.style.font_color = {r = 0.22, g = 0.77, b = 0.44}
-        local l =
-            t.add(
-            {type = 'label', caption = mvp.built_entities.name .. ' built ' .. mvp.built_entities.score .. ' things'}
-        )
+        local l = t.add({type = 'label', caption = mvp.built_entities.name .. ' built ' .. mvp.built_entities.score .. ' things'})
         l.style.font = 'default-bold'
         l.style.font_color = {r = 0.33, g = 0.66, b = 0.9}
 
@@ -796,10 +785,7 @@ local function show_mvps(player)
         local l = t.add({type = 'label', caption = 'Builder >> '})
         l.style.font = 'default-listbox'
         l.style.font_color = {r = 0.22, g = 0.77, b = 0.44}
-        local l =
-            t.add(
-            {type = 'label', caption = mvp.built_entities.name .. ' built ' .. mvp.built_entities.score .. ' things'}
-        )
+        local l = t.add({type = 'label', caption = mvp.built_entities.name .. ' built ' .. mvp.built_entities.score .. ' things'})
         l.style.font = 'default-bold'
         l.style.font_color = {r = 0.33, g = 0.66, b = 0.9}
 

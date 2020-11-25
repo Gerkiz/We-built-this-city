@@ -31,9 +31,7 @@ local function teleport_player(surface, source_player, position)
     if not source_player.character then
         return
     end
-    surface.create_entity(
-        {name = 'character-corpse', position = source_player.position, force = source_player.force.name}
-    )
+    surface.create_entity({name = 'character-corpse', position = source_player.position, force = source_player.force.name})
     source_player.teleport(position, surface)
     if source_player.character.health < 25 then
         source_player.character.health = 250
@@ -53,13 +51,7 @@ end
 
 local function teleport_effects(surface, position)
     local x = position.x + (4 - (math.random(1, 80) * 0.1))
-    surface.create_entity(
-        {
-            name = 'railgun-beam',
-            position = {x = position.x, y = position.y},
-            target = {x = x, y = position.y - math.random(6, 13)}
-        }
-    )
+
     for y = 0, 1, 1 do
         surface.create_entity(
             {
@@ -122,8 +114,7 @@ end
 
 local function teleport(source_player, target_player)
     source_player.teleport({x = math.floor(source_player.position.x), y = math.floor(source_player.position.y)})
-    local target_position =
-        target_player.surface.find_non_colliding_position('character', target_player.position, 128, 1)
+    local target_position = target_player.surface.find_non_colliding_position('character', target_player.position, 128, 1)
     if not target_position then
         target_position = {x = target_player.position.x, y = target_player.position.y}
     end
@@ -190,10 +181,8 @@ local function get_sorted_player_table(requesting_player)
         if player.name ~= requesting_player.name and player.force == requesting_player.force then
             local distance =
                 math.ceil(
-                math.sqrt(
-                    (player.position.x - requesting_player.position.x) ^ 2 +
-                        (player.position.y - requesting_player.position.y) ^ 2
-                ) * 10
+                math.sqrt((player.position.x - requesting_player.position.x) ^ 2 + (player.position.y - requesting_player.position.y) ^ 2) *
+                    10
             ) * 0.1
             table.insert(t, {name = player.name, distance = distance})
         end
@@ -215,9 +204,7 @@ local function create_gui_toggle_button(player)
         return
     end
     local b =
-        player.gui.top.add(
-        {type = 'sprite-button', name = 'team_teleport_button', caption = 'TP', tooltip = 'Teleport to a Team Member'}
-    )
+        player.gui.top.add({type = 'sprite-button', name = 'team_teleport_button', caption = 'TP', tooltip = 'Teleport to a Team Member'})
     b.style.font_color = {r = 0.55, g = 0.22, b = 0.77}
     b.style.font = 'heading-1'
     b.style.minimal_height = 38
@@ -316,8 +303,7 @@ local function on_gui_click(event)
             player.print('You need one more minute to recover from the last teleport.')
         else
             player.print(
-                'You are not capable of handling another teleport yet, you need ' ..
-                    tostring(recovery_time) .. ' more minutes to recover.'
+                'You are not capable of handling another teleport yet, you need ' .. tostring(recovery_time) .. ' more minutes to recover.'
             )
         end
         return

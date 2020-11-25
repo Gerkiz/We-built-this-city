@@ -1,5 +1,3 @@
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
 local Gui = require 'utils.gui.core'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
@@ -261,20 +259,20 @@ end
 
 function Public.create_warp_button(player)
     if not Roles.get_role(player):allowed('show-warp') then
-        if mod(player)[main_button_name] then
-            mod(player)[main_button_name].destroy()
+        if Gui.get_button_flow(player)[main_button_name] then
+            Gui.get_button_flow(player)[main_button_name].destroy()
         end
         return
     end
-    if mod(player)[main_button_name] then
+    if Gui.get_button_flow(player)[main_button_name] then
         return
     end
-    mod(player).add {
+    Gui.get_button_flow(player).add {
         type = 'sprite-button',
         sprite = 'item/discharge-defense-equipment',
         name = main_button_name,
         tooltip = 'Warp to places!',
-        style = m_gui.button_style
+        style = Gui.button_style
     }
 end
 
@@ -441,7 +439,7 @@ local function draw_player_warp_only(player, p, table, sub_table, name, warp, e)
             type = 'sprite-button',
             name = remove_warp_button_name,
             tooltip = 'Removes warp: ' .. bottom_warp_flow.name,
-            style = m_gui.button_style,
+            style = Gui.button_style,
             sprite = 'utility/trash'
         }
         remove_warp_flow.style.padding = -2

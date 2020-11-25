@@ -1,8 +1,6 @@
-local m_gui = require 'mod-gui'
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
 local Global = require 'utils.global'
-local mod = m_gui.get_button_flow
 
 local this = {
     config = {},
@@ -170,7 +168,7 @@ local function gui_open_frame(player)
         storage_flow.add {
         type = 'sprite-button',
         name = 'upgrade_planner_storage_delete',
-        sprite = 'utility/trash_bin',
+        sprite = 'utility/trash',
         tooltip = 'Delete Storage'
     }
     remove_button.style = 'back_button'
@@ -276,7 +274,7 @@ local function gui_open_frame(player)
         ruleset_grid.add {
             type = 'sprite-button',
             name = 'upgrade_planner_clear_' .. i,
-            sprite = 'utility/trash_bin',
+            sprite = 'utility/trash',
             tooltip = 'Clear',
             ''
         }
@@ -958,7 +956,7 @@ local on_gui_click = function(event)
         return
     end
     if name == 'give_upgrade_tool' then
-        player.clean_cursor()
+        player.clear_cursor()
         if player.get_item_count('selection-tool') > 0 then
             player.remove_item {name = 'selection-tool', count = 999}
         end
@@ -1079,16 +1077,16 @@ Event.add(
             this.storage_index[player.name] = 1
         end
 
-        if mod(player)['upgrade_planner_config_button'] then
+        if Gui.get_button_flow(player)['upgrade_planner_config_button'] then
             return
         end
         local b =
-            mod(player).add {
+            Gui.get_button_flow(player).add {
             type = 'sprite-button',
             sprite = 'item/fast-transport-belt',
             name = 'upgrade_planner_config_button',
             tooltip = 'Upgrade planner',
-            style = m_gui.button_style
+            style = Gui.button_style
         }
         Gui.allow_player_to_toggle(b.name)
     end

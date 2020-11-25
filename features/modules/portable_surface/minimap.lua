@@ -3,8 +3,7 @@ local Public = {}
 local ICT = require 'features.modules.portable_surface.table'
 local Functions = require 'features.modules.portable_surface.functions'
 local Gui = require 'features.modules.portable_surface.gui'
-local m_gui = require 'mod-gui'
-local mod = m_gui.get_button_flow
+local Core = require 'utils.gui'
 
 local function validate_player(player)
     if not player then
@@ -26,21 +25,21 @@ local function validate_player(player)
 end
 
 local function create_button(player, remove)
-    if mod(player)['minimap_button'] then
-        mod(player)['minimap_button'].destroy()
+    if Core.get_button_flow(player)['minimap_button'] then
+        Core.get_button_flow(player)['minimap_button'].destroy()
     end
 
     if remove then
         return
     end
 
-    mod(player).add(
+    Core.get_button_flow(player).add(
         {
             type = 'sprite-button',
             name = 'minimap_button',
             sprite = 'utility/map',
             tooltip = 'Open or close minimap.',
-            style = m_gui.button_style
+            style = Core.button_style
         }
     )
 end
@@ -125,10 +124,7 @@ local function draw_minimap(player, surface, position)
     local player_data = get_player_data(player)
     local frame = player.gui.left.minimap_toggle_frame
     if not frame then
-        frame =
-            player.gui.left.add(
-            {type = 'frame', direction = 'vertical', name = 'minimap_toggle_frame', caption = 'Minimap'}
-        )
+        frame = player.gui.left.add({type = 'frame', direction = 'vertical', name = 'minimap_toggle_frame', caption = 'Minimap'})
     end
     frame.visible = true
     local element = frame['minimap_frame']

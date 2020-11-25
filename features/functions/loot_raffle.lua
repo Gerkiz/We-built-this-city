@@ -156,7 +156,6 @@ local item_worths = {
 	["submachine-gun"] = 32,
 	["shotgun"] = 16,
 	["combat-shotgun"] = 256,
-	["railgun"] = 512,
 	["rocket-launcher"] = 128,
 	["flamethrower"] = 512,
 	["land-mine"] = 8,
@@ -165,7 +164,6 @@ local item_worths = {
 	["uranium-rounds-magazine"] = 64,
 	["shotgun-shell"] = 4,
 	["piercing-shotgun-shell"] = 16,
-	["railgun-dart"] = 16,
 	["cannon-shell"] = 8,
 	["explosive-cannon-shell"] = 16,
 	["uranium-cannon-shell"] = 64,
@@ -234,11 +232,11 @@ function Public.roll_item_stack(remaining_budget, blacklist)
 		item_worth = item_worths[item_name]
 		if not blacklist[item_name] and item_worth <= remaining_budget then break end
 	end
-	
+
 	local stack_size = game.item_prototypes[item_name].stack_size
-	
+
 	local item_count = 1
-	
+
 	for c = 1, math_random(1, stack_size), 1 do
 		local price = c * item_worth
 		if price <= remaining_budget then
@@ -254,7 +252,7 @@ end
 local function roll_item_stacks(remaining_budget, max_slots, blacklist)
 	local item_stack_set = {}
 	local item_stack_set_worth = 0
-	
+
 	for i = 1, max_slots, 1 do
 		if remaining_budget <= 0 then break end
 		local item_stack = Public.roll_item_stack(remaining_budget, blacklist)
@@ -262,27 +260,27 @@ local function roll_item_stacks(remaining_budget, max_slots, blacklist)
 		remaining_budget = remaining_budget - item_stack.count * item_worths[item_stack.name]
 		item_stack_set_worth = item_stack_set_worth + item_stack.count * item_worths[item_stack.name]
 	end
-	
-	return item_stack_set, item_stack_set_worth	
+
+	return item_stack_set, item_stack_set_worth
 end
 
 function Public.roll(budget, max_slots, blacklist)
 	if not budget then return end
 	if not max_slots then return end
-	
+
 	local b
 	if not blacklist then
 		b = {}
 	else
 		b = blacklist
 	end
-	
-	budget = math_floor(budget)	
+
+	budget = math_floor(budget)
 	if budget == 0 then return end
-	
+
 	local final_stack_set
 	local final_stack_set_worth = 0
-	
+
 	for attempt = 1, 5, 1 do
 		local item_stack_set, item_stack_set_worth = roll_item_stacks(budget, max_slots, b)
 		if item_stack_set_worth > final_stack_set_worth or item_stack_set_worth == budget then

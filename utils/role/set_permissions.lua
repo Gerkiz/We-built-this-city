@@ -48,7 +48,6 @@ local jail =
         'begin_mining',
         'start_walking',
         'open_blueprint_library_gui',
-        'build_item',
         'use_item',
         'select_item',
         'rotate_entity',
