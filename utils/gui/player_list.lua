@@ -2,6 +2,7 @@ local Event = require 'utils.event'
 local play_time = require 'utils.datastore.session_data'
 local Gui = require 'utils.gui.core'
 local Roles = require 'utils.role.main'
+local SpamProtection = require 'utils.spam_protection'
 
 local symbol_asc = '▲'
 local symbol_desc = '▼'
@@ -579,6 +580,11 @@ local function on_gui_click(event)
         return
     end
 
+    local is_spamming = SpamProtection.is_spamming(player)
+    if is_spamming then
+        return
+    end
+
     local name = event.element.name
     local actions = {
         ['player_list_panel_header_2'] = function()
@@ -672,7 +678,7 @@ local function on_player_joined_game(event)
     refresh()
 end
 
-local function on_player_left_game(event)
+local function on_player_left_game()
     refresh()
 end
 

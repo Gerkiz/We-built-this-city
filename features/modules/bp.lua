@@ -95,11 +95,9 @@ local function gui_open_frame(player)
 
     local frame = flow.upgrade_planner_config_frame
 
-    if frame and frame.visible then
-        frame.visible = false
-        return
-    elseif frame and not frame.visible then
-        frame.visible = true
+    if frame then
+        frame.destroy()
+        this.config_tmp[player.name] = nil
         return
     end
 
@@ -737,14 +735,8 @@ local on_player_selected_area = function(event)
             for _, tile in pairs(new_tiles) do
                 positions[#positions + 1] = tile.position
             end
-            script.raise_event(
-                defines.events.on_player_mined_tile,
-                {player_index = player.index, surface_index = surface.index, positions = positions}
-            )
-            script.raise_event(
-                defines.events.on_player_built_tile,
-                {player_index = player.index, surface_index = surface.index, positions = positions}
-            )
+            script.raise_event(defines.events.on_player_mined_tile, {player_index = player.index, surface_index = surface.index, positions = positions})
+            script.raise_event(defines.events.on_player_built_tile, {player_index = player.index, surface_index = surface.index, positions = positions})
         end
     end
 

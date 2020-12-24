@@ -420,15 +420,25 @@ end
 local function toggle(event)
     local left = event.player.gui.left
     local main_frame = left[main_frame_name]
+    local player = event.player
 
     if main_frame then
-        Gui.toggle_visibility(event.player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
         local create_poll_frame = left[create_poll_frame_name]
         if create_poll_frame and create_poll_frame.valid then
-            Gui.toggle_visibility(event.player, create_poll_frame)
+            is_spamming = Gui.toggle_visibility(player)
+            if is_spamming then
+                return
+            end
         end
     else
-        Tabs.toggle_visibility(event.player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
         draw_main_frame(left, event.player)
     end
 end

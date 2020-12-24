@@ -1,6 +1,8 @@
 -- config tab --
 
+local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
+local SpamProtection = require 'utils.spam_protection'
 
 local functions = {
     ['panel_spectator_switch'] = function(event)
@@ -51,112 +53,146 @@ local functions = {
         else
             global.scenario_config.gen_settings.trees_enabled = true
         end
+    end,
+    ['panel_scrambled_ores'] = function(event)
+        if event.element.switch_state == 'left' then
+            global.enable_scramble = true
+        else
+            global.enable_scramble = true
+        end
+    end,
+    ['panel_town_shape'] = function(event)
+        local player = game.get_player(event.player_index)
+        local SS = package.loaded['map_gen.multiplayer_spawn.lib.separate_spawns']
+        if event.element.switch_state == 'left' then
+            global.enable_town_shape = true
+            global.enable_buddy_spawn = false
+            if SS then
+                SS.DisplaySpawnOptions(player, true)
+            end
+        end
+        if event.element.switch_state == 'right' then
+            global.enable_town_shape = false
+            global.enable_buddy_spawn = true
+            if SS then
+                SS.DisplaySpawnOptions(player, true)
+            end
+        end
     end
 }
 
-local function add_switch(element, switch_state, name, description_main, description)
-    local label
+local function add_switch(element, switch_state, name, description_main)
     local t = element.add({type = 'table', column_count = 5})
-    label = t.add({type = 'label', caption = 'ON'})
-    label.style.padding = 0
-    label.style.left_padding = 10
-    label.style.font_color = {0.77, 0.77, 0.77}
+    local main_label = t.add({type = 'label', caption = 'ON'})
+    main_label.style.padding = 0
+    main_label.style.left_padding = 10
+    main_label.style.font_color = {0.77, 0.77, 0.77}
     local switch = t.add({type = 'switch', name = name})
     switch.switch_state = switch_state
     switch.style.padding = 0
     switch.style.margin = 0
-    label = t.add({type = 'label', caption = 'OFF'})
-    label.style.padding = 0
-    label.style.font_color = {0.70, 0.70, 0.70}
+    local off_label = t.add({type = 'label', caption = 'OFF'})
+    off_label.style.padding = 0
+    off_label.style.font_color = {0.70, 0.70, 0.70}
 
-    label = t.add({type = 'label', caption = description_main})
-    label.style.padding = 2
-    label.style.left_padding = 10
-    label.style.minimal_width = 120
-    label.style.font = 'heading-2'
-    label.style.font_color = {0.88, 0.88, 0.99}
+    local spacing_label = t.add({type = 'label'})
+    spacing_label.style.padding = 2
+    spacing_label.style.left_padding = 10
+    spacing_label.style.minimal_width = 120
+    spacing_label.style.font = 'heading-2'
+    spacing_label.style.font_color = {0.88, 0.88, 0.99}
 
-    label = t.add({type = 'label', caption = description})
-    label.style.padding = 2
-    label.style.left_padding = 10
-    label.style.single_line = false
-    label.style.font = 'heading-3'
-    label.style.font_color = {0.85, 0.85, 0.85}
+    local desc_label = t.add({type = 'label', caption = description_main})
+    desc_label.style.padding = 2
+    desc_label.style.left_padding = 10
+    desc_label.style.single_line = false
+    desc_label.style.font = 'heading-3'
+    desc_label.style.font_color = {0.85, 0.85, 0.85}
+    return desc_label
 end
 
 local build_config_gui = (function(player, frame)
-    local switch_state
     frame.clear()
 
     local line_elements = {}
 
     line_elements[#line_elements + 1] = frame.add({type = 'line'})
 
-    switch_state = 'right'
+    local panel_spectator_switch_switch = 'right'
     if player.spectator then
-        switch_state = 'left'
+        panel_spectator_switch_switch = 'left'
     end
-    add_switch(
-        frame,
-        switch_state,
-        'panel_spectator_switch',
-        'SpectatorMode',
-        'Disables zoom-to-world view noise effect.\nEnvironmental sounds will be based on map view.'
-    )
-
+    local spec_label = add_switch(frame, panel_spectator_switch_switch, 'panel_spectator_switch', 'Spectator Mode')
+    spec_label.tooltip = 'Disables zoom-to-world view noise effect.\nEnvironmental sounds will be based on map view.'
     line_elements[#line_elements + 1] = frame.add({type = 'line'})
 
     if global.auto_hotbar_enabled then
-        switch_state = 'right'
+        local panel_auto_hotbar_switch_switch = 'right'
         if global.auto_hotbar_enabled[player.index] then
-            switch_state = 'left'
+            panel_auto_hotbar_switch_switch = 'left'
         end
-        add_switch(frame, switch_state, 'panel_auto_hotbar_switch', 'AutoHotbar', 'Automatically fills your hotbar with placeable items.')
+        local hotbar_label = add_switch(frame, panel_auto_hotbar_switch_switch, 'panel_auto_hotbar_switch', 'Auto Hotbar')
+        hotbar_label.tooltip = 'Automatically fills your hotbar with placeable items.'
         line_elements[#line_elements + 1] = frame.add({type = 'line'})
     end
 
-    if global.scenario_config and global.scenario_config.resource_tiles_new then
-        if not player.admin then
-            return
-        end
-        switch_state = 'right'
-        for k, v in pairs(global.scenario_config.resource_tiles_new) do
-            if v.amount > 10000 then
-                switch_state = 'left'
+    if player.admin then
+        if global.scenario_config and global.scenario_config.resource_tiles_new then
+            local panel_amount_of_ore_switch = 'right'
+            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+                if v.amount > 10000 then
+                    panel_amount_of_ore_switch = 'left'
+                end
             end
+            local ores_label = add_switch(frame, panel_amount_of_ore_switch, 'panel_amount_of_ore', 'Amount of Ore in starting area?')
+            ores_label.tooltip = 'Starting ore: on = 10000, off = 2500.'
+            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
-        add_switch(frame, switch_state, 'panel_amount_of_ore', 'AmountOfOre', 'Starting ore: on = 10000, off = 2500.')
-        line_elements[#line_elements + 1] = frame.add({type = 'line'})
-    end
 
-    if global.scenario_config and global.scenario_config.resource_tiles_new then
-        if not player.admin then
-            return
-        end
-        switch_state = 'right'
-        for k, v in pairs(global.scenario_config.resource_tiles_new) do
-            if v.size > 20 then
-                switch_state = 'left'
+        if global.scenario_config and global.scenario_config.resource_tiles_new then
+            local panel_size_of_ore = 'right'
+            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+                if v.size > 20 then
+                    panel_size_of_ore = 'left'
+                end
             end
+            local size_of_ores_label = add_switch(frame, panel_size_of_ore, 'panel_size_of_ore', 'Define size of ore in starting area?')
+            size_of_ores_label.tooltip = 'Starting ore: on = 25, off = 18.'
+            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
-        add_switch(frame, switch_state, 'panel_size_of_ore', 'SizeOfOre', 'Starting ore: on = 25, off = 18.')
-        line_elements[#line_elements + 1] = frame.add({type = 'line'})
-    end
 
-    if global.scenario_config and global.scenario_config.gen_settings then
-        if not player.admin then
-            return
+        if global.scenario_config and global.scenario_config.gen_settings then
+            local panel_trees_in_starting_switch = 'right'
+            if global.scenario_config.gen_settings.trees_enabled == false then
+                panel_trees_in_starting_switch = 'left'
+            end
+            add_switch(frame, panel_trees_in_starting_switch, 'panel_trees_in_starting', 'Enable trees in starting area?')
+            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
-        switch_state = 'right'
-        if global.scenario_config.gen_settings.trees_enabled == false then
-            switch_state = 'left'
+        if global.scenario_config then
+            local panel_scrambled_ores_switch = 'right'
+            if global.enable_scramble then
+                panel_scrambled_ores_switch = 'left'
+            end
+            add_switch(frame, panel_scrambled_ores_switch, 'panel_scrambled_ores', 'Enable scrambled ores?')
+            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
-        add_switch(frame, switch_state, 'panel_trees_in_starting', 'TreesInStartingArea', 'on = false, off = true.')
-        line_elements[#line_elements + 1] = frame.add({type = 'line'})
+        if global.scenario_config then
+            local panel_town_shape_switch = 'right'
+            if global.enable_town_shape then
+                panel_town_shape_switch = 'left'
+            end
+            add_switch(frame, panel_town_shape_switch, 'panel_town_shape', 'Enable ONLY Town shapes when creating a new base?')
+            line_elements[#line_elements + 1] = frame.add({type = 'line'})
+        end
     end
 end)
 
 local function on_gui_click(event)
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then
+        return
+    end
     if not event.element then
         return
     end
@@ -164,6 +200,10 @@ local function on_gui_click(event)
         return
     end
     if functions[event.element.name] then
+        local is_spamming = SpamProtection.is_spamming(player)
+        if is_spamming then
+            return
+        end
         functions[event.element.name](event)
         return
     end
@@ -171,5 +211,4 @@ end
 
 Gui.tabs['Config'] = build_config_gui
 
-local event = require 'utils.event'
-event.add(defines.events.on_gui_click, on_gui_click)
+Event.add(defines.events.on_gui_switch_state_changed, on_gui_click)

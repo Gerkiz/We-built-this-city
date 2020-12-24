@@ -164,8 +164,7 @@ local function draw_main_frame(player, target, chest_id)
     end
     local p = target or player
 
-    local frame, top_frame =
-        Gui.add_main_frame(player.gui.screen, main_frame_name, p.name .. '´s private portable stash', 'Your personal storage chest.')
+    local frame, top_frame = Gui.add_main_frame(player.gui.screen, main_frame_name, p.name .. '´s private portable stash', 'Your personal storage chest.')
     top_frame.auto_center = true
 
     local data = {}
@@ -200,10 +199,7 @@ local function draw_main_frame(player, target, chest_id)
     local text =
         tbl.add {
         type = 'label',
-        caption = format(
-            'Stores unlimited quantity of items (up to ' ..
-                amount_and_types .. ' types).\nRead the tooltip by hovering the question-mark above!'
-        )
+        caption = format('Stores unlimited quantity of items (up to ' .. amount_and_types .. ' types).\nRead the tooltip by hovering the question-mark above!')
     }
     text.style.single_line = false
 
@@ -571,9 +567,15 @@ Gui.on_click(
         local screen = player.gui.screen
         local main_frame = screen[main_frame_name]
         if main_frame and main_frame.valid then
-            Gui.toggle_visibility(player, main_frame)
+            local is_spamming = Gui.toggle_visibility(player)
+            if is_spamming then
+                return
+            end
         else
-            Gui.toggle_visibility(player, main_frame)
+            local is_spamming = Gui.toggle_visibility(player)
+            if is_spamming then
+                return
+            end
             draw_main_frame(player)
         end
     end

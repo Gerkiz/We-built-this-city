@@ -129,13 +129,7 @@ local function level_up(player)
         RPG_GUI.update_player_stats(player)
     end
     if player.gui.screen[main_frame_name] then
-        if not player.gui.screen[main_frame_name].visible then
-            RPG_GUI.toggle(player, true)
-            player.gui.screen[main_frame_name].visible = false
-        end
-        if player.gui.screen[main_frame_name].visible then
-            RPG_GUI.toggle(player, true)
-        end
+        RPG_GUI.toggle(player, true)
     end
 
     Public.level_up_effects(player)
@@ -342,8 +336,7 @@ function Public.update_health(player)
 
     if rpg_extra.enable_health_and_mana_bars then
         if rpg_t[player.index].show_bars then
-            local max_life =
-                math.floor(player.character.prototype.max_health + player.character_health_bonus + player.force.character_health_bonus)
+            local max_life = math.floor(player.character.prototype.max_health + player.character_health_bonus + player.force.character_health_bonus)
             if not rpg_t[player.index].health_bar then
                 rpg_t[player.index].health_bar = create_healthbar(player, 0.5)
             elseif not rendering.is_valid(rpg_t[player.index].health_bar) then

@@ -123,7 +123,7 @@ local tiles = {
 }
 
 local function ticker(e)
-    if e.surface.name ~= 'nauvis' or e.surface.name ~= 'wbtc' then
+    if e.surface.name == 'nauvis' then
         return
     end
     local center = {x = (e.area.left_top.x + e.area.right_bottom.x) / 2, y = (e.area.left_top.y + e.area.right_bottom.y) / 2}

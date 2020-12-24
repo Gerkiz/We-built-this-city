@@ -1,3 +1,4 @@
+local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui.core'
 local Validate = require 'utils.validate_player'
@@ -110,15 +111,16 @@ local function on_gui_click(event)
         return
     end
     if event.element.name == 'close_map_intro' then
-        Gui.toggle_visibility(player, event.element)
-        return
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
     end
 end
 
 Gui.tabs['Info'] = create_map_intro
 
-local event = require 'utils.event'
-event.add(defines.events.on_player_joined_game, on_player_joined_game)
-event.add(defines.events.on_gui_click, on_gui_click)
+Event.add(defines.events.on_player_joined_game, on_player_joined_game)
+Event.add(defines.events.on_gui_click, on_gui_click)
 
 return Public

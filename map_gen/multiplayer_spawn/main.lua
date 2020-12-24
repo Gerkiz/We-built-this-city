@@ -1,6 +1,5 @@
 require 'utils.gui.core'
 require 'features.modules.launch_fish_to_win'
-require 'features.modules.spawn_ent.main'
 require 'features.modules.biters_yield_coins'
 require 'features.modules.dangerous_goods'
 require 'features.modules.biter_pets'
@@ -29,12 +28,9 @@ local R_launch = require 'map_gen.multiplayer_spawn.lib.rocket_launch'
 local Surface = require 'utils.surface'
 local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
 local Alert = require 'utils.alert'
+require 'features.modules.towny.main'
 local math_random = math.random
 
-----------------------------------------
--- On Init - only runs once the first
---   time the game starts
-----------------------------------------
 local function on_start()
     Autostash.insert_into_furnace(true)
     local T = Map.Pop_info()
@@ -69,7 +65,6 @@ local function on_start()
     T.main_caption_color = {r = 150, g = 150, b = 0}
     T.sub_caption_color = {r = 0, g = 150, b = 0}
 
-    -- Create new game surface
     Utils.CreateGameSurface()
 
     for k, v in pairs(global.scenario_config.resource_tiles_new) do
@@ -84,21 +79,19 @@ local function on_start()
     -- MUST be before other stuff, but after surface creation.
     SS.InitSpawnGlobalsAndForces()
 
+    if global.enable_town_shape then
+        global.enable_buddy_spawn = false
+    end
+
     -- Frontier Silo Area Generation
     if (global.frontier_rocket_silo_mode) then
         Silo.SpawnSilosAndGenerateSiloAreas()
     end
     -- Everyone do the shuffle. Helps avoid always starting at the same location.
     global.vanillaSpawns = Utils.shuffle(global.vanillaSpawns)
-    --log ("Vanilla spawns:")
-    --log(serpent.block(global.vanillaSpawns))
 end
 Event.on_init(on_start)
 
-----------------------------------------
--- Rocket launch event
--- Used for end game win conditions / unlocking late game stuff
-----------------------------------------
 Event.add(
     defines.events.on_rocket_launched,
     function(event)
@@ -120,9 +113,6 @@ Event.add(
     end
 )
 
-----------------------------------------
--- Chunk Generation
-----------------------------------------
 Event.add(
     defines.events.on_chunk_generated,
     function(event)
@@ -161,14 +151,9 @@ Event.add(
     end
 )
 
-----------------------------------------
--- Gui Click
-----------------------------------------
 Event.add(
     defines.events.on_gui_click,
     function(event)
-        -- Don't interfere with other mod related stuff.
-
         SS.WelcomeTextGuiClick(event)
         SS.SpawnOptsGuiClick(event)
         SS.SpawnCtrlGuiClick(event)
@@ -188,9 +173,6 @@ Event.add(
     end
 )
 
-----------------------------------------
--- Player Events
-----------------------------------------
 Event.add(
     defines.events.on_player_joined_game,
     function(event)
@@ -236,9 +218,6 @@ Event.add(
     end
 )
 
-----------------------------------------
--- On BUILD entity. Don't forget on_robot_built_entity too!
-----------------------------------------
 Event.add(
     defines.events.on_built_entity,
     function(event)
@@ -252,19 +231,6 @@ Event.add(
     end
 )
 
-----------------------------------------
--- On script_raised_built. This should help catch mods that
--- place items that don't count as player_built and robot_built.
--- Specifically FARL.
-----------------------------------------
---Event.add(defines.events.script_raised_built, function(event)
---
---end)
-
-----------------------------------------
--- On tick events. Stuff that needs to happen at regular intervals.
--- Delayed events, delayed spawns, ...
-----------------------------------------
 Event.add(
     defines.events.on_tick,
     function()

@@ -1,8 +1,3 @@
--- rocket_launch.lua
--- May 2019
-
--- This is meant to extract out any rocket launch related logic to support my oarc scenario designs.
-
 local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
 local Config = require 'map_gen.multiplayer_spawn.config'
 local Tabs = require 'utils.gui.core'
@@ -37,9 +32,7 @@ function Public.RocketLaunchEvent(event)
     if global.satellite_sent[force.name] then
         -- First sat launch for this force.
         global.satellite_sent[force.name] = global.satellite_sent[force.name] + 1
-        Utils.SendBroadcastMsg(
-            'Team ' .. event.rocket.force.name .. ' launched another rocket. Total ' .. global.satellite_sent[force.name]
-        )
+        Utils.SendBroadcastMsg('Team ' .. event.rocket.force.name .. ' launched another rocket. Total ' .. global.satellite_sent[force.name])
     else
         -- game.set_game_state{game_finished=true, player_won=true, can_continue=true}
         global.satellite_sent[force.name] = 1

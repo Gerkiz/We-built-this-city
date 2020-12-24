@@ -1,11 +1,12 @@
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
-local Surface = require 'utils.surface'.get_surface_name()
+local Surface = require 'utils.surface'
 local Jailed = require 'utils.datastore.jail_data'
 local AntiGrief = require 'features.functions.antigrief'
 local Color = require 'utils.color_presets'
 local Global = require 'utils.global'
 local Roles = require 'utils.role.main'
+local SpamProtection = require 'utils.spam_protection'
 
 local this = {}
 
@@ -84,8 +85,7 @@ local function bring_player(player, source_player)
     if pos then
         player.teleport(pos, source_player.surface)
         game.print(
-            player.name ..
-                ' has been teleported to ' .. source_player.name .. '. ' .. bring_player_messages[math.random(1, #bring_player_messages)],
+            player.name .. ' has been teleported to ' .. source_player.name .. '. ' .. bring_player_messages[math.random(1, #bring_player_messages)],
             {r = 0.98, g = 0.66, b = 0.22}
         )
     end
@@ -102,10 +102,7 @@ local function go_to_player(player, source_player)
     local pos = player.surface.find_non_colliding_position('character', player.position, 50, 1)
     if pos then
         source_player.teleport(pos, player.surface)
-        game.print(
-            source_player.name .. ' is visiting ' .. player.name .. '. ' .. go_to_player_messages[math.random(1, #go_to_player_messages)],
-            {r = 0.98, g = 0.66, b = 0.22}
-        )
+        game.print(source_player.name .. ' is visiting ' .. player.name .. '. ' .. go_to_player_messages[math.random(1, #go_to_player_messages)], {r = 0.98, g = 0.66, b = 0.22})
     end
 end
 
@@ -161,11 +158,18 @@ end
 
 local function respawn_player(player)
     local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
-    local pos = game.surfaces[Surface].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
-    player.teleport(pos, Surface)
+    local name = Surface.get_surface_name()
+    local pos = game.surfaces[name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
     SS.SeparateSpawnsPlayerCreated(player.index)
-    game.print('Resetting and respawning ' .. player.name, Color.warning)
-    log('Resetting and respawning ' .. player.name)
+    player.teleport(pos, game.surfaces[name])
+    if package.loaded['features.modules.towny.table'] then
+        local TownyTable = package.loaded['features.modules.towny.table']
+        TownyTable.reset_player(player)
+    end
+
+    player.force = game.forces.player
+    game.print('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.', Color.warning)
+    log('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.')
 end
 local enemy_messages = {
     'Shoot on sight!',
@@ -373,6 +377,11 @@ local function text_changed(event)
         return
     end
     if frame.name ~= 'Admin' then
+        return
+    end
+
+    local is_spamming = SpamProtection.is_spamming(player)
+    if is_spamming then
         return
     end
 
@@ -699,6 +708,10 @@ local function on_gui_click(event)
     end
 
     if admin_functions[name] then
+        local is_spamming = SpamProtection.is_spamming(player)
+        if is_spamming then
+            return
+        end
         local target_player_name = frame['admin_player_select'].items[frame['admin_player_select'].selected_index]
         if not target_player_name then
             return
@@ -715,6 +728,10 @@ local function on_gui_click(event)
     end
 
     if admin_global_functions[name] then
+        local is_spamming = SpamProtection.is_spamming(player)
+        if is_spamming then
+            return
+        end
         admin_global_functions[name](player)
         return
     end
@@ -762,6 +779,11 @@ local function on_gui_selection_state_changed(event)
             return
         end
 
+        local is_spamming = SpamProtection.is_spamming(player)
+        if is_spamming then
+            return
+        end
+
         create_admin_panel(player, frame)
     end
     if name == 'admin_player_select' then
@@ -775,6 +797,11 @@ local function on_gui_selection_state_changed(event)
             return
         end
         if frame.name ~= 'Admin' then
+            return
+        end
+
+        local is_spamming = SpamProtection.is_spamming(player)
+        if is_spamming then
             return
         end
 

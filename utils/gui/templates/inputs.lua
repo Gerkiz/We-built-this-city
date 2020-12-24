@@ -136,9 +136,7 @@ function inputs.add(obj)
     end
     local type = obj.type
     if
-        not (type == 'button' or type == 'sprite-button' or type == 'choose-elem-button' or type == 'checkbox' or type == 'radiobutton' or
-            type == 'textfield' or
-            type == 'text-box' or
+        not (type == 'button' or type == 'sprite-button' or type == 'choose-elem-button' or type == 'checkbox' or type == 'radiobutton' or type == 'textfield' or type == 'text-box' or
             type == 'slider' or
             type == 'drop-down')
      then

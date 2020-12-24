@@ -73,8 +73,14 @@ end
 ---@param duration number in seconds
 ---@param sound string sound to play, nil to not play anything
 local function alert_to(player, duration, sound, volume)
+    local id = autoincrement()
     local frame_holder = player.gui.left.add({type = 'flow'})
-
+    --[[  frame_holder.location = {x = 1, y = 40}
+    local parent_frame = tostring(id - 1)
+    local parent_flow = player.gui.screen[parent_frame]
+    if parent_flow then
+        frame_holder.location = {x = 1, y = parent_flow.location.y + 60}
+    end ]]
     local frame = frame_holder.add({type = 'frame', name = alert_frame_name, direction = 'vertical', style = 'captionless_frame'})
     frame.style.width = 300
 
@@ -88,7 +94,6 @@ local function alert_to(player, duration, sound, volume)
     style.color = Color.orange
     progressbar.value = 1 -- it starts full
 
-    local id = autoincrement()
     local tick = game.tick
     if not duration then
         duration = 15

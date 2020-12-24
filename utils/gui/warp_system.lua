@@ -554,9 +554,15 @@ function Public.toggle(player)
     end
 
     if main_frame then
-        Tabs.toggle_visibility(player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
     else
-        Tabs.toggle_visibility(player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
         draw_main_frame(player, left)
     end
 end
@@ -587,10 +593,7 @@ end
 
 function Public.is_spam(p, player)
     if p.spam > game.tick then
-        player.print(
-            'Please wait ' .. math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.',
-            Color.warning
-        )
+        player.print('Please wait ' .. math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.', Color.warning)
         return true
     end
     return false

@@ -138,24 +138,21 @@ local function get_highest(chest, tbl, turret_name, turret_ammo)
             goto final
         end
 
-        local a_item = this.valid_ammo[chest_item]
-        local t_item = this.valid_turrets[turret_name]
+        local from_chest_item = this.valid_ammo[chest_item]
+        local from_turret_item = this.valid_turrets[turret_name]
 
-        if (a_item and a_item.category == t_item.category) then
+        if (from_chest_item and from_chest_item.category == from_turret_item.category) then
             if turret_ammo then
-                if round(a_item.priority) > round(this.valid_ammo[turret_ammo].priority) then
+                if round(from_chest_item.priority) > round(this.valid_ammo[turret_ammo].priority) then
                     item = chest_item
                     count = chest_count
-                    break
-                elseif a_item.category == t_item.category and round(a_item.priority) > highest then
+                elseif from_chest_item.category == from_turret_item.category and round(from_chest_item.priority) > highest then
                     item = chest_item
                     count = chest_count
-                    break
                 end
-            elseif a_item.category == t_item.category and round(a_item.priority) > highest then
+            elseif from_chest_item.category == from_turret_item.category and round(from_chest_item.priority) > highest then
                 item = chest_item
                 count = chest_count
-                break
             end
         end
     end
@@ -274,15 +271,14 @@ local function refill(entity_turret, entity_chest)
 
         local chest = chests.get_inventory(defines.inventory.chest)
         local turret_ammo_name, turret_ammo_count = get_ammo(turret)
+        local chest_item_name, chest_item_count = get_items(chest, turret.name, turret_ammo_name)
 
         if turret_ammo_count and turret_ammo_count >= 10 then
-            if turret_ammo_count >= 15 then
+            if turret_ammo_count >= 20 then
                 remove_ammo(chest, turret)
             end
             goto final
         end
-
-        local chest_item_name, chest_item_count = get_items(chest, turret.name, turret_ammo_name)
 
         if not (this.valid_ammo[chest_item_name]) then
             goto final
@@ -438,6 +434,17 @@ local function on_entity_built(event)
     end
 end
 
+local function on_robot_built_entity(event)
+    local ce = event.created_entity
+    if not (ce and ce.valid) then
+        return
+    end
+
+    if (this.valid_turrets[ce.name]) then
+        Public.refill_turret_callback(ce)
+    end
+end
+
 local function get_fuel_items()
     local filter = game.get_filtered_item_prototypes
     for name, fuel in pairs(filter({{filter = 'fuel'}})) do
@@ -550,6 +557,7 @@ end
 local get_priorities = Public.get_priorities
 
 Event.add(defines.events.on_built_entity, on_entity_built)
+Event.add(defines.events.on_robot_built_entity, on_robot_built_entity)
 Event.add(defines.events.on_pre_player_mined_item, on_pre_player_mined_item)
 Event.on_nth_tick(50, on_tick)
 Event.on_init(

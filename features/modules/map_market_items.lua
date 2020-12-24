@@ -34,6 +34,9 @@ items.spawn = {
     {price = {{'uranium-ore', 20}}, offer = {type = 'give-item', item = 'raw-fish', count = 2}},
     {price = {{'coin', 500}}, offer = {type = 'give-item', item = 'speed-module-3'}},
     {price = {{'coin', 500}}, offer = {type = 'give-item', item = 'productivity-module-3'}},
-    {price = {{'coin', 500}}, offer = {type = 'give-item', item = 'effectivity-module-3'}}
+    {price = {{'coin', 500}}, offer = {type = 'give-item', item = 'effectivity-module-3'}},
+    {price = {{'coin', 300}}, offer = {type = 'give-item', item = 'loader', count = 1}},
+    {price = {{'coin', 600}}, offer = {type = 'give-item', item = 'fast-loader', count = 1}},
+    {price = {{'coin', 900}}, offer = {type = 'give-item', item = 'express-loader', count = 1}}
 }
 return items

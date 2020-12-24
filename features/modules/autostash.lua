@@ -353,10 +353,7 @@ local function auto_stash(player, event)
             chests = get_nearby_chests(player, nil, true, false)
         end
     elseif shift then
-        if
-            button == defines.mouse_button_type.right and this.insert_into_wagon or
-                button == defines.mouse_button_type.left and this.insert_into_wagon
-         then
+        if button == defines.mouse_button_type.right and this.insert_into_wagon or button == defines.mouse_button_type.left and this.insert_into_wagon then
             chests = get_nearby_chests(player, area, false, true)
         end
     else
@@ -436,8 +433,7 @@ local function create_gui_button(player)
         tooltip =
             'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'
     elseif this.insert_into_furnace then
-        tooltip =
-            'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.'
+        tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nCTRL+RMB: Fill nearby furnaces.'
     elseif this.insert_into_wagon then
         tooltip =
             'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.\nSHIFT+LMB: Everything onto filtered slots to wagon.\nSHIFT+RMB: Only ores to wagon'

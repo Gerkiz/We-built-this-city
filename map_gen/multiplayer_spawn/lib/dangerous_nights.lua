@@ -99,7 +99,6 @@ local function spawn_shipwreck(surface, position)
         {{name = 'explosives', count = math_random(25, 50)}, weight = 1, evolution_min = 0.2, evolution_max = 0.6},
         {{name = 'lubricant-barrel', count = math_random(4, 10)}, weight = 1, evolution_min = 0.3, evolution_max = 0.5},
         {{name = 'rocket-fuel', count = math_random(4, 10)}, weight = 2, evolution_min = 0.3, evolution_max = 0.7},
-        {{name = 'computer', count = 1}, weight = 1, evolution_min = 0.2, evolution_max = 1},
         {{name = 'steel-plate', count = math_random(50, 100)}, weight = 2, evolution_min = 0.1, evolution_max = 0.3},
         {{name = 'nuclear-fuel', count = 1}, weight = 2, evolution_min = 0.7, evolution_max = 1},
         {{name = 'burner-inserter', count = math_random(8, 16)}, weight = 3, evolution_min = 0.0, evolution_max = 0.1},
@@ -230,10 +229,7 @@ local function get_spawner(surface)
             if i2 < 1 then
                 break
             end
-            local distance =
-                math.sqrt(
-                (spawners[i].position.x - global.last_spawners[i2].x) ^ 2 + (spawners[i].position.y - global.last_spawners[i2].y) ^ 2
-            )
+            local distance = math.sqrt((spawners[i].position.x - global.last_spawners[i2].x) ^ 2 + (spawners[i].position.y - global.last_spawners[i2].y) ^ 2)
             if distance < 200 then
                 spawner_valid = false
                 break
@@ -405,13 +401,11 @@ local function generate_spawn_area(surface)
             local pos = {x = x, y = y}
             if pos.x > fort_size * -1 and pos.x < fort_size and pos.y > fort_size * -1 and pos.y < fort_size then
                 if
-                    pos.x > (fort_size - fort_wall_width) * -1 and pos.x < fort_size - fort_wall_width and
-                        pos.y > (fort_size - fort_wall_width) * -1 and
+                    pos.x > (fort_size - fort_wall_width) * -1 and pos.x < fort_size - fort_wall_width and pos.y > (fort_size - fort_wall_width) * -1 and
                         pos.y < fort_size - fort_wall_width
                  then
                     if
-                        pos.x <= (fort_size - fort_wall_width * 2) * -1 or pos.x >= (fort_size - fort_wall_width * 2) or
-                            pos.y <= (fort_size - fort_wall_width * 2) * -1 or
+                        pos.x <= (fort_size - fort_wall_width * 2) * -1 or pos.x >= (fort_size - fort_wall_width * 2) or pos.y <= (fort_size - fort_wall_width * 2) * -1 or
                             pos.y >= (fort_size - fort_wall_width * 2)
                      then
                         table.insert(turrets, {name = 'gun-turret', position = {x = pos.x, y = pos.y}, force = 'player'})
@@ -427,8 +421,7 @@ local function generate_spawn_area(surface)
                 table.insert(tiles, {name = 'stone-path', position = {x = pos.x, y = pos.y}})
 
                 if
-                    pos.x <= (fort_size - fort_wall_width) * -1 or pos.x >= (fort_size - fort_wall_width) or
-                        pos.y <= (fort_size - fort_wall_width) * -1 or
+                    pos.x <= (fort_size - fort_wall_width) * -1 or pos.x >= (fort_size - fort_wall_width) or pos.y <= (fort_size - fort_wall_width) * -1 or
                         pos.y >= (fort_size - fort_wall_width)
                  then
                     if math_random(1, 3) ~= 1 then

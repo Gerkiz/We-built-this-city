@@ -6,6 +6,7 @@
 local Surface = require 'utils.surface'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local Gui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
+local TownyTable = require 'features.modules.towny.table'
 local Alert = require 'utils.alert'
 local table_insert = table.insert
 local table_remove = table.remove
@@ -184,6 +185,11 @@ end
 
 -- Give player these default items.
 function Public.GivePlayerItems(player)
+    local is_pvp = TownyTable.get_pvp(player)
+    if is_pvp then
+        return
+    end
+
     for _, item in pairs(global.player_respawn_start_items) do
         player.insert(item)
     end
@@ -191,6 +197,11 @@ end
 
 -- Starter only items
 function Public.GivePlayerStarterItems(player)
+    local is_pvp = TownyTable.get_pvp(player)
+    if is_pvp then
+        return
+    end
+
     for _, item in pairs(global.player_spawn_start_items) do
         player.insert(item)
     end
@@ -204,10 +215,7 @@ end
 function Public.GiveQuickStartPowerArmor(player)
     player.insert {name = 'modular-armor', count = 1}
 
-    if
-        player and player.get_inventory(defines.inventory.character_armor) ~= nil and
-            player.get_inventory(defines.inventory.character_armor)[1] ~= nil
-     then
+    if player and player.get_inventory(defines.inventory.character_armor) ~= nil and player.get_inventory(defines.inventory.character_armor)[1] ~= nil then
         local p_armor = player.get_inventory(defines.inventory.character_armor)[1].grid
         if p_armor ~= nil then
             p_armor.put({name = 'battery-equipment'})
@@ -257,31 +265,26 @@ function Public.SetCeaseFireBetweenAllForces()
             for x, _ in pairs(game.forces) do
                 if x ~= 'neutral' and x ~= 'enemy' then
                     team.set_cease_fire(x, true)
-                end
-            end
-        end
-    end
-end
-
--- Set all forces to friendly
-function Public.SetFriendlyBetweenAllForces()
-    for name, team in pairs(game.forces) do
-        if name ~= 'neutral' and name ~= 'enemy' then
-            for x, _ in pairs(game.forces) do
-                if x ~= 'neutral' and x ~= 'enemy' then
                     team.set_friend(x, true)
                 end
             end
         end
     end
+    TownyTable.set_pvp_for_forces()
+    TownyTable.form_alliances()
 end
 
 -- For each other player force, share a chat msg.
 function Public.ShareChatBetweenForces(player, msg)
+    local forces = TownyTable.get_pvp_tbl()
     for _, force in pairs(game.forces) do
         if (force ~= nil) then
             if ((force.name ~= 'enemy') and (force.name ~= 'neutral') and (force.name ~= player) and (force ~= player.force)) then
-                force.print(player.name .. ': ' .. msg)
+                for i = 1, #forces do
+                    if force ~= forces[i] then
+                        force.print(player.name .. ': ' .. msg)
+                    end
+                end
             end
         end
     end
@@ -457,7 +460,7 @@ function Public.FindUngeneratedCoordinates(minDistChunks, maxDistChunks, surface
         end
     end
 
-    log('spawn: x=' .. position.x .. ', y=' .. position.y)
+    -- log('spawn: x=' .. position.x .. ', y=' .. position.y)
     return position
 end
 
@@ -666,6 +669,11 @@ end
 
 -- Add Long Reach to Character
 function Public.GivePlayerLongReach(player)
+    local is_pvp = TownyTable.get_pvp(player)
+    if is_pvp then
+        return
+    end
+
     player.character.character_build_distance_bonus = global.build_dist_bonus
     player.character.character_reach_distance_bonus = global.reach_dist_bonus
     -- player.character.character_resource_reach_distance_bonus  = global.resource_dist_bonus
@@ -819,9 +827,7 @@ function Public.DropGravestoneChestFromCorpse(corpse)
     end
 
     if (grave ~= nil) and (game.players[corpse.character_corpse_player_index] ~= nil) then
-        game.players[corpse.character_corpse_player_index].print(
-            'Your corpse got eaten by biters! They kindly dropped your items into a chest! Go get them quick!'
-        )
+        game.players[corpse.character_corpse_player_index].print('Your corpse got eaten by biters! They kindly dropped your items into a chest! Go get them quick!')
     end
 end
 
@@ -872,13 +878,7 @@ function Public.AutofillTurret(player, turret)
     end
 
     -- Attempt to transfer some ammo
-    local ret =
-        Public.TransferItemMultipleTypes(
-        mainInv,
-        turret,
-        {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'},
-        global.autofill_ammo
-    )
+    local ret = Public.TransferItemMultipleTypes(mainInv, turret, {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'}, global.autofill_ammo)
 
     -- Check the result and print the right text to inform the user what happened.
     if (ret > 0) then
@@ -910,12 +910,7 @@ function Public.AutoFillVehicle(player, vehicle)
 
     -- Attempt to transfer some tank shells
     if (vehicle.name == 'tank') then
-        Public.TransferItemMultipleTypes(
-            mainInv,
-            vehicle,
-            {'explosive-uranium-cannon-shell', 'uranium-cannon-shell', 'explosive-cannon-shell', 'cannon-shell'},
-            100
-        )
+        Public.TransferItemMultipleTypes(mainInv, vehicle, {'explosive-uranium-cannon-shell', 'uranium-cannon-shell', 'explosive-cannon-shell', 'cannon-shell'}, 100)
     end
 end
 
@@ -936,10 +931,7 @@ function Public.CreateCropCircle(surface, centerPos, chunkArea, tileRadius, fill
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
-                if
-                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
-                        (game.active_mods['oarc-restricted-build']))
-                 then
+                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
@@ -968,10 +960,7 @@ function Public.CreateCropCircleNoTrees(surface, centerPos, chunkArea, tileRadiu
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
-                if
-                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
-                        (game.active_mods['oarc-restricted-build']))
-                 then
+                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
@@ -1025,10 +1014,7 @@ function Public.CreateCropOctagon(surface, centerPos, chunkArea, tileRadius, fil
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius + 2) then
-                if
-                    (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or
-                        (game.active_mods['oarc-restricted-build']))
-                 then
+                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
@@ -1122,10 +1108,8 @@ end
 function Public.CreateHoldingPen(surface, chunkArea, sizeTiles, sizeMoat)
     local global_data = MPS.get()
     if
-        (((chunkArea.left_top.x >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and
-            (chunkArea.left_top.x <= (sizeTiles + sizeMoat + global_data.chunk_size))) and
-            ((chunkArea.left_top.y >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and
-                (chunkArea.left_top.y <= (sizeTiles + sizeMoat + global_data.chunk_size))))
+        (((chunkArea.left_top.x >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and (chunkArea.left_top.x <= (sizeTiles + sizeMoat + global_data.chunk_size))) and
+            ((chunkArea.left_top.y >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and (chunkArea.left_top.y <= (sizeTiles + sizeMoat + global_data.chunk_size))))
      then
         -- Remove stuff
         Public.RemoveAliensInArea(surface, chunkArea)
@@ -1139,10 +1123,7 @@ function Public.CreateHoldingPen(surface, chunkArea, sizeTiles, sizeMoat)
         for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
             for j = chunkArea.left_top.y, chunkArea.right_bottom.y, 1 do
                 -- Are we within the moat area?
-                if
-                    ((i > -(sizeTiles + sizeMoat)) and (i < ((sizeTiles + sizeMoat) - 1)) and (j > -(sizeTiles + sizeMoat)) and
-                        (j < ((sizeTiles + sizeMoat) - 1)))
-                 then
+                if ((i > -(sizeTiles + sizeMoat)) and (i < ((sizeTiles + sizeMoat) - 1)) and (j > -(sizeTiles + sizeMoat)) and (j < ((sizeTiles + sizeMoat) - 1))) then
                     -- Are we within the land area? Place land.
                     if ((i > -(sizeTiles)) and (i < ((sizeTiles) - 1)) and (j > -(sizeTiles)) and (j < ((sizeTiles) - 1))) then
                         -- Else, surround with water.
@@ -1189,6 +1170,10 @@ end
 -- Autofill softmod
 function Public.Autofill(event)
     local player = game.players[event.player_index]
+    local is_pvp = TownyTable.get_pvp(player)
+    if is_pvp then
+        return
+    end
     local eventEntity = event.created_entity
     if not (eventEntity and eventEntity.valid) then
         return

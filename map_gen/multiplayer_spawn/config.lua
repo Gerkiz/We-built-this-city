@@ -2,14 +2,13 @@ local global_data = require 'map_gen.multiplayer_spawn.lib.table'.get()
 
 global.welcome_msg_title = 'We built this city!'
 global.welcome_msg = ''
-global.server_msg =
-    'Rules: Be polite. Ask before changing other players stuff. Have fun!\n' .. 'Discord: discord.io/wbtc'
+global.server_msg = 'Rules: Be polite. Ask before changing other players stuff. Have fun!\n' .. 'Discord: discord.io/wbtc'
 
 global.scenario_info_msg =
     'This scenario gives you and/or your friends your own starting area.\n' ..
-    'You can be on the main team or your own. All teams are friendly.\n' ..
-        'If you leave in the first 15 minutes, your base and character will be deleted!\n' ..
-            'Repeated joining and leaving will result in a temporary ban.'
+    'You can play towny (PVP) if you´d like, the main team or your own.\n' ..
+        'All teams are friendly. Except if you play Towny (PVP)\n' ..
+            'If you leave in the first 15 minutes, your base and character will be deleted!\n' .. 'Repeated joining and leaving will result in a temporary ban.'
 
 global.enable_vanilla_spawns = false
 
@@ -19,9 +18,12 @@ global.enable_default_spawn = true
 -- each with their own starting point. It adds more GUI selection options.
 global.enable_buddy_spawn = true
 
+-- Enable Town-shape like when spawning?
+global.enable_town_shape = true
+
 -- Frontier style rocket silo mode
 -- This means you can't build silos, but some spawn out in the wild for you to use.
-global.frontier_rocket_silo_mode = false
+global.frontier_rocket_silo_mode = true
 
 -- Silo Islands
 -- This options is only valid when used with global.enable_vanilla_spawns and global.frontier_rocket_silo_mode!
@@ -32,7 +34,7 @@ global.silo_island_mode = false
 -- Removes decorative items to reduce save file size.
 global.enable_undecorator = false
 
-global.enable_scramble = false
+global.enable_scramble = true
 
 -- Enable Long Reach
 global.enable_longreach = false

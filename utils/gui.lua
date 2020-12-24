@@ -1,6 +1,7 @@
 local Token = require 'utils.token'
 local Event = require 'utils.event'
 local Global = require 'utils.global'
+local SpamProtection = require 'utils.spam_protection'
 
 local tostring = tostring
 local next = next
@@ -85,6 +86,11 @@ function Gui._mt:raise_custom_event(event)
         return self
     end
     event.player = player
+
+    local is_spamming = SpamProtection.is_spamming(player)
+    if is_spamming then
+        return
+    end
 
     local success, err = pcall(handler, player, element, event)
     if not success then
@@ -355,6 +361,7 @@ local function event_handler_factory(event_name)
             if not element_define then
                 return
             end
+
             element_define:raise_custom_event(event)
         end
     )
@@ -468,6 +475,11 @@ local function handler_factory(event_name)
         element[event_name](
             element,
             function(_, _, event)
+                local player = game.get_player(event.player_index)
+                if not (player and player.valid) then
+                    return
+                end
+
                 handler(event)
             end
         )
@@ -540,8 +552,7 @@ function Gui.get_button_flow(player)
     local gui = player.gui.top
     local button_flow = gui.mod_gui_button_flow
     if not button_flow then
-        button_flow =
-            gui.add {type = 'flow', name = 'mod_gui_button_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
+        button_flow = gui.add {type = 'flow', name = 'mod_gui_button_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
         button_flow.style.left_padding = 4
         button_flow.style.top_padding = 4
     end
@@ -552,13 +563,21 @@ function Gui.get_frame_flow(player)
     local gui = player.gui.left
     local frame_flow = gui.mod_gui_frame_flow
     if not frame_flow then
-        frame_flow =
-            gui.add {type = 'flow', name = 'mod_gui_frame_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
+        frame_flow = gui.add {type = 'flow', name = 'mod_gui_frame_flow', direction = 'horizontal', style = 'mod_gui_spacing_horizontal_flow'}
         frame_flow.style.left_padding = 4
         frame_flow.style.top_padding = 4
     end
     return frame_flow
 end
+
+Event.on_init(
+    function()
+        local a = game.active_mods['base']
+        if a == '1.0.0' then
+            Gui.frame_style = 'inner_frame_in_outer_frame'
+        end
+    end
+)
 
 Event.add(
     defines.events.on_player_created,

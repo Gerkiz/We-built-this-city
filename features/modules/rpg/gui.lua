@@ -51,8 +51,7 @@ end
 
 local function get_class(player)
     local rpg_t = RPG.get('rpg_t')
-    local average =
-        (rpg_t[player.index].strength + rpg_t[player.index].magicka + rpg_t[player.index].dexterity + rpg_t[player.index].vitality) / 4
+    local average = (rpg_t[player.index].strength + rpg_t[player.index].magicka + rpg_t[player.index].dexterity + rpg_t[player.index].vitality) / 4
     local high_attribute = 0
     local high_attribute_name = ''
     for _, attribute in pairs({'strength', 'magicka', 'dexterity', 'vitality'}) do
@@ -327,8 +326,7 @@ local function draw_main_frame(player, location)
 
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.mining_name'}), w1)
-    local mining_speed_value =
-        math.round((player.force.manual_mining_speed_modifier + player.character_mining_speed_modifier + 1) * 100) .. '%'
+    local mining_speed_value = math.round((player.force.manual_mining_speed_modifier + player.character_mining_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, mining_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
@@ -377,14 +375,12 @@ local function draw_main_frame(player, location)
 
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.crafting_speed'}), w1)
-    local crafting_speed_value =
-        math.round((player.force.manual_crafting_speed_modifier + player.character_crafting_speed_modifier + 1) * 100) .. '%'
+    local crafting_speed_value = math.round((player.force.manual_crafting_speed_modifier + player.character_crafting_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, crafting_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
     add_gui_description(right_bottom_table, ({'rpg_gui.running_speed'}), w1)
-    local running_speed_value =
-        math.round((player.force.character_running_speed_modifier + player.character_running_speed_modifier + 1) * 100) .. '%'
+    local running_speed_value = math.round((player.force.character_running_speed_modifier + player.character_running_speed_modifier + 1) * 100) .. '%'
     add_gui_stat(right_bottom_table, running_speed_value, w2)
 
     add_gui_description(right_bottom_table, ' ', w0)
@@ -502,9 +498,15 @@ function Public.toggle(player, recreate)
         return
     end
     if main_frame then
-        Tabs.toggle_visibility(player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
     else
-        Tabs.toggle_visibility(player, main_frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
         draw_main_frame(player)
     end
 end
@@ -697,11 +699,7 @@ Gui.on_click(
         end
 
         if frame and frame.valid then
-            if frame.visible then
-                frame.visible = false
-            elseif not frame.visible then
-                frame.visible = true
-            end
+            frame.destroy()
         else
             Settings.extra_settings(player)
         end

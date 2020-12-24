@@ -105,17 +105,17 @@ function Public.create_surface()
         --map_gen_settings.height = 128
         map_gen_settings.cliff_settings = {cliff_elevation_interval = 35, cliff_elevation_0 = 35}
         map_gen_settings.autoplace_controls = {
-            ['coal'] = {frequency = 0.33, size = 2, richness = 2},
-            ['stone'] = {frequency = 0.33, size = 2, richness = 2},
-            ['copper-ore'] = {frequency = 0.33, size = 2, richness = 2},
-            ['iron-ore'] = {frequency = 0.33, size = 2, richness = 2},
-            ['crude-oil'] = {frequency = 0.33, size = 2, richness = 2},
-            ['uranium-ore'] = {frequency = 0.33, size = 2, richness = 2},
-            ['trees'] = {frequency = 1, size = 1, richness = 1},
-            ['enemy-base'] = {frequency = 0.33, size = 0.33, richness = 1}
+            ['coal'] = {frequency = 1, size = 2, richness = 2},
+            ['stone'] = {frequency = 1, size = 2, richness = 2},
+            ['copper-ore'] = {frequency = 1, size = 2, richness = 2},
+            ['iron-ore'] = {frequency = 1, size = 2, richness = 2},
+            ['crude-oil'] = {frequency = 1, size = 2, richness = 2},
+            ['uranium-ore'] = {frequency = 1, size = 2, richness = 2},
+            ['trees'] = {frequency = 0.88, size = 0.64, richness = 1},
+            ['enemy-base'] = {frequency = 1, size = 1, richness = 1}
         }
         local mine = {}
-        mine['control-setting:moisture:bias'] = 0.33
+        mine['control-setting:moisture:bias'] = 0.07
         mine['control-setting:moisture:frequency:multiplier'] = 1
 
         map_gen_settings.property_expression_names = mine
@@ -132,12 +132,6 @@ function Public.create_surface()
 
         surface.request_to_generate_chunks({0, 0}, 2)
         surface.force_generate_chunk_requests()
-
-        local _y = surface.find_non_colliding_position('character-corpse', {0, -22}, 2, 2)
-        surface.create_entity({name = 'character-corpse', position = _y})
-
-        local y = surface.find_non_colliding_position('character-corpse', {0, 22}, 2, 2)
-        surface.create_entity({name = 'character-corpse', position = y})
 
         --game.forces.player.technologies["landfill"].enabled = false
         --game.forces.player.technologies["optics"].researched = true

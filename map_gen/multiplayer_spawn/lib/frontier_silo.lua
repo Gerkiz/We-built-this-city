@@ -222,12 +222,7 @@ function Public.BuildSiloAttempt(event)
 
     -- If we get here, means it wasn't in a valid position. Need to remove it.
     if (event.created_entity.last_user ~= nil) then
-        Utils.FlyingText(
-            "Can't build silo here! Check the map!",
-            epos,
-            Utils.my_color_red,
-            event.created_entity.surface
-        )
+        Utils.FlyingText("Can't build silo here! Check the map!", epos, Utils.my_color_red, event.created_entity.surface)
         if (event.created_entity.name == 'entity-ghost') then
             event.created_entity.destroy()
         else
@@ -271,27 +266,9 @@ function Public.GenerateRocketSiloChunk(event)
                 end
 
                 -- Remove trees/resources inside the spawn area
-                Utils.RemoveInCircle(
-                    surface,
-                    chunkArea,
-                    'tree',
-                    siloPos,
-                    global.scenario_config.gen_settings.land_area_tiles + 5
-                )
-                Utils.RemoveInCircle(
-                    surface,
-                    chunkArea,
-                    'resource',
-                    siloPos,
-                    global.scenario_config.gen_settings.land_area_tiles + 5
-                )
-                Utils.RemoveInCircle(
-                    surface,
-                    chunkArea,
-                    'cliff',
-                    siloPos,
-                    global.scenario_config.gen_settings.land_area_tiles + 5
-                )
+                Utils.RemoveInCircle(surface, chunkArea, 'tree', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
+                Utils.RemoveInCircle(surface, chunkArea, 'resource', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
+                Utils.RemoveInCircle(surface, chunkArea, 'cliff', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
                 Utils.RemoveDecorationsArea(surface, chunkArea)
 
                 -- Create rocket silo
@@ -468,8 +445,7 @@ function Public.PhilipsRadar(surface, siloPos, force)
     radar.destructible = false
     radar = surface.create_entity {name = 'radar', position = {siloPos.x - 43, siloPos.y}, force = force}
     radar.destructible = false
-    local substation =
-        surface.create_entity {name = 'substation', position = {siloPos.x - 38, siloPos.y - 1}, force = force}
+    local substation = surface.create_entity {name = 'substation', position = {siloPos.x - 38, siloPos.y - 1}, force = force}
     substation.destructible = false
     radar = surface.create_entity {name = 'accumulator', position = {siloPos.x - 40, siloPos.y - 1}, force = force}
     radar.destructible = false

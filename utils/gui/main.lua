@@ -2,6 +2,8 @@ local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui'
 local Color = require 'utils.color_presets'
+local SpamProtection = require 'utils.spam_protection'
+
 local disabled_tabs = {}
 local ignored_visibility = {}
 local icons = {
@@ -289,29 +291,28 @@ function Gui.get_disabled_tabs()
     return disabled_tabs
 end
 
-function Gui.toggle_visibility(player, main_frame)
+function Gui.toggle_visibility(player, state)
     local left = player.gui.left
     local screen = player.gui.screen
+
     for _, child in pairs(left.children) do
-        if child.visible and child ~= main_frame then
-            child.visible = false
-        elseif child.visible and child == main_frame then
-            child.visible = false
-        elseif not child.visible and child == main_frame then
-            child.visible = true
+        if child.valid then
+            child.destroy()
         end
     end
+
+    if state == 'left' then
+        return
+    end
+
     for _, child in pairs(screen.children) do
         if not ignored_visibility[child.name] then
-            if child.visible and child ~= main_frame then
-                child.visible = false
-            elseif child.visible and child == main_frame then
-                child.visible = false
-            elseif not child.visible and child == main_frame then
-                child.visible = true
+            if child.valid then
+                child.destroy()
             end
         end
     end
+    return false
 end
 
 function Gui.refresh(player)
@@ -519,9 +520,15 @@ function Gui.toggle(player)
     local frame = left[main_frame_name]
 
     if frame then
-        Gui.toggle_visibility(player, frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
     else
-        Gui.toggle_visibility(player, frame)
+        local is_spamming = Gui.toggle_visibility(player)
+        if is_spamming then
+            return
+        end
         main_frame(player)
     end
 end
