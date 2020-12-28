@@ -921,8 +921,7 @@ Gui.on_click(
         local p = get_player_data(player)
 
         if not Roles.get_role(player):allowed('always-warp') then
-            local success = Public.is_spam(p, player)
-            if not success then
+            if Public.is_spam(p, player) then
                 return
             end
 

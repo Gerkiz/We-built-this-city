@@ -3,7 +3,6 @@ local Event = require 'utils.event'
 local AntiGrief = require 'features.functions.antigrief'
 local Color = require 'utils.color_presets'
 local SpamProtection = require 'utils.spam_protection'
-local WD = require 'features.modules.wave_defense.table'
 local Math2D = require 'math2d'
 
 --RPG Modules
@@ -183,16 +182,6 @@ local function on_entity_died(event)
     end
 
     local rpg_extra = RPG.get('rpg_extra')
-
-    if rpg_extra.enable_wave_defense then
-        if rpg_extra.rpg_xp_yield['big-biter'] <= 16 then
-            local wave_number = WD.get_wave()
-            if wave_number >= 1000 then
-                rpg_extra.rpg_xp_yield['big-biter'] = 16
-                rpg_extra.rpg_xp_yield['behemoth-biter'] = 64
-            end
-        end
-    end
 
     if not event.cause then
         return

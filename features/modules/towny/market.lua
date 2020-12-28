@@ -4,13 +4,13 @@ local Public = {}
 
 local upgrade_functions = {
     --Upgrade Town Center Health
-    [1] = function(town_center)
+    [1] = function(town_center, player)
         if town_center.max_health > 500000 then
             return
         end
         town_center.health = town_center.health + town_center.max_health
         town_center.max_health = town_center.max_health * 2
-        Town_center.set_market_health(town_center.market, 0)
+        Town_center.set_market_health(town_center.market, 0, player)
     end,
     --Upgrade Backpack
     [2] = function(town_center)
@@ -100,16 +100,25 @@ function Public.refresh_offers(event)
     if market.name ~= 'market' then
         return
     end
+    local player = game.get_player(event.player_index)
+    if not player.valid then
+        return
+    end
     local towny = TownyTable.get('towny')
     local town_center = towny.town_centers[market.force.name]
     if not town_center then
         town_center = towny.town_centers_placeholders[market.force.name]
         if not town_center then
-            return
+            town_center = towny.town_centers_placeholders[player.name]
+            if not town_center then
+                return
+            end
         end
     end
-    clear_offers(market)
-    set_offers(town_center)
+    if town_center and town_center.market and market.unit_number == town_center.market.unit_number then
+        clear_offers(market)
+        set_offers(town_center)
+    end
 end
 
 function Public.offer_purchased(event)
@@ -120,17 +129,25 @@ function Public.offer_purchased(event)
 
     local market = event.market
 
+    local player = game.get_player(event.player_index)
+    if not player.valid then
+        return
+    end
+
     local towny = TownyTable.get('towny')
 
     local town_center = towny.town_centers[market.force.name]
     if not town_center then
         town_center = towny.town_centers_placeholders[market.force.name]
         if not town_center then
-            return
+            town_center = towny.town_centers_placeholders[player.name]
+            if not town_center then
+                return
+            end
         end
     end
 
-    upgrade_functions[offer_index](town_center)
+    upgrade_functions[offer_index](town_center, player)
 
     local count = event.count
     if count > 1 then

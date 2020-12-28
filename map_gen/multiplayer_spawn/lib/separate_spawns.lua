@@ -213,8 +213,10 @@ function Public.FindUnusedSpawns(player, remove_player)
             end
         end
 
+        TownyTable.reset_player(player)
+
         -- Remove a force if this player created it and they are the only one on it
-        if ((#player.force.players <= 1) and (player.force.name ~= global.main_force_name)) then
+        if ((#player.force.players <= 1) and (player.force.name ~= global.main_force_name) and (player.force.name ~= 'player')) then
             game.merge_forces(player.force, global.main_force_name)
         end
 
@@ -692,6 +694,10 @@ end
 -- Check if we are past the delayed tick count
 -- Spawn the players and remove them from the table.
 function Public.DelayedSpawnOnTick()
+    if #global.delayedSpawns <= 0 then
+        return
+    end
+
     if ((game.tick % (30)) == 1) then
         if ((global.delayedSpawns ~= nil) and (#global.delayedSpawns > 0)) then
             for i = #global.delayedSpawns, 1, -1 do
@@ -700,9 +706,14 @@ function Public.DelayedSpawnOnTick()
                 if (delayedSpawn.delayedTick < game.tick) then
                     -- TODO, add check here for if chunks around spawn are generated surface.is_chunk_generated(chunkPos)
                     if (game.players[delayedSpawn.playerName] ~= nil) then
-                        Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
+                        if not game.players[delayedSpawn.playerName].connected then
+                            table.remove(global.delayedSpawns, i)
+                            return
+                        else
+                            Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
+                            table.remove(global.delayedSpawns, i)
+                        end
                     end
-                    table.remove(global.delayedSpawns, i)
                 end
             end
         end
@@ -725,6 +736,7 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
         -- Create the spawn resources here
         if (delayedSpawn.layout ~= 'towny_shape' and delayedSpawn.layout ~= 'towny_shape_non_pvp') then
             Team.set_player_to_outlander(player)
+            Utils.GivePlayerStarterItems(player)
             Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
             Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1}, water_data.length)
             if delayedSpawn.layout == 'circle_shape' then
@@ -736,8 +748,9 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
             if delayedSpawn.layout == 'towny_shape' then
                 Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos)
             elseif delayedSpawn.layout == 'towny_shape_non_pvp' then
-                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true)
+                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true, delayedSpawn.own_team)
                 Team.set_player_to_outlander(player)
+                Utils.GivePlayerStarterItems(player)
             end
         end
     end
@@ -756,7 +769,6 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
             alignment = 'center',
             scale_with_zoom = false
         }
-        Utils.GivePlayerStarterItems(game.players[delayedSpawn.playerName])
     end
 
     local pos = player.surface.find_non_colliding_position('character', delayedSpawn.pos, 10, 5)
@@ -1048,7 +1060,7 @@ function Public.DisplayWelcomeTextGui(player)
     UtilsGui.AddSpacer(wGui)
 
     -- Warning about spawn creation time
-    UtilsGui.AddLabel(wGui, 'spawn_time_msg_lbl1', {'oarc-spawn-time-warning-msg'}, UtilsGui.my_warning_style)
+    UtilsGui.AddLabel(wGui, 'spawn_time_msg_lbl1', '', UtilsGui.my_warning_style)
 
     -- Confirm button
     UtilsGui.AddSpacerLine(wGui)
@@ -1423,7 +1435,6 @@ function Public.SpawnOptsGuiClick(event)
         if (global.scenario_config.gen_settings.moat_choice_enabled and not global.enable_vanilla_spawns and (pgcs.spawn_solo_flow.isolated_spawn_moat_option_checkbox ~= nil)) then
             moatChoice = pgcs.spawn_solo_flow.isolated_spawn_moat_option_checkbox.state
         end
-        pgcs.destroy()
     else
         return -- Do nothing, no valid element item was clicked.
     end
@@ -1446,10 +1457,17 @@ function Public.SpawnOptsGuiClick(event)
         -- Create a new spawn point
         local newSpawn = {x = 0, y = 0}
 
+        local goto_main_team = pgcs.spawn_solo_flow.isolated_spawn_main_team_radio.state
+        local goto_new_team = pgcs.spawn_solo_flow.isolated_spawn_new_team_radio.state
+
         -- Create a new force for player if they choose that radio button
         if global.enable_separate_teams then
-            Public.CreatePlayerCustomForce(player, layout)
-            own_team = true
+            if goto_new_team then
+                Public.CreatePlayerCustomForce(player, layout)
+                own_team = true
+            elseif goto_main_team then
+                own_team = false
+            end
         end
 
         -- Find an unused vanilla spawn
@@ -1502,6 +1520,9 @@ function Public.SpawnOptsGuiClick(event)
         Utils.SendBroadcastMsg({'oarc-looking-for-buddy', player.name})
 
         Public.DisplayBuddySpawnOptions(player)
+    end
+    if pgcs and pgcs.valid then
+        pgcs.destroy()
     end
 end
 

@@ -7,6 +7,7 @@ local Info = require 'features.modules.towny.info'
 local Market = require 'features.modules.towny.market'
 local Team = require 'features.modules.towny.team'
 local Town_center = require 'features.modules.towny.town_center'
+require 'features.modules.towny.commands'
 
 local function on_player_respawned(event)
     local player = game.players[event.player_index]
@@ -133,7 +134,7 @@ end
 local tick_actions = {
     [60 * 5] = Team.update_town_chart_tags,
     [60 * 10] = Team.set_all_player_colors,
-    [60 * 20] = Biters.wipe_units_out_of_evo_range,
+    -- [60 * 20] = Biters.wipe_units_out_of_evo_range,
     [60 * 25] = Biters.unit_groups_start_moving,
     [60 * 40] = Biters.validate_swarms,
     [60 * 45] = Biters.swarm,

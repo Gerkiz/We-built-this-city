@@ -1,6 +1,8 @@
+local TownyTable = require 'features.modules.towny.table'
+
 local Public = {}
 
-local connection_radius = 7
+local connection_radius = 10
 
 local entity_type_whitelist = {
     ['accumulator'] = true,
@@ -93,12 +95,27 @@ local function error_floaty(surface, position, msg)
     )
 end
 
-local function is_town_market_nearby(entity)
+local function is_player_in_town(player)
+    local towny = TownyTable.get('towny')
+    if towny.town_centers_placeholders[player.name] then
+        return true
+    end
+    return false
+end
+
+local function is_town_market_nearby(entity, player)
     local area = {{entity.position.x - 48, entity.position.y - 48}, {entity.position.x + 48, entity.position.y + 48}}
     local markets = entity.surface.find_entities_filtered({name = 'market', area = area})
     if not markets[1] then
         return false
     end
+
+    if player and player.valid then
+        if is_player_in_town(player) then
+            return false
+        end
+    end
+
     for _, market in pairs(markets) do
         if market.force.index > 3 then
             return true
@@ -112,9 +129,7 @@ function Public.prevent_isolation(event)
     if not entity.valid then
         return
     end
-    if entity.force.index == 1 then
-        return
-    end
+
     if not entity_type_whitelist[entity.type] then
         return
     end
@@ -136,6 +151,7 @@ function Public.prevent_isolation_landfill(event)
     if event.item.name ~= 'landfill' then
         return
     end
+
     local surface = game.surfaces[event.surface_index]
     local tiles = event.tiles
 
@@ -156,32 +172,28 @@ function Public.prevent_isolation_landfill(event)
     end
 end
 
-local square_min_distance_to_spawn = 80 ^ 2
-
 function Public.restrictions(event)
     local entity = event.created_entity
     if not entity.valid then
         return
     end
 
+    local player
+    if event.player_index then
+        player = game.get_player(event.player_index)
+        if not player.valid then
+            return
+        end
+    end
+
     if entity.force.index == 1 then
-        if is_town_market_nearby(entity) then
+        if is_town_market_nearby(entity, player) then
             refund_item(event, event.stack.name)
             error_floaty(entity.surface, entity.position, 'Building too close to a town center!')
             entity.destroy()
         end
         return
     end
-
-    if not entity_type_whitelist[entity.type] then
-        return
-    end
-    if entity.position.x ^ 2 + entity.position.y ^ 2 > square_min_distance_to_spawn then
-        return
-    end
-    refund_item(event, event.stack.name)
-    error_floaty(entity.surface, entity.position, 'Building too close to spawn!')
-    entity.destroy()
 end
 
 return Public

@@ -72,7 +72,9 @@ end
 
 function Public.set_all_player_colors()
     for _, p in pairs(game.connected_players) do
-        Public.set_player_color(p)
+        if not p.admin then
+            Public.set_player_color(p)
+        end
     end
 end
 
@@ -90,7 +92,7 @@ function Public.give_outlander_items(player)
 end
 
 function Public.set_player_to_outlander(player)
-    player.force = game.forces.player
+    -- player.force = game.forces.player
     -- game.permissions.get_group('outlander').add_player(player)
     player.tag = '[Outlander]'
     Public.set_player_color(player)
@@ -335,7 +337,7 @@ function Public.kill_force(force_name)
     local towny = TownyTable.get('towny')
     local market = towny.town_centers[force_name] and towny.town_centers[force_name].market
     if not market then
-        market = towny.town_centers_placeholders[force_name].market
+        market = towny.town_centers_placeholders[force_name] and towny.town_centers_placeholders[force_name].market
         if not market then
             return
         end
@@ -360,6 +362,7 @@ function Public.kill_force(force_name)
             towny.requests[player.index] = 'kill-character'
         end
         player.force = game.forces.player
+        TownyTable.add_to_reset_player(player)
     end
 
     for _, e in pairs(surface.find_entities_filtered({force = force_name})) do

@@ -28,7 +28,10 @@ local R_launch = require 'map_gen.multiplayer_spawn.lib.rocket_launch'
 local Surface = require 'utils.surface'
 local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
 local Alert = require 'utils.alert'
+local TownyTable = require 'features.modules.towny.table'
+
 require 'features.modules.towny.main'
+
 local math_random = math.random
 
 local function on_start()
@@ -176,6 +179,17 @@ Event.add(
 Event.add(
     defines.events.on_player_joined_game,
     function(event)
+        local player = game.players[event.player_index]
+        local surface_name = Surface.get_surface_name()
+
+        if TownyTable.get_reset_player(player) then
+            local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
+            player.teleport(pos, surface_name)
+            SS.SeparateSpawnsPlayerCreated(event.player_index)
+            TownyTable.remove_player_to_reset(player)
+            return
+        end
+
         Utils.PlayerJoinedMessages(event)
     end
 )
@@ -201,12 +215,23 @@ Event.add(
 Event.add(
     defines.events.on_player_respawned,
     function(event)
+        local player = game.players[event.player_index]
+        local surface_name = Surface.get_surface_name()
+
+        if TownyTable.get_reset_player(player) then
+            local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
+            player.teleport(pos, surface_name)
+            SS.SeparateSpawnsPlayerCreated(event.player_index)
+            TownyTable.remove_player_to_reset(player)
+            return
+        end
+
         SS.SeparateSpawnsPlayerRespawned(event)
 
         Utils.PlayerRespawnItems(event)
 
         if global.enable_longreach then
-            Utils.GivePlayerLongReach(game.players[event.player_index])
+            Utils.GivePlayerLongReach(player)
         end
     end
 )
@@ -248,7 +273,7 @@ Event.add(
                 local _pos = Utils.shuffle(pos)
                 local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
 
-                global.market = surface.create_entity {name = 'market', position = p, force = 'player'}
+                global.market = surface.create_entity {name = 'market', position = p, force = global.main_force_name}
 
                 rendering.draw_text {
                     text = 'Market',

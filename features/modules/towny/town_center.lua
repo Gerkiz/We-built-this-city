@@ -147,13 +147,14 @@ local function get_replacement_tile(surface, position)
     return 'grass-1'
 end
 
-local function draw_town_spawn(player_name, mock)
+local function draw_town_spawn(player_name, mock, set_force)
     local towny = TownyTable.get('towny')
     local market
     if not mock then
         market = towny.town_centers[player_name].market
     else
         market = towny.town_centers_placeholders[player_name].market
+        player_name = set_force
     end
     local position = market.position
     local surface = market.surface
@@ -263,13 +264,20 @@ local function draw_town_spawn(player_name, mock)
     end
 end
 
-function Public.set_market_health(entity, final_damage_amount)
+function Public.set_market_health(entity, final_damage_amount, player)
     local towny = TownyTable.get('towny')
     local town_center = towny.town_centers[entity.force.name]
     if not town_center then
         town_center = towny.town_centers_placeholders[entity.force.name]
         if not town_center then
-            return
+            if player and player.valid then
+                town_center = towny.town_centers_placeholders[player.name]
+                if not town_center then
+                    return
+                end
+            else
+                return
+            end
         end
     end
 
@@ -329,7 +337,7 @@ function Public.add_new_force(force_name)
     force.set_ammo_damage_modifier('artillery-shell', -0.75)
 end
 
-function Public.create_new_town(surface, player, position, mock)
+function Public.create_new_town(surface, player, position, mock, own_team)
     if not player then
         return
     end
@@ -378,20 +386,25 @@ function Public.create_new_town(surface, player, position, mock)
     else
         towny.town_centers_placeholders[player_name] = {}
         town_center = towny.town_centers_placeholders[player_name]
-        town_center.market = surface.create_entity({name = 'market', position = position, force = player_name})
+        local set_force = 'player'
+        if own_team then
+            set_force = player_name
+        end
+        town_center.market = surface.create_entity({name = 'market', position = position, force = set_force})
         town_center.market.active = false
         town_center.chunk_position = {math.floor(position.x / 32), math.floor(position.y / 32)}
         town_center.position = position
         town_center.max_health = 1000
         town_center.health = town_center.max_health
         town_center.color = get_color()
-        town_center.force = player_name
+        town_center.force = set_force
         town_center.surface = surface
         town_center.research_counter = 1
         town_center.upgrades = {}
         town_center.upgrades.mining_prod = 0
-        draw_town_spawn(player_name, true)
+        draw_town_spawn(player_name, true, set_force)
         towny.size_of_placeholders_towns = towny.size_of_placeholders_towns + 1
+        game.print('>> ' .. player.name .. ' has founded a new town!', {255, 255, 0})
         town_center.town_caption =
             rendering.draw_text {
             text = player.name .. "'s Town (NON-PVP)",

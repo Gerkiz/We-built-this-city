@@ -156,7 +156,7 @@ function Public.reset_force(force, killed)
     if this.towny.town_centers[tostring(force.name)] then
         local Team = require 'features.modules.towny.team'
         if not killed then
-            Team.kill_force(force.force.name)
+            Team.kill_force(force.name)
         end
         this.towny.town_centers[tostring(force.name)] = nil
         this.towny.size_of_town_centers = this.towny.size_of_town_centers - 1
@@ -186,6 +186,7 @@ function Public.reset_table()
         pvp = {},
         pvp_forces = {},
         alliances = {},
+        players_to_reset = {},
         cooldowns = {},
         size_of_town_centers = 0,
         size_of_placeholders_towns = 0,
@@ -206,6 +207,37 @@ function Public.add_to_pvp(player)
     if player and player.valid then
         this.towny.pvp[player.index] = true
         return this.towny.pvp[player.index]
+    end
+    return false
+end
+
+function Public.add_to_reset_player(player)
+    if player and player.valid then
+        this.towny.players_to_reset[player.index] = true
+        return this.towny.players_to_reset[player.index]
+    end
+    return false
+end
+
+function Public.remove_player_to_reset(player)
+    if player and player.valid then
+        if this.towny.players_to_reset[player.index] then
+            this.towny.players_to_reset[player.index] = nil
+            return true
+        else
+            return false
+        end
+    end
+    return false
+end
+
+function Public.get_reset_player(player)
+    if player and player.valid then
+        if this.towny.players_to_reset[player.index] then
+            return true
+        else
+            return false
+        end
     end
     return false
 end

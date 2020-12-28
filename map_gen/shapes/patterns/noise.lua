@@ -30,16 +30,16 @@ local function default(t, k, v)
     end
 end
 
-local A1, A2 = 727595, 798405  -- 5^17=D20*A1+A2
-local D20, D40 = 1048576, 1099511627776  -- 2^20, 2^40
+local A1, A2 = 727595, 798405 -- 5^17=D20*A1+A2
+local D20, D40 = 1048576, 1099511627776 -- 2^20, 2^40
 local X1, X2 = 0, 1
 local function rand()
-    local U = X2*A2
-    local V = (X1*A2 + X2*A1) % D20
-    V = (V*D20 + U) % D40
-    X1 = floor(V/D20)
-    X2 = V - X1*D20
-    return V/D40
+    local U = X2 * A2
+    local V = (X1 * A2 + X2 * A1) % D20
+    V = (V * D20 + U) % D40
+    X1 = floor(V / D20)
+    X2 = V - X1 * D20
+    return V / D40
 end
 
 local function randomize_phases(schema, wmin, wmax)
@@ -56,8 +56,7 @@ local function randomize_phases(schema, wmin, wmax)
         for wx = 0, outer - 1 do
             for wy = 0, outer - 1 do
                 local w = tau * sqrt(wx * wx + wy * wy) / (M * zoom)
-                if (w > 0 and w >= wmin and w <= wmax and
-                    (extended or (wx >= inner) or (wy >= inner))) then
+                if (w > 0 and w >= wmin and w <= wmax and (extended or (wx >= inner) or (wy >= inner))) then
                     t_insert(thetas, tau * rand())
                     if wx > 0 and wy > 0 and 2 * wy < M then
                         t_insert(thetas, tau * rand())
@@ -97,8 +96,7 @@ local function compute_grid(schema, idx, phase, wmin, wmax, power)
     for wx = 0, outer - 1 do
         for wy = 0, outer - 1 do
             w = tau * sqrt(wx * wx + wy * wy) / (M * zoom)
-            if (w > 0 and w >= wmin and w <= wmax and
-                (extended or (wx >= inner) or (wy >= inner))) then
+            if (w > 0 and w >= wmin and w <= wmax and (extended or (wx >= inner) or (wy >= inner))) then
                 -- The (wx, wy) lattice point represents a square in the frequency
                 -- plane with a side length of 2 pi / (M zoom), so has area that squared.
                 -- Then divide by the Jacobian 2 pi w to convert to polar coordinates,
@@ -138,10 +136,10 @@ local function compute_grid(schema, idx, phase, wmin, wmax, power)
     for x = 0, M - 1 do
         for y = 0, M - 1 do
             local a, b, c, d
-            a = grid[x * M              + y]
-            b = grid[((x + 1) % M) * M  + y]
-            c = grid[x * M              + (y + 1) % M]
-            d = grid[((x + 1) % M) * M  + (y + 1) % M]
+            a = grid[x * M + y]
+            b = grid[((x + 1) % M) * M + y]
+            c = grid[x * M + (y + 1) % M]
+            d = grid[((x + 1) % M) * M + (y + 1) % M]
             grid_dx[x * M + y] = b - a
             grid_dy[x * M + y] = c - a
             grid_dxy[x * M + y] = a + d - b - c
@@ -236,7 +234,7 @@ local function Noise(options)
         options = {}
     end
 
-    local land_percent = default(options, "land_percent", 0.5)
+    local land_percent = default(options, 'land_percent', 0.5)
     if land_percent > 0.999 then
         return Simple.AllLand()
     end
@@ -247,13 +245,13 @@ local function Noise(options)
     -- the time it is above thresh equals land_pct.
     local thresh1 = sqrt(2) * erfinv(1 - 2 * land_percent)
 
-    local start_on_land = default(options, "start_on_land", true)
-    local start_on_beach = default(options, "start_on_beach", true)
-    local wavelength_min = default(options, "wavelength_min", 2)
-    local wavelength_max = default(options, "wavelength_max", 10000)
-    local n1 = default(options, "n1", 1)
-    local n2 = default(options, "n2", -1)
-    local power = options["power"]
+    local start_on_land = default(options, 'start_on_land', true)
+    local start_on_beach = default(options, 'start_on_beach', true)
+    local wavelength_min = default(options, 'wavelength_min', 2)
+    local wavelength_max = default(options, 'wavelength_max', 10000)
+    local n1 = default(options, 'n1', 1)
+    local n2 = default(options, 'n2', -1)
+    local power = options['power']
 
     if wavelength_min < 2 then
         wavelength_min = 2
@@ -267,7 +265,6 @@ local function Noise(options)
 
     local wmin = tau / wavelength_max
     local wmax = tau / wavelength_min
-
 
     local grid_schema = make_grid_schema(wmin)
     local Ms = grid_schema[3]
@@ -291,8 +288,6 @@ local function Noise(options)
     local data = {}
 
     local phase = randomize_phases(grid_schema, wmin, wmax)
-
-    --log(serpent.block(phase))
 
     local function make_grid(i)
         --print("Making grid")
@@ -362,11 +357,7 @@ local function Noise(options)
                 j = (floor(x / z) % M) * M + floor(y / z) % M
                 dx = (x / z) % 1
                 dy = (y / z) % 1
-                h = (h
-                    + griddata.grids[i][j]
-                    + griddata.grids_dx[i][j] * dx
-                    + griddata.grids_dy[i][j] * dy
-                    + griddata.grids_dxy[i][j] * dx * dy)
+                h = (h + griddata.grids[i][j] + griddata.grids_dx[i][j] * dx + griddata.grids_dy[i][j] * dy + griddata.grids_dxy[i][j] * dx * dy)
             end
         end
 
@@ -448,7 +439,7 @@ local function Noise(options)
         create = create,
         reload = reload,
         get = get,
-        output = "bool"
+        output = 'bool'
     }
 end
 
@@ -457,14 +448,14 @@ function Public.NoiseExponent(options)
         options = {}
     end
 
-    local exponent = default(options, "exponent", 1.8)
+    local exponent = default(options, 'exponent', 1.8)
     if exponent <= 1 then
         exponent = 1
     end
     local function power(w)
         return math.pow(w, -exponent)
     end
-    options["power"] = power
+    options['power'] = power
     return Noise(options)
 end
 
@@ -475,8 +466,8 @@ function Public.NoiseCustom(options)
     if options == nil then
         options = {}
     end
-    local exponent = default(options, "exponent", 1.8)
-    local noise = default(options, "noise", {1, 1, 1, 1, 1, 1, 0.7, 0.4, 0.3, 0.2})
+    local exponent = default(options, 'exponent', 1.8)
+    local noise = default(options, 'noise', {1, 1, 1, 1, 1, 1, 0.7, 0.4, 0.3, 0.2})
     if #noise < 1 then
         noise = {1}
     end
@@ -497,13 +488,12 @@ function Public.NoiseCustom(options)
         else
             for i = 1, n - 1 do
                 if logw <= logws[i] and logw >= logws[i + 1] then
-                    return math.pow(w, -exponent) * (noise[i+1] +
-                        (noise[i] - noise[i+1]) * (logw - logws[i+1]) / (logws[i] - logws[i+1]))
+                    return math.pow(w, -exponent) * (noise[i + 1] + (noise[i] - noise[i + 1]) * (logw - logws[i + 1]) / (logws[i] - logws[i + 1]))
                 end
             end
         end
     end
-    options["power"] = power
+    options['power'] = power
     return Noise(options)
 end
 

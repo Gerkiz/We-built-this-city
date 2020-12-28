@@ -107,15 +107,9 @@ local function roll_target()
 end
 
 local function get_random_close_spawner(surface, market)
-    local spawners = surface.find_entities_filtered({type = 'unit-spawner'})
+    local spawners = surface.find_entities_filtered({position = market.position, radius = 200, type = 'unit-spawner'})
     if not spawners[1] then
-        spawners = surface.find_entities_filtered({type = 'unit-spawner'})
-        if not spawners[1] then
-            spawners = surface.find_entities_filtered({type = 'unit-spawner'})
-            if not spawners[1] then
-                return false
-            end
-        end
+        return false
     end
     local size_of_spawners = #spawners
     local center = market.position

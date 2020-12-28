@@ -62,8 +62,11 @@ local function get_task_per_tick(tick)
 end
 
 local function on_tick()
-    local tick = game.tick
+    if #callbacks <= 0 then
+        return
+    end
 
+    local tick = game.tick
     for i = 1, get_task_per_tick(tick) do
         local task = Queue_peek(task_queue)
         if task ~= nil then

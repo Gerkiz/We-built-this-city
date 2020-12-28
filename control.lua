@@ -36,7 +36,6 @@ require 'utils.datastore.player_tag_data'
 require 'utils.player_modifiers'
 require 'utils.command_handler'
 require 'features.modules.rpg.main'
-require 'utils.biter_corpse_remover'
 
 --! Role system
 local Role = require 'utils.role.main'
@@ -62,7 +61,8 @@ require 'features.modules.floaty_chat'
 require 'features.modules.autohotbar'
 require 'features.modules.autostash'
 require 'features.modules.tree_decon'
---require 'features.modules.autofill'
+require 'features.modules.autofill'
+require 'features.modules.enable_loaders'
 require 'features.modules.portable_surface.main'
 require 'features.modules.spawn_ent.main'
 require 'features.commands.repair'
@@ -72,7 +72,7 @@ require 'features.commands.map_restart'
 require 'features.modules.infinity_chest'
 require 'features.modules.portable_chest'
 require 'features.modules.bp'
-require 'features.modules.winter'
+-- require 'features.modules.winter'
 
 ---! load from config/map
 require 'map_loader'
@@ -114,7 +114,6 @@ Event.on_init(
 --! DEBUG SETTINGS
 
 if _DEBUG then
-    require 'utils.profiler'
     function raw(string)
         return game.print(serpent.block(string))
     end
@@ -123,3 +122,5 @@ end
 if _DUMP_ENV then
     require 'utils.dump_env'
 end
+
+require 'utils.profiler'
