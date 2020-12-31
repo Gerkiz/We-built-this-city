@@ -18,10 +18,6 @@ local function on_entity_died(event)
     if entity.type == 'car' or entity.name == 'spidertron' then
         Functions.kill_car(ic, entity)
     end
-
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event, true)
-    end
 end
 
 local function on_player_mined_entity(event)
@@ -32,14 +28,14 @@ local function on_player_mined_entity(event)
 
     local ic = IC.get()
 
+    if entity.name == 'steel-chest' then
+        Functions.on_player_and_robot_mined_entity(event, ic)
+    end
+
     Minimap.kill_minimap(game.players[event.player_index])
 
     if entity.type == 'car' or entity.name == 'spidertron' then
         Functions.save_car(ic, event)
-    end
-
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event)
     end
 end
 
@@ -51,12 +47,12 @@ local function on_robot_mined_entity(event)
     end
     local ic = IC.get()
 
-    if entity.type == 'car' or entity.name == 'spidertron' then
-        Functions.kill_car(ic, entity)
+    if entity.name == 'steel-chest' or entity.name == 'iron-chest' then
+        Functions.on_player_and_robot_mined_entity(event, ic)
     end
 
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event, true)
+    if entity.type == 'car' or entity.name == 'spidertron' then
+        Functions.kill_car(ic, entity)
     end
 end
 
@@ -66,6 +62,18 @@ local function on_built_entity(event)
     if not ce or not ce.valid then
         return
     end
+
+    local ic = IC.get()
+
+    local valid = {
+        ['steel-chest'] = true,
+        ['iron-chest'] = true
+    }
+
+    if valid[ce.name] then
+        Functions.on_built_entity(event, ic)
+    end
+
     if not ce.type == 'car' or not ce.name == 'spidertron' then
         return
     end
@@ -75,7 +83,6 @@ local function on_built_entity(event)
         return
     end
 
-    local ic = IC.get()
     Functions.create_car(ic, event)
 end
 
@@ -93,6 +100,7 @@ local function on_tick()
 
     if tick % 60 == 0 then
         Functions.item_transfer(ic)
+        Functions.divide_contents(ic)
     end
 
     if tick % 240 == 0 then

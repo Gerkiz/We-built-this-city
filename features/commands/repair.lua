@@ -23,7 +23,7 @@ commands.add_command(
         local player = game.player
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('repair') then
+                if not Roles.allowed(player, 'repair') then
                     local p = Server.player_return
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
@@ -59,11 +59,7 @@ commands.add_command(
                     if not disallow[e.name] then
                         e.silent_revive()
                     else
-                        Server.player_return(
-                            'You have repaired: ' .. e.name .. ' this item is not allowed.',
-                            Color.warning,
-                            player
-                        )
+                        Server.player_return('You have repaired: ' .. e.name .. ' this item is not allowed.', Color.warning, player)
                     end
                 end
             end

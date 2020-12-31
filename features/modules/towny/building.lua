@@ -5,6 +5,7 @@ local Public = {}
 local connection_radius = 10
 
 local entity_type_whitelist = {
+    ['car'] = true,
     ['accumulator'] = true,
     ['ammo-turret'] = true,
     ['arithmetic-combinator'] = true,
@@ -61,7 +62,11 @@ local function is_position_isolated(surface, force, position)
 
     for _, e in pairs(surface.find_entities_filtered({area = area, force = force.name})) do
         if entity_type_whitelist[e.type] then
-            count = count + 1
+            if e.type == 'car' and not e.minable then
+                count = count + 1
+            else
+                count = count + 1
+            end
             if count > 1 then
                 return
             end

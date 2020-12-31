@@ -3,6 +3,7 @@ local Roles = require 'utils.role.main'
 local TaskTable = require 'utils.task_table'
 local Server = require 'utils.server'
 local Color = require 'utils.color_presets'
+local Core = require 'utils.core'
 local nth_tick = 54001
 local msg = {{'chat-bot.join-us'}, {'chat-bot.discord'}, {'chat-bot.custom-commands'}}
 
@@ -50,7 +51,7 @@ Event.on_nth_tick(
         end
         local players = #game.connected_players
         game.print {'chat-bot.message', {'chat-bot.players-online', players}}
-        game.print {'chat-bot.message', {'chat-bot.map-time', Server.tick_to_display_format(game.tick)}}
+        game.print {'chat-bot.message', {'chat-bot.map-time', Core.format_time(game.ticks_played)}}
     end
 )
 
@@ -132,7 +133,7 @@ Event.add(
             return
         end
         local player_message = event.message:lower():gsub('%s+', '')
-        local allowed = Roles.get_role(player):allowed('global-chat')
+        local allowed = Roles.allowed(player, 'global-chat')
         for to_find, message in pairs(messages) do
             if player_message:match(command_syntax .. to_find) then
                 if allowed then

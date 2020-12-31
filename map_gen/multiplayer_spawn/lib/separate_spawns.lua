@@ -51,12 +51,14 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
         trash.clear()
     end
 
-    if player.character and player.character.valid then
-        player.character.active = false
-    else
-        player.set_controller({type = defines.controllers.god})
-        player.create_character()
-        player.character.active = false
+    if player.connected then
+        if player.character and player.character.valid then
+            player.character.active = false
+        else
+            player.set_controller({type = defines.controllers.god})
+            player.create_character()
+            player.character.active = false
+        end
     end
 
     player.force = global.main_force_name
@@ -115,6 +117,10 @@ function Public.FindUnusedSpawns(player, remove_player)
     local surface_name = Surface.get_surface_name()
     if not player then
         log('ERROR - FindUnusedSpawns on NIL Player!')
+        return
+    end
+
+    if #global.delayedSpawns <= 0 then
         return
     end
 
@@ -190,8 +196,6 @@ function Public.FindUnusedSpawns(player, remove_player)
 
             global.uniqueSpawns[player.name] = nil
 
-            TownyTable.reset_force(player.force)
-
             if not nearOtherSpawn then
                 log('Removing base: ' .. spawnPos.x .. ',' .. spawnPos.y)
                 Public.Remove_area(spawnPos, global.check_spawn_ungenerated_chunk_radius + 5)
@@ -212,8 +216,6 @@ function Public.FindUnusedSpawns(player, remove_player)
                 end
             end
         end
-
-        TownyTable.reset_player(player)
 
         -- Remove a force if this player created it and they are the only one on it
         if ((#player.force.players <= 1) and (player.force.name ~= global.main_force_name) and (player.force.name ~= 'player')) then
@@ -264,7 +266,7 @@ function Public.SetupAndClearSpawnAreas(surface, chunkArea)
             -- If the chunk is within the main land area, then clear trees/resources
             -- and create the land spawn areas (guaranteed land with a circle of trees)
             if Utils.CheckIfInArea(chunkAreaCenter, landArea) then
-                if not (spawn.layout == 'towny_shape' or spawn.layout == 'towny_shape_non_pvp') then
+                if not (spawn.layout == 'towny_shape_new') then
                     if spawn.buddy_spawn then
                         -- Remove trees/resources inside the spawn area
                         if (spawn.layout == 'circle_shape') then
@@ -649,7 +651,7 @@ function Public.ChangePlayerSpawn(player, pos)
     global.playerCooldowns[player.name] = {setRespawn = game.tick}
 end
 
-function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoice, vanillaSpawn, own_team, buddy_spawn)
+function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoice, vanillaSpawn, own_team, buddy_spawn, pvp)
     local global_data = MPS.get()
     if not buddy_spawn then
         buddy_spawn = false
@@ -663,7 +665,8 @@ function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoic
             vanilla = vanillaSpawn,
             player = playerName,
             own_team = own_team,
-            buddy_spawn = buddy_spawn
+            buddy_spawn = buddy_spawn,
+            pvp = pvp
         }
 
         local delay_spawn_seconds = 2 * (math.ceil(global.scenario_config.gen_settings.land_area_tiles / global_data.chunk_size))
@@ -679,7 +682,8 @@ function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoic
                 vanilla = vanillaSpawn,
                 delayedTick = delayedTick,
                 own_team = own_team,
-                buddy_spawn = buddy_spawn
+                buddy_spawn = buddy_spawn,
+                pvp = pvp
             }
         )
 
@@ -732,22 +736,64 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
     end
     local player = game.players[delayedSpawn.playerName]
 
+    local pvp = false
+    if delayedSpawn.pvp then
+        pvp = true
+    elseif not delayedSpawn.pvp then
+        pvp = false
+    end
+
     if (not delayedSpawn.vanilla) then
-        -- Create the spawn resources here
-        if (delayedSpawn.layout ~= 'towny_shape' and delayedSpawn.layout ~= 'towny_shape_non_pvp') then
-            Team.set_player_to_outlander(player)
-            Utils.GivePlayerStarterItems(player)
-            Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
-            Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1}, water_data.length)
-            if delayedSpawn.layout == 'circle_shape' then
+        if delayedSpawn.layout == 'circle_shape' then
+            if pvp then
+                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, false, false, true)
+                Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
+                Utils.CreateWaterStrip(
+                    game.surfaces[surface_name],
+                    {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1},
+                    water_data.length
+                )
+                Utils.GivePlayerStarterItems(player, true)
                 Public.GenerateStartingResources_Classic(game.surfaces[surface_name], delayedSpawn.pos)
-            elseif delayedSpawn.layout == 'square_shape' then
+            else
+                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true, delayedSpawn.own_team, true)
+                Team.set_player_to_outlander(player)
+                Utils.GivePlayerStarterItems(player)
+                Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
+                Utils.CreateWaterStrip(
+                    game.surfaces[surface_name],
+                    {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1},
+                    water_data.length
+                )
+                Public.GenerateStartingResources_Classic(game.surfaces[surface_name], delayedSpawn.pos)
+            end
+        elseif delayedSpawn.layout == 'square_shape' then
+            if pvp then
+                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, false, false, true)
+                Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
+                Utils.CreateWaterStrip(
+                    game.surfaces[surface_name],
+                    {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1},
+                    water_data.length
+                )
+                Utils.GivePlayerStarterItems(player, true)
+                Public.GenerateStartingResources_New(game.surfaces[surface_name], delayedSpawn.pos)
+            else
+                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true, delayedSpawn.own_team, true)
+                Team.set_player_to_outlander(player)
+                Utils.GivePlayerStarterItems(player)
+                Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
+                Utils.CreateWaterStrip(
+                    game.surfaces[surface_name],
+                    {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset + 1},
+                    water_data.length
+                )
                 Public.GenerateStartingResources_New(game.surfaces[surface_name], delayedSpawn.pos)
             end
-        else
-            if delayedSpawn.layout == 'towny_shape' then
+        elseif delayedSpawn.layout == 'towny_shape_new' then
+            if pvp then
                 Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos)
-            elseif delayedSpawn.layout == 'towny_shape_non_pvp' then
+            else
                 Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true, delayedSpawn.own_team)
                 Team.set_player_to_outlander(player)
                 Utils.GivePlayerStarterItems(player)
@@ -758,7 +804,7 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
     Gui.toggle_visibility(player)
 
     -- Send the player to that position
-    if (delayedSpawn.layout ~= 'towny_shape' and delayedSpawn.layout ~= 'towny_shape_non_pvp') then
+    if (delayedSpawn.layout ~= 'towny_shape_new') then
         rendering.draw_text {
             text = player.name .. ' comfy home!',
             surface = surface_name,
@@ -846,7 +892,7 @@ function Public.SendPlayerToRandomSpawn(player)
     end
 end
 
-function Public.CreateForce(force_name, layout)
+function Public.CreateForce(force_name, pvp_state)
     local global_data = MPS.get()
     local newForce = nil
     local surface_name = Surface.get_surface_name()
@@ -871,7 +917,7 @@ function Public.CreateForce(force_name, layout)
             Silo.ChartRocketSiloAreas(game.surfaces[surface_name], newForce)
         end
 
-        if layout == 'towny_shape' then
+        if pvp_state then
             TownyTable.add_to_pvp_forces(newForce)
         end
 
@@ -889,8 +935,8 @@ function Public.CreateForce(force_name, layout)
     return newForce
 end
 
-function Public.CreatePlayerCustomForce(player, layout)
-    local newForce = Public.CreateForce(player.name, layout)
+function Public.CreatePlayerCustomForce(player, pvp_state)
+    local newForce = Public.CreateForce(player.name, pvp_state)
     player.force = newForce
 
     if (newForce.name == player.name) then
@@ -1105,6 +1151,10 @@ function Public.DisplaySpawnOptions(player, remove)
         return
     end
 
+    if (player.gui.screen.welcome_msg ~= nil) then
+        player.gui.screen.welcome_msg.destroy()
+    end
+
     if player.gui.screen.spawn_opts then
         if remove then
             player.gui.screen.spawn_opts.destroy()
@@ -1127,17 +1177,31 @@ function Public.DisplaySpawnOptions(player, remove)
     sGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
     sGui.auto_center = true
 
-    -- Warnings and explanations...
-    --local warn_msg = {"oarc-click-info-btn-help"}
-    --UtilsGui.AddLabel(sGui, "warning_lbl1", warn_msg, UtilsGui.my_warning_style)
-    --UtilsGui.AddLabel(sGui, "spawn_msg_lbl1", SPWN1, UtilsGui.my_label_style)
-
-    -- Button and message about the regular vanilla spawn
-
-    -- The main spawning options. Solo near and solo far.
-    -- If enable, you can also choose to be on your own team.
     UtilsGui.AddLabel(sGui, 'warning_lbl1', 'You can choose between the classic layout or the new one.', UtilsGui.my_label_style)
-    local layout_flow = sGui.add {name = 'layout', type = 'frame', direction = 'vertical', style = 'bordered_frame'}
+
+    local sTable = sGui.add {type = 'table', column_count = 3, name = 'upper_table'}
+    local layout_flow = sTable.add {name = 'layout', type = 'frame', direction = 'vertical', style = 'bordered_frame'}
+    layout_flow.style.minimal_height = 135
+    layout_flow.style.minimal_width = 230
+    local playstyle_flow = sTable.add {name = 'playstyle', type = 'frame', direction = 'vertical', style = 'bordered_frame'}
+    playstyle_flow.style.minimal_height = 135
+    playstyle_flow.style.minimal_width = 230
+    UtilsGui.AddLabel(playstyle_flow, 'normal_spawn_lbl1', 'Play Mode:', UtilsGui.my_label_style)
+    playstyle_flow.add {
+        name = 'pvp',
+        type = 'radiobutton',
+        caption = 'PVP-mode: ON',
+        state = false,
+        tooltip = 'PVP - it´s player versus players.'
+    }
+    playstyle_flow.add {
+        name = 'non_pvp',
+        type = 'radiobutton',
+        caption = 'PVP-mode: OFF',
+        state = true,
+        tooltip = 'NON-pvp, explore the world at your own pace.'
+    }
+
     UtilsGui.AddLabel(layout_flow, 'normal_spawn_lbl1', {'oarc-layout'}, UtilsGui.my_label_style)
     if not global.enable_town_shape then
         layout_flow.add {
@@ -1156,18 +1220,11 @@ function Public.DisplaySpawnOptions(player, remove)
         }
     end
     layout_flow.add {
-        name = 'layout_towny',
-        type = 'radiobutton',
-        caption = {'oarc-layout-towny'},
-        state = true,
-        tooltip = 'The new layout, towny shape (PVP).'
-    }
-    layout_flow.add {
         name = 'layout_towny_non_pvp',
         type = 'radiobutton',
         caption = {'oarc-layout-towny_non_pvp'},
-        state = false,
-        tooltip = 'The new layout, towny shape (NON-PVP).'
+        state = true,
+        tooltip = 'The new layout, towny shape.'
     }
 
     local soloSpawnFlow =
@@ -1202,14 +1259,13 @@ function Public.DisplaySpawnOptions(player, remove)
             name = 'isolated_spawn_main_team_radio',
             type = 'radiobutton',
             caption = {'oarc-join-main-team-radio'},
-            enabled = false,
-            state = false
+            state = true
         }
         soloSpawnFlow.add {
             name = 'isolated_spawn_new_team_radio',
             type = 'radiobutton',
             caption = {'oarc-create-own-team-radio'},
-            state = true
+            state = false
         }
     end
 
@@ -1332,39 +1388,48 @@ function Public.SpawnOptsRadioSelect(event)
         event.element.parent.isolated_spawn_main_team_radio.state = false
     end
 
+    local layout_elem = event.element.parent
+    local solo_flow_elem = event.element.parent.parent.parent.spawn_solo_flow
+    local upperTable = event.element.parent.parent
+
     if not global.enable_town_shape then
         if (elemName == 'layout_towny_non_pvp') then
-            event.element.parent.layout_towny.state = false
-            event.element.parent.layout_circle.state = false
-            event.element.parent.layout_square.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = true
-        elseif (elemName == 'layout_towny') then
-            event.element.parent.layout_towny_non_pvp.state = false
-            event.element.parent.layout_circle.state = false
-            event.element.parent.layout_square.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_new_team_radio.state = true
+            layout_elem.layout_circle.state = false
+            layout_elem.layout_square.state = false
+        elseif (elemName == 'pvp') then
+            upperTable.playstyle.non_pvp.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.enabled = false
+            solo_flow_elem.isolated_spawn_new_team_radio.state = true
+        elseif (elemName == 'non_pvp') then
+            upperTable.playstyle.pvp.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.state = true
+            solo_flow_elem.isolated_spawn_main_team_radio.enabled = true
+            solo_flow_elem.isolated_spawn_new_team_radio.state = false
         elseif (elemName == 'layout_square') then
-            event.element.parent.layout_towny_non_pvp.state = false
-            event.element.parent.layout_towny.state = false
-            event.element.parent.layout_circle.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = true
+            layout_elem.layout_towny_non_pvp.state = false
+            layout_elem.layout_circle.state = false
         elseif (elemName == 'layout_circle') then
-            event.element.parent.layout_towny_non_pvp.state = false
-            event.element.parent.layout_towny.state = false
-            event.element.parent.layout_square.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = true
+            layout_elem.layout_towny_non_pvp.state = false
+            layout_elem.layout_square.state = false
         end
     else
-        if (elemName == 'layout_towny_non_pvp') then
-            event.element.parent.layout_towny.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = true
-        elseif (elemName == 'layout_towny') then
-            event.element.parent.layout_towny_non_pvp.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.state = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_main_team_radio.enabled = false
-            event.element.parent.parent.spawn_solo_flow.isolated_spawn_new_team_radio.state = true
+        if (elemName == 'pvp') then
+            upperTable.playstyle.non_pvp.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.enabled = false
+            solo_flow_elem.isolated_spawn_new_team_radio.state = true
+        elseif (elemName == 'non_pvp') then
+            upperTable.playstyle.pvp.state = false
+            solo_flow_elem.isolated_spawn_main_team_radio.state = true
+            solo_flow_elem.isolated_spawn_main_team_radio.enabled = true
+            solo_flow_elem.isolated_spawn_new_team_radio.state = false
+        elseif (elemName == 'layout_square') then
+            layout_elem.layout_towny_non_pvp.state = false
+            layout_elem.layout_circle.state = false
+        elseif (elemName == 'layout_circle') then
+            layout_elem.layout_towny_non_pvp.state = false
+            layout_elem.layout_square.state = false
         end
     end
 
@@ -1404,13 +1469,22 @@ function Public.SpawnOptsGuiClick(event)
     local circle_shape = false
     local square_shape = false
     if not global.enable_town_shape then
-        circle_shape = pgcs.layout.layout_circle.state
-        square_shape = pgcs.layout.layout_square.state
+        circle_shape = pgcs.upper_table.layout.layout_circle.state
+        square_shape = pgcs.upper_table.layout.layout_square.state
     end
-    local towny_shape = pgcs.layout.layout_towny.state
-    local towny_non_pvp_shape = pgcs.layout.layout_towny_non_pvp.state
+
+    local pvp_state = false
+    local pvp = pgcs.upper_table.playstyle.pvp.state
+    local non_pvp = pgcs.upper_table.playstyle.non_pvp.state
+    local towny_non_pvp_shape = pgcs.upper_table.layout.layout_towny_non_pvp.state
 
     local moatChoice = false
+
+    if pvp then
+        pvp_state = true
+    elseif non_pvp then
+        pvp_state = false
+    end
 
     if circle_shape then
         layout = 'circle_shape'
@@ -1418,11 +1492,8 @@ function Public.SpawnOptsGuiClick(event)
     if square_shape then
         layout = 'square_shape'
     end
-    if towny_shape then
-        layout = 'towny_shape'
-    end
     if towny_non_pvp_shape then
-        layout = 'towny_shape_non_pvp'
+        layout = 'towny_shape_new'
     end
 
     -- Check if a valid button on the gui was pressed
@@ -1463,7 +1534,7 @@ function Public.SpawnOptsGuiClick(event)
         -- Create a new force for player if they choose that radio button
         if global.enable_separate_teams then
             if goto_new_team then
-                Public.CreatePlayerCustomForce(player, layout)
+                Public.CreatePlayerCustomForce(player, pvp_state)
                 own_team = true
             elseif goto_main_team then
                 own_team = false
@@ -1499,7 +1570,7 @@ function Public.SpawnOptsGuiClick(event)
 
         -- Send the player there
         -- QueuePlayerForDelayedSpawn(player.name, newSpawn, moatChoice, vanillaChoice)
-        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, layout, moatChoice, global.enable_vanilla_spawns, own_team)
+        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, layout, moatChoice, global.enable_vanilla_spawns, own_team, false, pvp_state)
         if (elemName == 'isolated_spawn_near') then
             Utils.SendBroadcastMsg({'oarc-player-is-joining-near', player.name})
         elseif (elemName == 'isolated_spawn_far') then
@@ -2482,8 +2553,8 @@ function Public.BuddySpawnRequestMenuClick(event)
         Public.ChangePlayerSpawn(player, newSpawn)
         Public.ChangePlayerSpawn(game.players[requesterName], global.buddySpawn)
         -- Send the player there
-        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true)
-        Public.QueuePlayerForDelayedSpawn(requesterName, global.buddySpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true)
+        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true, false)
+        Public.QueuePlayerForDelayedSpawn(requesterName, global.buddySpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true, false)
         Utils.SendBroadcastMsg(requesterName .. ' and ' .. player.name .. ' are joining the game together!')
 
         -- Unlock spawn control gui tab

@@ -1,5 +1,5 @@
 local Color = require 'utils.color_presets'
-local Roles = require 'utils.role.table'
+local Roles = require 'utils.role.main'
 local Server = require 'utils.server'
 
 local function interface(callback, ...)
@@ -20,7 +20,7 @@ commands.add_command(
         if player then
             if player ~= nil then
                 local p = Server.player_return
-                if not Roles.get_role(player):allowed('interface') then
+                if not Roles.allowed(player, 'interface') then
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
                 end
@@ -34,9 +34,7 @@ commands.add_command(
             callback = 'return ' .. callback
         end
         if player then
-            callback =
-                'local player, surface, force, entity = game.player, game.player.surface, game.player.force, game.player.selected;' ..
-                callback
+            callback = 'local player, surface, force, entity = game.player, game.player.surface, game.player.force, game.player.selected;' .. callback
         end
         if string.find(callback, 'Roles') or string.find(callback, 'roles') then
             callback = 'local Roles = require "utils.role.main" Roles.get_role(game.player);' .. callback

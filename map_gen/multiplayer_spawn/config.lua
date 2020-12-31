@@ -19,7 +19,7 @@ global.enable_default_spawn = true
 global.enable_buddy_spawn = true
 
 -- Enable Town-shape like when spawning?
-global.enable_town_shape = true
+global.enable_town_shape = false
 
 -- Frontier style rocket silo mode
 -- This means you can't build silos, but some spawn out in the wild for you to use.
@@ -307,7 +307,7 @@ global.scenario_config = {
 global.enable_separate_teams = true
 
 -- Main force is what default players join
-global.main_force_name = 'Main Force'
+global.main_force_name = 'MainForce'
 
 -- Enable if players can allow others to join their base.
 -- And specify how many including the host are allowed.

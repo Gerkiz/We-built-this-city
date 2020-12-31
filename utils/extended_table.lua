@@ -499,8 +499,8 @@ end
 
 --- Returns the closest match to a key
 -- @usage tbl = {foo=1,bar=2}
--- table.autokey(tbl,'f') -- return 1
-function Public.autokey(tbl, str)
+-- table.contains(tbl,'f') -- return 1
+function Public.contains(tbl, str)
     local _return = {}
     for key, value in pairs(tbl) do
         if string.match(string.lower(key), string.lower(str)) then

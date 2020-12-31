@@ -10,22 +10,27 @@ function require(path)
     if loaded[path] then
         return loaded[path] or log('Can only require files at runtime that have been required in the control stage.', 2)
     end
+    if _DEBUG then
+        return r(path)
+    end
     local s, e = pcall(r, path)
     if not s then
-        log(e)
+        log('[ERROR] Failed to load file: ' .. path)
+    elseif type(e) == 'string' and e:find('not found') then
+        log('[ERROR] File not found: ' .. path)
     end
     return e
 end
 
 --! other stuff
 local Event = require 'utils.event'
-
 require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
 require 'utils.table'
 require 'utils.spam_protection'
-require 'utils.surface'
+local Surface = require 'utils.surface'
+Surface.bypass(false)
 require 'utils.datastore.server_ups'
 require 'utils.datastore.color_data'
 require 'utils.datastore.session_data'
@@ -39,7 +44,6 @@ require 'features.modules.rpg.main'
 
 --! Role system
 local Role = require 'utils.role.main'
-require 'utils.role.roles'
 require 'utils.role.set_permissions'
 require 'utils.role.set_roles'
 Role.adjust_permission()
@@ -112,13 +116,6 @@ Event.on_init(
 )
 
 --! DEBUG SETTINGS
-
-if _DEBUG then
-    function raw(string)
-        return game.print(serpent.block(string))
-    end
-end
-
 if _DUMP_ENV then
     require 'utils.dump_env'
 end

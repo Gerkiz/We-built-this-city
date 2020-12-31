@@ -24,6 +24,9 @@ local function on_player_used_capsule(event)
 end
 
 local function on_built_entity(event)
+    if not TownyTable.get_build_isolation() then
+        return
+    end
     if Building.prevent_isolation(event) then
         return
     end
@@ -31,6 +34,9 @@ local function on_built_entity(event)
 end
 
 local function on_robot_built_entity(event)
+    if not TownyTable.get_build_isolation() then
+        return
+    end
     if Building.prevent_isolation(event) then
         return
     end
@@ -38,17 +44,23 @@ local function on_robot_built_entity(event)
 end
 
 local function on_player_built_tile(event)
+    if not TownyTable.get_build_isolation() then
+        return
+    end
     Building.prevent_isolation_landfill(event)
 end
 
 local function on_robot_built_tile(event)
+    if not TownyTable.get_build_isolation() then
+        return
+    end
     Building.prevent_isolation_landfill(event)
 end
 
 local function on_entity_died(event)
     local entity = event.entity
     if entity.name == 'market' then
-        Team.kill_force(entity.force.name)
+        TownyTable.reset_force_with_players(entity.force)
     end
 end
 
@@ -133,7 +145,7 @@ end
 
 local tick_actions = {
     [60 * 5] = Team.update_town_chart_tags,
-    [60 * 10] = Team.set_all_player_colors,
+    -- [60 * 10] = Team.set_all_player_colors,
     -- [60 * 20] = Biters.wipe_units_out_of_evo_range,
     [60 * 25] = Biters.unit_groups_start_moving,
     [60 * 40] = Biters.validate_swarms,

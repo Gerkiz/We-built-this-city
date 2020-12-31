@@ -22,10 +22,10 @@ local coin_yield = {
 }
 
 local entities_that_earn_coins = {
-    ['artillery-turret'] = true,
-    ['gun-turret'] = true,
-    ['laser-turret'] = true,
-    ['flamethrower-turret'] = true
+    ['artillery-turret'] = false,
+    ['gun-turret'] = false,
+    ['laser-turret'] = false,
+    ['flamethrower-turret'] = false
 }
 
 --extra coins for "boss" biters from biter_health_booster.lua

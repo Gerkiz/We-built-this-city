@@ -9,7 +9,8 @@ local global_data = {
     island = false,
     surface_name = 'wbtc',
     water = 0.5,
-    modded = false
+    modded = false,
+    bypass = false
 }
 
 Global.register(
@@ -20,6 +21,9 @@ Global.register(
 )
 
 local function is_game_modded()
+    if global_data.bypass then
+        return false
+    end
     local i = 0
     for k, _ in pairs(game.active_mods) do
         i = i + 1
@@ -150,6 +154,7 @@ local function on_init()
         Public.create_surface()
         return
     end
+
     local mgs = game.surfaces['nauvis'].map_gen_settings
     mgs.width = 16
     mgs.height = 16
@@ -177,6 +182,15 @@ function Public.set_modded(value)
         global_data.modded = false
     end
     return global_data.modded
+end
+
+function Public.bypass(value)
+    if value then
+        global_data.bypass = true
+    else
+        global_data.bypass = false
+    end
+    return global_data.bypass
 end
 
 function Public.set_island(var)

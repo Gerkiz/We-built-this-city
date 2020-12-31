@@ -337,7 +337,7 @@ function Public.add_new_force(force_name)
     force.set_ammo_damage_modifier('artillery-shell', -0.75)
 end
 
-function Public.create_new_town(surface, player, position, mock, own_team)
+function Public.create_new_town(surface, player, position, mock, own_team, just_market)
     if not player then
         return
     end
@@ -369,7 +369,9 @@ function Public.create_new_town(surface, player, position, mock, own_team)
         town_center.upgrades.mining_prod = 0
 
         game.print('>> ' .. player.name .. ' has founded a new town!', {255, 255, 0})
-        draw_town_spawn(player_name)
+        if not just_market then
+            draw_town_spawn(player_name)
+        end
         towny.size_of_town_centers = towny.size_of_town_centers + 1
         town_center.town_caption =
             rendering.draw_text {
@@ -386,7 +388,7 @@ function Public.create_new_town(surface, player, position, mock, own_team)
     else
         towny.town_centers_placeholders[player_name] = {}
         town_center = towny.town_centers_placeholders[player_name]
-        local set_force = 'player'
+        local set_force = global.main_force_name
         if own_team then
             set_force = player_name
         end
@@ -402,7 +404,9 @@ function Public.create_new_town(surface, player, position, mock, own_team)
         town_center.research_counter = 1
         town_center.upgrades = {}
         town_center.upgrades.mining_prod = 0
-        draw_town_spawn(player_name, true, set_force)
+        if not just_market then
+            draw_town_spawn(player_name, true, set_force)
+        end
         towny.size_of_placeholders_towns = towny.size_of_placeholders_towns + 1
         game.print('>> ' .. player.name .. ' has founded a new town!', {255, 255, 0})
         town_center.town_caption =
@@ -419,7 +423,7 @@ function Public.create_new_town(surface, player, position, mock, own_team)
         }
     end
 
-    Team.add_chart_tag(game.forces.player, town_center.market)
+    Team.add_chart_tag(game.forces[global.main_force_name], town_center.market)
 
     town_center.health_text =
         rendering.draw_text {

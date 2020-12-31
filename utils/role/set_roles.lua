@@ -1,32 +1,40 @@
-local Public = require 'utils.role.main'
+local Roles = require 'utils.role.main'
 
-local groups = Public.get_groups()
+local groups = Roles.get_groups()
 
-groups['Root']:add_role {
-    name = 'Owner',
-    short_hand = 'Owner',
-    tag = '',
-    time = nil,
-    colour = {r = 170, g = 0, b = 0},
-    disallow = {},
-    is_admin = true,
-    is_spectator = true,
-    base_afk_time = false
-}
-groups['Admin']:add_role {
-    name = 'Moderator',
-    short_hand = 'Mod',
-    tag = '',
-    colour = {r = 0, g = 170, b = 0},
-    disallow = {},
-    is_admin = true,
-    is_spectator = true,
-    base_afk_time = false
-}
+Roles.add_role(
+    groups['Root'],
+    {
+        name = 'Owner',
+        short_hand = 'Owner',
+        tag = '',
+        time = nil,
+        colour = {r = 170, g = 0, b = 0},
+        disallow = {},
+        is_admin = true,
+        is_spectator = true,
+        base_afk_time = false
+    }
+)
 
-local roles = Public.get_roles()
+Roles.add_role(
+    groups['Admin'],
+    {
+        name = 'Moderator',
+        short_hand = 'Mod',
+        tag = '',
+        colour = {r = 0, g = 170, b = 0},
+        disallow = {},
+        is_admin = true,
+        is_spectator = true,
+        base_afk_time = false
+    }
+)
 
-roles['Owner']:edit(
+local roles = Roles.get_roles()
+
+Roles.edit(
+    roles['Owner'],
     'allow',
     false,
     {
@@ -43,7 +51,8 @@ roles['Owner']:edit(
     }
 )
 
-roles['Moderator']:edit(
+Roles.edit(
+    roles['Moderator'],
     'allow',
     false,
     {
@@ -53,7 +62,8 @@ roles['Moderator']:edit(
     }
 )
 
-roles['Veteran']:edit(
+Roles.edit(
+    roles['Veteran'],
     'allow',
     false,
     {
@@ -63,7 +73,8 @@ roles['Veteran']:edit(
     }
 )
 
-roles['Casual']:edit(
+Roles.edit(
+    roles['Casual'],
     'allow',
     false,
     {
@@ -73,7 +84,8 @@ roles['Casual']:edit(
     }
 )
 
-roles['Rookie']:edit(
+Roles.edit(
+    roles['Rookie'],
     'allow',
     false,
     {
@@ -81,7 +93,7 @@ roles['Rookie']:edit(
     }
 )
 
-Public.standard_roles {
+Roles.standard_roles {
     ['gerkiz'] = 'Owner',
     ['cko6o4ku'] = 'Moderator',
     ['userguide'] = 'Moderator',

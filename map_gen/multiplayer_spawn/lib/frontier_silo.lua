@@ -4,7 +4,7 @@
 
 require('map_gen.multiplayer_spawn.config')
 local Utils = require('map_gen.multiplayer_spawn.lib.oarc_utils')
-local surface_name = require 'utils.surface'.get_surface_name()
+local Surface = require 'utils.surface'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 
 --------------------------------------------------------------------------------
@@ -40,8 +40,10 @@ function Public.SpawnSilosAndGenerateSiloAreas()
         Public.SetRandomSiloPosition(global.silo_spawns)
     end
 
+    local surface = Surface.get_surface_name()
+
     -- Freezes the game at the start to generate all the chunks.
-    Public.GenerateRocketSiloAreas(game.surfaces[surface_name])
+    Public.GenerateRocketSiloAreas(game.surfaces[surface])
 end
 
 -- This creates a random silo position, stored to global.siloPosition
@@ -164,7 +166,7 @@ local function CreateRocketSilo(surface, siloPosition, force)
 
     -- TAG it on the main force at least.
     game.forces[global.main_force_name].add_chart_tag(
-        game.surfaces[surface_name],
+        surface,
         {
             position = siloPosition,
             text = 'Rocket Silo',

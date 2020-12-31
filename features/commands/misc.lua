@@ -2,7 +2,7 @@ local Session = require 'utils.datastore.session_data'
 local Modifiers = require 'utils.player_modifiers'
 local Server = require 'utils.server'
 local Color = require 'utils.color_presets'
-local Roles = require 'utils.role.table'
+local Roles = require 'utils.role.main'
 local Event = require 'utils.event'
 
 commands.add_command(
@@ -18,7 +18,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('spaghetti') then
+                if not Roles.allowed(player, 'spaghetti') then
                     p = Server.player_return
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
@@ -33,11 +33,7 @@ commands.add_command(
         if param == 'true' then
             if not _a.spaghetti_are_you_sure then
                 _a.spaghetti_are_you_sure = true
-                Server.player_return(
-                    'Spaghetti is not enabled, run this command again to enable spaghett',
-                    Color.yellow,
-                    player
-                )
+                Server.player_return('Spaghetti is not enabled, run this command again to enable spaghett', Color.yellow, player)
                 return
             end
             if _a.spaghetti_enabled == true then
@@ -117,7 +113,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('pregen_map') then
+                if not Roles.allowed(player, 'pregen_map') then
                     p = Server.player_return
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
@@ -135,11 +131,7 @@ commands.add_command(
 
         if not _a.generate_map then
             _a.generate_map = true
-            Server.player_return(
-                '[WARNING] This command will make the server LAG, run this command again if you really want to do this!',
-                Color.yellow,
-                player
-            )
+            Server.player_return('[WARNING] This command will make the server LAG, run this command again if you really want to do this!', Color.yellow, player)
             return
         end
         local radius = param
@@ -170,7 +162,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('dump_layout') then
+                if not Roles.allowed(player, 'dump_layout') then
                     p = Server.player_return
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
@@ -179,11 +171,7 @@ commands.add_command(
         end
         if not _a.dump_layout then
             _a.dump_layout = true
-            Server.player_return(
-                '[WARNING] This command will make the server LAG, run this command again if you really want to do this!',
-                Color.yellow,
-                player
-            )
+            Server.player_return('[WARNING] This command will make the server LAG, run this command again if you really want to do this!', Color.yellow, player)
             return
         end
         local surface = game.players[1].surface
@@ -242,7 +230,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('creative') then
+                if not Roles.allowed(player, 'creative') then
                     p = Server.player_return
                     p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                     return
@@ -313,7 +301,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('clear_corpses') then
+                if not Roles.allowed(player, 'clear_corpses') then
                     p = Server.player_return
                     p('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail, player)
                     return
@@ -349,7 +337,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('trust') then
+                if not Roles.allowed(player, 'trust') then
                     p = Server.player_return
                     p('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail, player)
                     return
@@ -379,9 +367,7 @@ commands.add_command(
                 for _, a in pairs(game.connected_players) do
                     if a.admin == true and a.name ~= player.name then
                         a.print('[INFO]: ' .. player.name .. ' trusted ' .. target_player.name, Color.info)
-                        Server.to_admin_embed(
-                            table.concat {'[Info] ', player.name, ' has trusted ', target_player.name, '.'}
-                        )
+                        Server.to_admin_embed(table.concat {'[Info] ', player.name, ' has trusted ', target_player.name, '.'})
                     end
                 end
             end
@@ -414,7 +400,7 @@ commands.add_command(
 
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('untrust') then
+                if not Roles.allowed(player, 'untrust') then
                     p = Server.player_return
                     p('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail, player)
                     return
@@ -447,9 +433,7 @@ commands.add_command(
                 for _, a in pairs(game.connected_players) do
                     if a.admin == true and a.name ~= player.name then
                         a.print('[ADMIN]: ' .. player.name .. ' untrusted ' .. target_player.name, Color.info)
-                        Server.to_admin_embed(
-                            table.concat {'[Info] ', player.name, ' has untrusted ', target_player.name, '.'}
-                        )
+                        Server.to_admin_embed(table.concat {'[Info] ', player.name, ' has untrusted ', target_player.name, '.'})
                     end
                 end
             end

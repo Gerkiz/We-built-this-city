@@ -11,6 +11,7 @@ local Alert = require 'utils.alert'
 local table_insert = table.insert
 local table_remove = table.remove
 local math_random = math.random
+local max = math.max
 local math_floor = math.floor
 local format = string.format
 local abs = math.abs
@@ -196,7 +197,7 @@ function Public.GivePlayerItems(player)
 end
 
 -- Starter only items
-function Public.GivePlayerStarterItems(player)
+function Public.GivePlayerStarterItems(player, pvp)
     local is_pvp = TownyTable.get_pvp(player)
     if is_pvp then
         return
@@ -204,6 +205,10 @@ function Public.GivePlayerStarterItems(player)
 
     for _, item in pairs(global.player_spawn_start_items) do
         player.insert(item)
+    end
+
+    if pvp then
+        return
     end
 
     if global.enable_power_armor then
@@ -980,7 +985,7 @@ function Public.CreateCropSquare(surface, centerPos, area, tileRadius, fillTile)
             -- This ( X^2 + Y^2 ) is used to calculate if something
             -- is inside a circle area.
 
-            local distVar = math_floor(math.max(abs(centerPos.x - i) - 10, abs(centerPos.y - j) + 20))
+            local distVar = math_floor(max(abs(centerPos.x - i) - 10, abs(centerPos.y - j) + 20))
             --local distVar = math_floor((centerPos.x - i)^2 + (centerPos.y - j)^2)
 
             -- Fill in all unexpected water in a circle
@@ -1008,9 +1013,9 @@ function Public.CreateCropOctagon(surface, centerPos, chunkArea, tileRadius, fil
     local dirtTiles = {}
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
         for j = chunkArea.left_top.y, chunkArea.right_bottom.y, 1 do
-            local distVar1 = math_floor(math.max(abs(centerPos.x - i), abs(centerPos.y - j)))
+            local distVar1 = math_floor(max(abs(centerPos.x - i), abs(centerPos.y - j)))
             local distVar2 = math_floor(abs(centerPos.x - i) + abs(centerPos.y - j))
-            local distVar = math.max(distVar1 * 1.1, distVar2 * 0.707 * 1.1)
+            local distVar = max(distVar1 * 1.1, distVar2 * 0.707 * 1.1)
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius + 2) then
@@ -1053,7 +1058,7 @@ function Public.CreateMoatSquare(surface, centerPos, chunkArea, tileRadius)
     local insert = table_insert
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x - 1, 1 do
         for j = chunkArea.left_top.y, chunkArea.right_bottom.y - 1, 1 do
-            local distVar = math_floor(math.max(abs(centerPos.x - i) - 22, abs(centerPos.y - j) + 18))
+            local distVar = math_floor(max(abs(centerPos.x - i) - 22, abs(centerPos.y - j) + 18))
 
             -- Create a water ring
             if ((distVar < tileRadius) and (distVar > tileRadius - 3)) then

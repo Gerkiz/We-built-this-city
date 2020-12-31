@@ -121,56 +121,57 @@ function Public.set_pvp_for_forces()
     end
 end
 
-function Public.reset_player(player)
-    removeKeyValue(this.towny.alliances, player.name)
-    remove_from_pvp_forces(player.force.name)
-    if this.towny.town_centers[tostring(player.name)] then
-        local Team = require 'features.modules.towny.team'
-        Team.kill_force(player.force.name)
-        this.towny.town_centers[tostring(player.name)] = nil
-        this.towny.size_of_town_centers = this.towny.size_of_town_centers - 1
-        if this.towny.size_of_town_centers <= 0 then
-            this.towny.size_of_town_centers = 0
-        end
-    end
+function Public.reset_force_with_players(force, killed)
+    for _, player in pairs(force.players) do
+        removeKeyValue(this.towny.alliances, player.name)
+        removeKeyValue(this.towny.alliances, player.force.name)
+        remove_from_pvp_forces(player.force.name)
+        local pvp_player = this.towny.town_centers[tostring(player.name)]
+        local pvp_force = this.towny.town_centers[tostring(player.force.name)]
+        local pvp_placeholder_player = this.towny.town_centers_placeholders[tostring(player.name)]
+        local pvp_placeholder_force = this.towny.town_centers_placeholders[tostring(player.force.name)]
+        local Team = is_loaded('features.modules.towny.team')
 
-    if this.towny.town_centers_placeholders[tostring(player.name)] then
-        this.towny.town_centers_placeholders[tostring(player.name)] = nil
-        this.towny.size_of_placeholders_towns = this.towny.size_of_placeholders_towns - 1
-        if this.towny.size_of_placeholders_towns <= 0 then
-            this.towny.size_of_placeholders_towns = 0
+        if pvp_player or pvp_force then
+            if pvp_player then
+                this.towny.town_centers[tostring(player.name)] = nil
+                this.towny.size_of_town_centers = this.towny.size_of_town_centers - 1
+            elseif pvp_force then
+                if Team and not killed then
+                    Team.kill_force(player.force.name)
+                end
+                this.towny.town_centers[tostring(player.force.name)] = nil
+                this.towny.size_of_town_centers = this.towny.size_of_town_centers - 1
+            end
+            if this.towny.size_of_town_centers <= 0 then
+                this.towny.size_of_town_centers = 0
+            end
+        elseif pvp_placeholder_player or pvp_placeholder_force then
+            if pvp_placeholder_player then
+                this.towny.town_centers_placeholders[tostring(player.name)] = nil
+                this.towny.size_of_placeholders_towns = this.towny.size_of_placeholders_towns - 1
+            elseif pvp_placeholder_force then
+                if Team and not killed then
+                    Team.kill_force(player.force.name)
+                end
+                this.towny.town_centers_placeholders[tostring(player.force.name)] = nil
+                this.towny.size_of_placeholders_towns = this.towny.size_of_placeholders_towns - 1
+            end
+            if this.towny.size_of_placeholders_towns <= 0 then
+                this.towny.size_of_placeholders_towns = 0
+            end
         end
-    end
 
-    if Gui.get_button_flow(player)['towny_map_intro_button'] then
-        Gui.get_button_flow(player)['towny_map_intro_button'].destroy()
-    end
-
-    Public.set_pvp_for_forces()
-    Public.form_alliances()
-end
-
-function Public.reset_force(force, killed)
-    removeKeyValue(this.towny.alliances, force.name)
-    remove_from_pvp_forces(force.name)
-    if this.towny.town_centers[tostring(force.name)] then
-        local Team = require 'features.modules.towny.team'
-        if not killed then
-            Team.kill_force(force.name)
+        local sS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
+        if sS then
+            sS.SeparateSpawnsPlayerCreated(player.index)
         end
-        this.towny.town_centers[tostring(force.name)] = nil
-        this.towny.size_of_town_centers = this.towny.size_of_town_centers - 1
-        if this.towny.size_of_town_centers <= 0 then
-            this.towny.size_of_town_centers = 0
-        end
-    end
 
-    if this.towny.town_centers_placeholders[tostring(force.name)] then
-        this.towny.town_centers_placeholders[tostring(force.name)] = nil
-        this.towny.size_of_placeholders_towns = this.towny.size_of_placeholders_towns - 1
-        if this.towny.size_of_placeholders_towns <= 0 then
-            this.towny.size_of_placeholders_towns = 0
+        if Gui.get_button_flow(player)['towny_map_intro_button'] then
+            Gui.get_button_flow(player)['towny_map_intro_button'].destroy()
         end
+
+        Public.add_to_reset_player(player)
     end
 
     Public.set_pvp_for_forces()
@@ -179,6 +180,7 @@ end
 
 function Public.reset_table()
     this.towny = {
+        build_isolation = false,
         requests = {},
         request_cooldowns = {},
         town_centers_placeholders = {},
@@ -191,7 +193,8 @@ function Public.reset_table()
         size_of_town_centers = 0,
         size_of_placeholders_towns = 0,
         swarms = {},
-        disable_wipe_units_out_of_evo_range = false
+        disable_wipe_units_out_of_evo_range = false,
+        towny_enabled = false
     }
 end
 
@@ -282,6 +285,24 @@ function Public.get_pvp(player, name)
         end
         return false
     end
+end
+
+function Public.get_build_isolation()
+    return this.towny.build_isolation
+end
+
+function Public.set_build_isolation(value)
+    this.towny.build_isolation = value or false
+    return this.towny.build_isolation
+end
+
+function Public.get_towny_enabled()
+    return this.towny.towny_enabled
+end
+
+function Public.set_towny_enabled(value)
+    this.towny.towny_enabled = value or false
+    return this.towny.towny_enabled
 end
 
 function Public.get_pvp_tbl()

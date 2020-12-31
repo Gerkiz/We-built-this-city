@@ -208,15 +208,7 @@ local function get_formatted_playtime(x)
     end
 end
 
-local function get_rank(player)
-    local play_table = play_time.get_session_table()
-    local t = 0
-    if play_table then
-        if play_table[player.name] then
-            t = play_table[player.name]
-        end
-    end
-
+local function get_rank(player, t)
     local m = (player.online_time + t) / 3600
 
     local ranks = {
@@ -335,17 +327,17 @@ end
 
 local function get_sorted_list(sort_by)
     local play_table = play_time.get_session_table()
+    local t = 0
     local player_list = {}
     for i, player in pairs(game.connected_players) do
-        player_list[i] = {}
-        player_list[i].rank = get_rank(player)
-        player_list[i].name = player.name
-        player_list[i].admin = player.admin
-
-        local t = 0
         if play_table[player.name] then
             t = play_table[player.name]
         end
+
+        player_list[i] = {}
+        player_list[i].rank = get_rank(player, t)
+        player_list[i].name = player.name
+        player_list[i].admin = player.admin
 
         player_list[i].total_played_time = get_formatted_playtime(t + player.online_time)
         player_list[i].total_played_ticks = t + player.online_time

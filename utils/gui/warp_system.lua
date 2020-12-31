@@ -5,7 +5,7 @@ local Surface = require 'utils.surface'
 local Tabs = require 'utils.gui.core'
 local Color = require 'utils.color_presets'
 local Session = require 'utils.datastore.session_data'
-local Roles = require 'utils.role.table'
+local Roles = require 'utils.role.main'
 
 local warp_entities = {
     {'small-lamp', -3, -2},
@@ -258,7 +258,7 @@ function Public.make_tag(name, pos, shared)
 end
 
 function Public.create_warp_button(player)
-    if not Roles.get_role(player):allowed('show-warp') then
+    if not Roles.allowed(player, 'show-warp') then
         if Gui.get_button_flow(player)[main_button_name] then
             Gui.get_button_flow(player)[main_button_name].destroy()
         end
@@ -282,7 +282,7 @@ local function draw_create_warp(parent, player)
     local posy = position.y
     local dist2 = 100 ^ 2
     local p = get_player_data(player)
-    if not Roles.get_role(player):allowed('always-warp') then
+    if not Roles.allowed(player, 'always-warp') then
         for name, warp in pairs(warp_table) do
             local pos = warp.position
             if (posx - pos.x) ^ 2 + (posy - pos.y) ^ 2 < dist2 then
@@ -860,7 +860,7 @@ warp_icon_button =
 
         local position
 
-        if not Roles.get_role(player):allowed('always-warp') then
+        if not Roles.allowed(player, 'always-warp') then
             if Public.is_spam(p, player) then
                 return
             end
@@ -920,7 +920,7 @@ Gui.on_click(
 
         local p = get_player_data(player)
 
-        if not Roles.get_role(player):allowed('always-warp') then
+        if not Roles.allowed(player, 'always-warp') then
             if Public.is_spam(p, player) then
                 return
             end

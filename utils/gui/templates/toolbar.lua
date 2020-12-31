@@ -23,8 +23,7 @@ function toolbar.draw(event)
         return
     end
     for name, button in pairs(Gui.store_meta('toolbar')) do
-        local role = Roles.get_role(player)
-        if role:allowed(name) then
+        if Roles.allowed(player, name) then
             button:draw(frame)
         else
             button:remove(frame)

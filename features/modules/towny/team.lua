@@ -113,7 +113,7 @@ local function ally_outlander(player, target)
     if requesting_force.index == 1 then
         towny.requests[player.index] = target_force.name
 
-        local target_player = false
+        local target_player
         if target.type == 'character' then
             target_player = target.player
         else
@@ -346,23 +346,16 @@ function Public.kill_force(force_name)
 
     surface.create_entity({name = 'big-artillery-explosion', position = market.position})
 
-    local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
     local pos = surface.find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
-    local players = force.connected_players
-    for i = 1, #players do
-        local player = players[i]
-        player.teleport(pos, surface)
-        SS.SeparateSpawnsPlayerCreated(player.index)
-    end
 
     for _, player in pairs(force.players) do
         if player.character then
+            player.teleport(pos, surface)
             player.character.die()
         else
             towny.requests[player.index] = 'kill-character'
         end
-        player.force = game.forces.player
-        TownyTable.add_to_reset_player(player)
+        player.force = global.main_force_name
     end
 
     for _, e in pairs(surface.find_entities_filtered({force = force_name})) do
@@ -379,8 +372,6 @@ function Public.kill_force(force_name)
     game.print('>> ' .. force_name .. "'s town has fallen! [gps=" .. math.floor(market.position.x) .. ',' .. math.floor(market.position.y) .. ']', {255, 255, 0})
 
     game.merge_forces(force_name, 'neutral')
-
-    TownyTable.reset_force(force, true)
 
     if market and market.valid then
         market.die()

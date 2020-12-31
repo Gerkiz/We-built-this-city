@@ -1,5 +1,5 @@
 local Global = require 'utils.global'
-local Roles = require 'utils.role.table'
+local Roles = require 'utils.role.main'
 local Event = require 'utils.event'
 
 local this = {
@@ -46,9 +46,8 @@ Event.add(
         if not player then
             return
         end
-        local role = Roles.get_role(player)
         if not event.entity.last_user or event.entity.name == 'entity-ghost' then
-            if role:allowed('tree-decon') then
+            if Roles.allowed(player, 'tree-decon') then
                 this.trees[#this.trees + 1] = event.entity
                 this.clear = game.tick + 10
             end

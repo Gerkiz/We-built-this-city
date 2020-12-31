@@ -38,15 +38,15 @@ commands.add_command(
         local _a = p_modifer
         if player then
             if player ~= nil then
-                if not Roles.get_role(player):allowed('bonus') then
+                if not Roles.allowed(player, 'bonus') then
                     local p = Server.player_return
                     p('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail, player)
                     return
                 end
             end
         end
-        if package.loaded['features.modules.towny.table'] then
-            local TownyTable = package.loaded['features.modules.towny.table']
+        if is_loaded('features.modules.towny.table') then
+            local TownyTable = is_loaded('features.modules.towny.table')
             local towny = TownyTable.get('towny')
             if towny.town_centers[tostring(player.name)] then
                 Server.player_return("Bonus can't be applied. You are in PVP-mode.", Color.warning, player)
@@ -84,7 +84,7 @@ Event.add(
     defines.events.on_pre_player_died,
     function(event)
         local player = game.players[event.player_index]
-        if Roles.get_role(player):allowed('bonus-respawn') then
+        if Roles.allowed(player, 'bonus-respawn') then
             player.ticks_to_respawn = 120
         -- script.raise_event(defines.events.on_player_died,{
         --     tick=event.tick,

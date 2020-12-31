@@ -36,6 +36,7 @@ local math_random = math.random
 
 local function on_start()
     Autostash.insert_into_furnace(true)
+    TownyTable.set_towny_enabled(true)
     local T = Map.Pop_info()
     T.main_caption = 'Shrine of the Ancients'
     T.sub_caption = '    launch the rocket!    '
@@ -119,38 +120,21 @@ Event.add(
 Event.add(
     defines.events.on_chunk_generated,
     function(event)
-        if event.surface.index == 1 then
-            return
-        end
-        --
-        --[[local surface = event.surface
-    local table_insert = table.insert
-    local left_top = event.area.left_top
-    local tiles = {}
-    for x = 0, 31, 1 do
-        for y = 0, 31, 1 do
-            local pos = {x = left_top.x + x, y = left_top.y + y}
-            local t_name = surface.get_tile(pos).name == "dirt-" .. math.random(1, 6)
-            if t_name then
-                table_insert(tiles, {name = "dirt-" .. math.random(1, 6), position = pos})
+        if event.surface.name == 'wbtc' then
+            if global.enable_scramble then
+                Ores.scramble(event)
             end
-        end
-    end
 
-    surface.set_tiles(tiles, true)]]
-        if global.enable_scramble then
-            Ores.scramble(event)
-        end
+            if global.enable_undecorator then
+                Utils.UndecorateOnChunkGenerate(event)
+            end
 
-        if global.enable_undecorator then
-            Utils.UndecorateOnChunkGenerate(event)
-        end
+            Silo.GenerateRocketSiloChunk(event)
 
-        Silo.GenerateRocketSiloChunk(event)
-
-        SS.SeparateSpawnsGenerateChunk(event)
+            SS.SeparateSpawnsGenerateChunk(event)
 
         --CreateHoldingPen(event.surface, event.area, 16, 32)
+        end
     end
 )
 

@@ -157,17 +157,18 @@ local function kill(player, source_player)
 end
 
 local function respawn_player(player)
-    local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
+    local SS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
     local name = Surface.get_surface_name()
     local pos = game.surfaces[name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
-    SS.SeparateSpawnsPlayerCreated(player.index)
-    player.teleport(pos, game.surfaces[name])
-    if package.loaded['features.modules.towny.table'] then
-        local TownyTable = package.loaded['features.modules.towny.table']
-        TownyTable.reset_player(player)
+    local TownyTable = is_loaded('features.modules.towny.table')
+    if TownyTable then
+        TownyTable.reset_force_with_players(player.force)
+    elseif SS then
+        SS.SeparateSpawnsPlayerCreated(player.index)
     end
+    player.teleport(pos, game.surfaces[name])
 
-    player.force = game.forces.player
+    player.force = global.main_force_name
     game.print('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.', Color.warning)
     log('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.')
 end
@@ -191,7 +192,7 @@ local function ally(player, source_player)
     if player.name == source_player.name then
         return player.print("You can't select yourself!", {r = 1, g = 0.5, b = 0.1})
     end
-    player.force = game.forces.player
+    player.force = global.main_force_name
     game.print(player.name .. ' is our ally again!', {r = 0.98, g = 0.66, b = 0.22})
     admin_only_message(source_player.name .. ' made ' .. player.name .. ' our ally')
 end
@@ -479,7 +480,8 @@ local create_admin_panel = (function(player, frame)
         ),
         t.add({type = 'button', caption = 'Kill', name = 'kill', tooltip = 'Kills the selected player instantly.'})
     }
-    if package.loaded['map_gen.multiplayer_spawn.main'] then
+    local MultiSpawn = is_loaded('map_gen.multiplayer_spawn.main')
+    if MultiSpawn then
         buttons[#buttons + 1] =
             t.add(
             {

@@ -33,7 +33,7 @@ local function startCommand(command)
     local player = game.player
     if player then
         if player ~= nil then
-            if not Roles.get_role(player):allowed('interface') then
+            if not Roles.allowed(player, 'interface') then
                 local p = Server.player_return
                 p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                 return
@@ -47,7 +47,7 @@ local function stopCommand(command)
     local player = game.player
     if player then
         if player ~= nil then
-            if not Roles.get_role(player):allowed('interface') then
+            if not Roles.allowed(player, 'interface') then
                 local p = Server.player_return
                 p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
                 return

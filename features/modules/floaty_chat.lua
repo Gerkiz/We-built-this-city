@@ -13,7 +13,8 @@ local function on_console_chat(event)
     end
 
     local y_offset = -4
-    if package.loaded['features.modules.rpg.main'] then
+    local RPG = is_loaded('features.modules.rpg.main')
+    if RPG then
         y_offset = -4.5
     end
 

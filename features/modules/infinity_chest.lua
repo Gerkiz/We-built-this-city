@@ -7,6 +7,7 @@ local this = {
     inf_mode = {},
     inf_gui = {},
     storage = {},
+    private = {},
     chest = {
         ['infinity-chest'] = true
     },
@@ -16,7 +17,7 @@ local this = {
     debug = false
 }
 
-local default_limit = 1000
+local default_limit = 100
 local Public = {}
 
 Public.storage = {}
@@ -81,7 +82,7 @@ local function built_entity(event)
     if not entity.valid then
         return
     end
-    if entity.name ~= this.chest[entity.name] then
+    if not this.chest[entity.name] then
         return
     end
     if event.player_index then
@@ -93,19 +94,25 @@ local function built_entity(event)
             local chest_index = this.storage[player.index].chests
             local chest_to_place, index = return_value(chest_index)
             local limits = this.storage[player.index].limits[index]
+            local private = this.storage[player.index].private[index]
             local limit_index = limits.number
-            local limit_enabled = limits.enabled
+            local limit_state = limits.state
 
             this.inf_storage[entity.unit_number] = chest_to_place
-            this.limits[entity.unit_number] = {enabled = limit_enabled, number = limit_index}
+            this.limits[entity.unit_number] = {state = limit_state, number = limit_index}
+            this.private[entity.unit_number] = private
             this.storage[player.index].limits[index] = nil
+            this.storage[player.index].private[index] = nil
         end
         ::continue::
         entity.active = false
         if not this.limits[entity.unit_number] then
-            this.limits[entity.unit_number] = {enabled = true, number = default_limit}
+            this.limits[entity.unit_number] = {state = true, number = default_limit}
         end
         this.inf_chests[entity.unit_number] = {chest = entity, content = entity.get_inventory(defines.inventory.chest)}
+        if not this.private[entity.unit_number] then
+            this.private[entity.unit_number] = {state = false, owner = player.name}
+        end
         this.inf_mode[entity.unit_number] = 1
         rendering.draw_text {
             text = '♾',
@@ -124,7 +131,7 @@ local function built_entity_robot(event)
     if not entity.valid then
         return
     end
-    if entity.name ~= this.chest[entity.name] then
+    if not this.chest[entity.name] then
         return
     end
     entity.destroy()
@@ -150,7 +157,7 @@ local function item(item_name, item_count, inv, unit_number)
             local count = inv.remove({name = item_name, count = diff})
             this.inf_storage[unit_number][item_name] = count
         else
-            if this.limits[unit_number] and this.limits[unit_number].enabled and this.inf_storage[unit_number][item_name] >= this.limits[unit_number].number then
+            if this.limits[unit_number] and this.limits[unit_number].state and this.inf_storage[unit_number][item_name] >= this.limits[unit_number].number then
                 Public.err_msg('Limit for entity: ' .. unit_number .. 'and item: ' .. item_name .. ' is limited. ')
                 if mode == 1 then
                     this.inf_mode[unit_number] = 3
@@ -190,7 +197,8 @@ local function is_chest_empty(entity, player)
                 end
                 if (has_value(v) >= 1) then
                     this.storage[player].chests[number] = this.inf_storage[number]
-                    this.storage[player].limits[number] = {enabled = this.limits[number].enabled, number = this.limits[number].number}
+                    this.storage[player].private[number] = this.private[number]
+                    this.storage[player].limits[number] = {state = this.limits[number].state, number = this.limits[number].number}
                 end
             end
         end
@@ -199,10 +207,12 @@ local function is_chest_empty(entity, player)
         this.inf_chests[number] = nil
         this.inf_storage[number] = nil
         this.limits[number] = nil
+        this.private[number] = nil
         this.inf_mode[number] = nil
     else
         this.inf_chests[number] = nil
         this.inf_storage[number] = nil
+        this.private[number] = nil
         this.limits[number] = nil
         this.inf_mode[number] = nil
     end
@@ -213,7 +223,7 @@ local function on_entity_died(event)
     if not entity then
         return
     end
-    if entity.name ~= this.chest[entity.name] then
+    if not this.chest[entity.name] then
         return
     end
     local number = entity.unit_number
@@ -233,11 +243,12 @@ local function on_pre_player_mined_item(event)
     if not this.storage[player.index] then
         this.storage[player.index] = {
             chests = {},
+            private = {},
             limits = {}
         }
     end
 
-    if entity.name ~= this.chest[entity.name] then
+    if not this.chest[entity.name] then
         return
     end
     is_chest_empty(entity, player.index)
@@ -353,22 +364,32 @@ local function gui_opened(event)
     if not this.chest[entity.name] then
         return
     end
+    local number = entity.unit_number
     local player = game.players[event.player_index]
+
+    if this.private[number] and this.private[number].state then
+        if player.name ~= this.private[number].owner and not player.admin then
+            player.opened = nil
+            return
+        end
+    end
+
     local frame =
         player.gui.center.add {
         type = 'frame',
         caption = 'Unlimited Chest',
         direction = 'vertical',
-        name = entity.unit_number
+        name = number
     }
     local controls = frame.add {type = 'flow', direction = 'horizontal'}
     local items = frame.add {type = 'flow', direction = 'vertical'}
 
-    local mode = this.inf_mode[entity.unit_number]
+    local mode = this.inf_mode[number]
     local selected = mode and mode or 1
     local tbl = controls.add {type = 'table', column_count = 1}
 
     local limit_tooltip = '[color=yellow]Limit Info:[/color]\nThis is only usable if you intend to use this chest for one item.'
+    local private_tooltip = '[color=yellow]Private Info:[/color]\nThis will make it so no one else other than you can open this chest.'
 
     local mode_tooltip =
         '[color=yellow]Mode Info:[/color]\nEnabled: will active the chest and allow for insertions.\nDisabled: will deactivate the chest and let´s the player utilize the GUI to retrieve items.\nLimited: can´t be selected and will deactivate the chest as per limit.'
@@ -386,7 +407,8 @@ local function gui_opened(event)
 
     local tbl_2 = tbl.add {type = 'table', column_count = 2}
 
-    tbl_2.add {type = 'label', caption = 'Mode: ', tooltip = mode_tooltip}
+    local mode_label = tbl_2.add {type = 'label', caption = 'Mode: ', tooltip = mode_tooltip}
+    mode_label.style.font = 'heading-2'
     local drop_down
     if player.admin and this.editor[player.name] then
         drop_down =
@@ -394,7 +416,7 @@ local function gui_opened(event)
             type = 'drop-down',
             items = {'Enabled', 'Disabled', 'Limited', 'Editor'},
             selected_index = selected,
-            name = entity.unit_number,
+            name = number,
             tooltip = mode_tooltip
         }
     else
@@ -403,23 +425,35 @@ local function gui_opened(event)
             type = 'drop-down',
             items = {'Enabled', 'Disabled', 'Limited'},
             selected_index = selected,
-            name = entity.unit_number,
+            name = number,
             tooltip = mode_tooltip
         }
     end
 
-    local tbl_3 = tbl.add {type = 'table', column_count = 4}
+    local tbl_3 = tbl.add {type = 'table', column_count = 8}
 
-    tbl_3.add({type = 'label', caption = ' Limit: ', tooltip = limit_tooltip})
+    local limit_one_label = tbl_3.add({type = 'label', caption = ' Limit: ', tooltip = limit_tooltip})
+    limit_one_label.style.font = 'heading-2'
     local text_field = tbl_3.add({type = 'textfield', text = this.limits[entity.unit_number].number})
     text_field.style.width = 80
     text_field.numeric = true
     text_field.tooltip = limit_tooltip
+    text_field.style.minimal_width = 25
+    local bottom_flow = tbl_3.add {type = 'flow'}
+    bottom_flow.style.minimal_width = 40
 
-    tbl_3.add({type = 'label', caption = 'Limit Enabled: ', tooltip = limit_tooltip})
-    local limited = tbl_3.add({type = 'checkbox', state = this.limits[entity.unit_number].enabled})
-    limited.style.width = 80
+    local limit_two_label = bottom_flow.add({type = 'label', caption = '   Limit Enabled: ', tooltip = limit_tooltip})
+    limit_two_label.style.font = 'heading-2'
+    local limited = bottom_flow.add({type = 'checkbox', name = 'limit_chest', state = this.limits[entity.unit_number].state})
     limited.tooltip = limit_tooltip
+    limited.style.minimal_height = 25
+    limited.style.minimal_width = 25
+
+    local private_label = bottom_flow.add({type = 'label', caption = 'Private Chest? ', tooltip = private_tooltip})
+    private_label.style.font = 'heading-2'
+    local private_checkbox = bottom_flow.add({type = 'checkbox', name = 'private_chest', state = this.private[entity.unit_number].state})
+    private_checkbox.tooltip = private_tooltip
+    private_checkbox.style.minimal_height = 25
 
     this.inf_mode[entity.unit_number] = drop_down.selected_index
     player.opened = frame
@@ -461,7 +495,7 @@ local function update_gui()
         local inv = entity.get_inventory(defines.inventory.chest)
         local content = inv.get_contents()
         local limit = this.limits[entity.unit_number].number
-        local limit_enabled = this.limits[entity.unit_number].enabled
+        local limit_state = this.limits[entity.unit_number].state
         local full
 
         if not storage then
@@ -470,7 +504,7 @@ local function update_gui()
         for item_name, item_count in pairs(storage) do
             total = total + 1
             items[item_name] = item_count
-            if storage[item_name] >= limit and limit_enabled then
+            if storage[item_name] >= limit and limit_state then
                 full = true
             end
         end
@@ -746,8 +780,12 @@ local function on_gui_checked_state_changed(event)
 
     local unit_number = entity.unit_number
 
-    if this.limits[unit_number] then
-        this.limits[unit_number].enabled = state
+    if element.name == 'private_chest' then
+        if this.private[unit_number] == false or true then
+            this.private[entity.unit_number].state = state
+        end
+    elseif element.name == 'limit_chest' and this.limits[unit_number] then
+        this.limits[unit_number].state = state
     end
 
     pGui.updated = false
@@ -772,14 +810,17 @@ local function on_entity_settings_pasted(event)
     local source_number = source.unit_number
     local destination_number = destination.unit_number
 
-    if not this.limits[source_number] then
-        return
+    if this.limits[source_number] then
+        local source_limit = this.limits[source_number].number
+        local source_limit_state = this.limits[source_number].state
+        this.limits[destination_number] = {number = source_limit, state = source_limit_state}
     end
 
-    local source_limit = this.limits[source_number].number
-    local source_limit_enabled = this.limits[source_number].enabled
-
-    this.limits[destination_number] = {number = source_limit, enabled = source_limit_enabled}
+    if this.private[source_number] then
+        local source_state = this.private[source_number].state
+        local source_owner = this.private[source_number].owner
+        this.private[destination_number] = {state = source_state, owner = source_owner}
+    end
 end
 
 Event.on_nth_tick(

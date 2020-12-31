@@ -95,7 +95,7 @@ end
 local function create_tiles(entity)
     local collapse
     local check_collapse_position = WD.get('check_collapse_position')
-    if check_collapse_position and package.loaded['modules.collapse'] then
+    if check_collapse_position  then
         collapse = require 'modules.collapse'.get_position()
     end
     local function get_replacement_tile(surface, position)
@@ -178,9 +178,7 @@ local function time_out_biters()
             this.active_biter_count = this.active_biter_count - 1
             if biter.entity then
                 if biter.entity.valid then
-                    this.active_biter_threat =
-                        this.active_biter_threat -
-                        math_round(threat_values[biter.entity.name] * global.biter_health_boost, 2)
+                    this.active_biter_threat = this.active_biter_threat - math_round(threat_values[biter.entity.name] * global.biter_health_boost, 2)
                     if biter.entity.force.index == 2 then
                         biter.entity.destroy()
                     end
@@ -207,11 +205,7 @@ local function get_random_close_spawner()
             this.nests[k] = nil
             goto retry
         end
-        if
-            not spawner or
-                (center.x - spawner_2.position.x) ^ 2 + (center.y - spawner_2.position.y) ^ 2 <
-                    (center.x - spawner.position.x) ^ 2 + (center.y - spawner.position.y) ^ 2
-         then
+        if not spawner or (center.x - spawner_2.position.x) ^ 2 + (center.y - spawner_2.position.y) ^ 2 < (center.x - spawner.position.x) ^ 2 + (center.y - spawner.position.y) ^ 2 then
             spawner = spawner_2
         end
     end
@@ -254,10 +248,7 @@ local function set_main_target()
     end
 
     this.target = target
-    debug_print(
-        'set_main_target -- New main target ' ..
-            target.name .. ' at position x' .. target.position.x .. ' y' .. target.position.y .. ' selected.'
-    )
+    debug_print('set_main_target -- New main target ' .. target.name .. ' at position x' .. target.position.x .. ' y' .. target.position.y .. ' selected.')
 end
 
 local function set_group_spawn_position(surface)
@@ -271,10 +262,7 @@ local function set_group_spawn_position(surface)
         return
     end
     this.spawn_position = {x = position.x, y = position.y}
-    debug_print(
-        'set_group_spawn_position -- Changed position to x' ..
-            this.spawn_position.x .. ' y' .. this.spawn_position.y .. '.'
-    )
+    debug_print('set_group_spawn_position -- Changed position to x' .. this.spawn_position.x .. ' y' .. this.spawn_position.y .. '.')
 end
 
 local function set_enemy_evolution()
@@ -447,10 +435,7 @@ local function get_commmands(group)
         local side_target = SideTargets.get_side_target()
         if side_target then
             local target_position = side_target.position
-            local distance_to_target =
-                math_floor(
-                math_sqrt((target_position.x - group_position.x) ^ 2 + (target_position.y - group_position.y) ^ 2)
-            )
+            local distance_to_target = math_floor(math_sqrt((target_position.x - group_position.x) ^ 2 + (target_position.y - group_position.y) ^ 2))
             local steps = math_floor(distance_to_target / step_length) + 1
             local vector = {
                 math_round((target_position.x - group_position.x) / steps, 3),
@@ -458,9 +443,7 @@ local function get_commmands(group)
             }
 
             if this.debug then
-                debug_print(
-                    'get_commmands - to side_target x' .. side_target.position.x .. ' y' .. side_target.position.y
-                )
+                debug_print('get_commmands - to side_target x' .. side_target.position.x .. ' y' .. side_target.position.y)
                 debug_print('get_commmands - distance_to_target:' .. distance_to_target .. ' steps:' .. steps)
                 debug_print('get_commmands - vector ' .. vector[1] .. '_' .. vector[2])
             end
@@ -474,8 +457,7 @@ local function get_commmands(group)
     end
 
     local target_position = this.target.position
-    local distance_to_target =
-        math_floor(math_sqrt((target_position.x - group_position.x) ^ 2 + (target_position.y - group_position.y) ^ 2))
+    local distance_to_target = math_floor(math_sqrt((target_position.x - group_position.x) ^ 2 + (target_position.y - group_position.y) ^ 2))
     local steps = math_floor(distance_to_target / step_length) + 1
     local vector = {
         math_round((target_position.x - group_position.x) / steps, 3),
@@ -630,10 +612,7 @@ local function spawn_unit_group()
     local position = this.spawn_position
 
     local unit_group = surface.create_unit_group({position = position, force = 'enemy'})
-    local group_size =
-        math_floor(
-        this.average_unit_group_size * group_size_modifier_raffle[math_random(1, group_size_modifier_raffle_size)]
-    )
+    local group_size = math_floor(this.average_unit_group_size * group_size_modifier_raffle[math_random(1, group_size_modifier_raffle_size)])
     for _ = 1, group_size, 1 do
         local biter = spawn_biter(surface)
         if not biter then

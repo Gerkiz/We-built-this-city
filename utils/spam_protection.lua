@@ -32,6 +32,9 @@ function Public.set_new_value(player)
 end
 
 function Public.is_spamming(player, value_to_compare)
+    if _DEBUG then
+        return false
+    end
     if not this.prevent_spam[player.index] then
         return
     end
