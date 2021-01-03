@@ -24,8 +24,7 @@ commands.add_command(
         if player then
             if player ~= nil then
                 if not Roles.allowed(player, 'repair') then
-                    local p = Server.player_return
-                    p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
+                    player.print('[ERROR] Only admins are allowed to run this command!', Color.fail)
                     return
                 end
             end
@@ -36,7 +35,7 @@ commands.add_command(
         local max_range = role.power - highest_admin_power > 0 and const / (role.power - highest_admin_power) or nil
         local pos = player.position
         if not range or max_range and range > max_range then
-            Server.player_return('Invalid range.', Color.fail, player)
+            player.print('Invalid range.', Color.fail)
             return
         end
         local radius = {
@@ -59,7 +58,7 @@ commands.add_command(
                     if not disallow[e.name] then
                         e.silent_revive()
                     else
-                        Server.player_return('You have repaired: ' .. e.name .. ' this item is not allowed.', Color.warning, player)
+                        player.print('You have repaired: ' .. e.name .. ' this item is not allowed.', Color.warning)
                     end
                 end
             end

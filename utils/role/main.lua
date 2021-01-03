@@ -40,11 +40,17 @@ end
 
 function Roles.allowed(self, action)
     local role = Roles.get_role(self)
+    if not role then
+        return false
+    end
     return role.allow[action] or role.is_root or false
 end
 
 function Roles.disallowed(self, action)
     local role = Roles.get_role(self)
+    if not role then
+        return false
+    end
     return not role.allow[action] or role.is_root or false
 end
 
@@ -158,7 +164,7 @@ function Roles.get_all_roles(player)
         output = output .. ' Admin: ' .. admin
         output = output .. ' Group: ' .. role.group.name
         output = output .. ' AFK: ' .. tostring(role.base_afk_time)
-        Server.player_return(output, role.colour, _player)
+        _player.print(output, role.colour)
     end
 end
 
@@ -227,11 +233,11 @@ function Roles.give_role(player, role, by_player, tick, raise_event)
     end
 
     if this_role.group.name ~= 'User' then
-        Server.player_return({'roles.role-given', this_role.name}, print_colour, player)
+        player.print({'roles.role-given', this_role.name}, print_colour)
     end
 
     if player.tag ~= old_role.tag then
-        Server.player_return({'roles.tag-reset'}, print_colour, player)
+        player.print({'roles.tag-reset'}, print_colour)
     end
 
     -- role change

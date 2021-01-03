@@ -29,24 +29,26 @@ function Public.reset()
     this.debug_mode = false
     this.restore_on_theft = false
     this.doors = {}
-    this.chests = {}
+    this.belts = {}
     this.cars = {}
+    this.renders = {}
     this.saved_surfaces = {}
     this.allowed_surface = 'wbtc'
     this.trust_system = {}
-    this.chests_linked_to = {}
     this.players = {}
     this.surfaces = {}
     this.minimap = {}
     this.entity_type = {
         ['car'] = true,
         ['tank'] = true,
-        ['spidertron'] = true
+        ['spidertron'] = true,
+        ['spider-vehicle'] = true
     }
     this.car_areas = {
         ['car'] = {left_top = {x = -40, y = 0}, right_bottom = {x = 40, y = 60}},
         ['tank'] = {left_top = {x = -50, y = 0}, right_bottom = {x = 50, y = 70}},
-        ['spidertron'] = {left_top = {x = -60, y = 0}, right_bottom = {x = 60, y = 80}}
+        ['spidertron'] = {left_top = {x = -60, y = 0}, right_bottom = {x = 60, y = 80}},
+        ['spider-vehicle'] = {left_top = {x = -60, y = 0}, right_bottom = {x = 60, y = 80}}
     }
     this.disable_multiple_surfaces = false
     this.disable_multiple_vehicles = false

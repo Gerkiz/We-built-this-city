@@ -22,10 +22,10 @@ local coin_yield = {
 }
 
 local entities_that_earn_coins = {
-    ['artillery-turret'] = false,
-    ['gun-turret'] = false,
-    ['laser-turret'] = false,
-    ['flamethrower-turret'] = false
+    ['artillery-turret'] = true,
+    ['gun-turret'] = true,
+    ['laser-turret'] = true,
+    ['flamethrower-turret'] = true
 }
 
 --extra coins for "boss" biters from biter_health_booster.lua
@@ -103,7 +103,7 @@ local function on_entity_died(event)
             end
         end
         if entities_that_earn_coins[event.cause.name] then
-            event.entity.surface.spill_item_stack(event.cause.position, {name = 'coin', count = coin_count}, true)
+            -- event.entity.surface.spill_item_stack(event.cause.position, {name = 'coin', count = coin_count}, true)
             reward_has_been_given = true
         end
     end

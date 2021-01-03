@@ -79,7 +79,7 @@ require 'features.modules.bp'
 -- require 'features.modules.winter'
 
 ---! load from config/map
-require 'map_loader'
+-- require 'map_loader'
 --require 'map_builder'
 
 local function is_game_modded()
@@ -92,6 +92,16 @@ local function is_game_modded()
     end
     return false
 end
+
+-- Event.add(
+--     defines.events.on_player_joined_game,
+--     function(e)
+--         local player = game.get_player(e.player_index)
+--         player.insert({name = 'car'})
+--         player.insert({name = 'express-transport-belt', count = 100})
+--         player.insert({name = 'coin', count = 100000})
+--     end
+-- )
 
 Event.on_init(
     function()

@@ -20,7 +20,7 @@ commands.add_command(
 if _DEBUG then
     local Model = require 'model'
 
-    local loadstring = loadstring
+    local load = load
     local pcall = pcall
     local dump = Model.dump
     local log = log
@@ -43,7 +43,7 @@ if _DEBUG then
             if args.parameter == nil then
                 return
             end
-            local func, err = loadstring('return ' .. args.parameter)
+            local func, err = load('return ' .. args.parameter)
 
             if not func then
                 p(err)
@@ -79,7 +79,7 @@ if _DEBUG then
             if args.parameter == nil then
                 return
             end
-            local func, err = loadstring('return ' .. args.parameter)
+            local func, err = load('return ' .. args.parameter)
 
             if not func then
                 p(err)

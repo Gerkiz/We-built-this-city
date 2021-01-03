@@ -39,8 +39,7 @@ commands.add_command(
         if player then
             if player ~= nil then
                 if not Roles.allowed(player, 'bonus') then
-                    local p = Server.player_return
-                    p('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail, player)
+                    player.print('[ERROR] Only admins and trusted weebs are allowed to run this command!', Color.fail)
                     return
                 end
             end
@@ -49,13 +48,13 @@ commands.add_command(
             local TownyTable = is_loaded('features.modules.towny.table')
             local towny = TownyTable.get('towny')
             if towny.town_centers[tostring(player.name)] then
-                Server.player_return("Bonus can't be applied. You are in PVP-mode.", Color.warning, player)
+                player.print("Bonus can't be applied. You are in PVP-mode.", Color.warning)
                 return
             end
         end
         local bonus = tonumber(args.parameter)
         if not bonus or bonus < 0 or bonus > 50 then
-            Server.player_return('Invalid range.', Color.fail, player)
+            player.print('Invalid range.', Color.fail)
             return
         end
         for _, setting in pairs(settings) do
@@ -63,7 +62,7 @@ commands.add_command(
             player[setting.key] = setting.scale * math.floor(bonus) * 0.01
         end
         this[player.index] = bonus
-        Server.player_return('Bonus set to: ' .. math.floor(bonus) .. '%', Color.success, player)
+        player.print('Bonus set to: ' .. math.floor(bonus) .. '%', Color.success)
     end
 )
 

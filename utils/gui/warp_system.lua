@@ -129,33 +129,34 @@ function Public.remove_warp_point(name)
     if not warp then
         return
     end
-    local base_tile = warp.old_tile
     local surface = warp.surface
-    local offset = warp.position
     local tiles = {}
     if name == 'Spawn' then
         return
     end
+
     for x = -radius - 2, radius + 2 do
         for y = -radius - 2, radius + 2 do
             if x ^ 2 + y ^ 2 < (radius + 1) ^ 2 then
-                tiles[#tiles + 1] = {name = base_tile, position = {x + offset.x, y + offset.y}}
-                local entities =
-                    surface.find_entities_filtered {
-                    area = {{x + offset.x - 1, y + offset.y - 1}, {x + offset.x, y + offset.y}}
-                }
-                for _, entity in pairs(entities) do
-                    if entity.name ~= 'character' then
-                        entity.destroy()
+                if warp.old_tiles then
+                    for _, v in pairs(warp.old_tiles) do
+                        tiles[#tiles + 1] = {name = v.name, position = v.position}
                     end
                 end
-            --or entity.name ~= 'player' or entity.name ~= 'bob-character-fighter' or entity.name ~= 'bob-character-miner' or entity.name ~= 'bob-character-builder'
             end
         end
     end
-    if warp.old_tile then
-        surface.set_tiles(tiles)
+
+    if warp.entities then
+        for _, entity in pairs(warp.entities) do
+            entity.destroy()
+        end
     end
+
+    if warp.old_tiles then
+        surface.set_tiles(tiles, true, false)
+    end
+
     if warp.tag then
         warp.tag.destroy()
     end
@@ -168,14 +169,20 @@ function Public.make_warp_point(player, position, surface, icon, force, name, sh
         return
     end
     local offset = {x = math.floor(position.x), y = math.floor(position.y)}
-    local old_tile = surface.get_tile(offset).name
+    local old_tiles = {}
     local base_tiles = {}
     local tiles = {}
+    local entities = {}
+
     local _shared = shared or false
     -- player_table makes the base template to make the warp point
     for x = -radius - 2, radius + 2 do
         for y = -radius - 2, radius + 2 do
             if x ^ 2 + y ^ 2 < radius ^ 2 then
+                local old_tile = surface.get_tile({x + offset.x, y + offset.y})
+                if old_tile and (old_tile.name ~= warp_tile) then
+                    old_tiles[#old_tiles + 1] = {name = old_tile.name, position = old_tile.position}
+                end
                 base_tiles[#base_tiles + 1] = {name = warp_tile, position = {x + offset.x, y + offset.y}}
             end
         end
@@ -184,6 +191,10 @@ function Public.make_warp_point(player, position, surface, icon, force, name, sh
     surface.set_tiles(base_tiles)
     -- player_table adds the patterns and entities
     for _, p in pairs(warp_tiles) do
+        local old_tile = surface.get_tile({p[1] + offset.x + global_offset.x, p[2] + offset.y + global_offset.y})
+        if old_tile and (old_tile.name ~= warp_tile) then
+            old_tiles[#old_tiles + 1] = {name = old_tile.name, position = old_tile.position}
+        end
         tiles[#tiles + 1] = {
             name = warp_tile,
             position = {p[1] + offset.x + global_offset.x, p[2] + offset.y + global_offset.y}
@@ -201,6 +212,7 @@ function Public.make_warp_point(player, position, surface, icon, force, name, sh
         entity.health = 0
         entity.minable = false
         entity.rotatable = false
+        entities[#entities + 1] = entity
     end
 
     local tag =
@@ -218,10 +230,12 @@ function Public.make_warp_point(player, position, surface, icon, force, name, sh
         surface = surface,
         icon = icon,
         name = name,
-        old_tile = old_tile,
+        old_tiles = old_tiles,
         created_by = created_by,
+        entities = entities,
         shared = _shared
     }
+    return true
 end
 
 function Public.make_tag(name, pos, shared)
@@ -286,7 +300,7 @@ local function draw_create_warp(parent, player)
         for name, warp in pairs(warp_table) do
             local pos = warp.position
             if (posx - pos.x) ^ 2 + (posy - pos.y) ^ 2 < dist2 then
-                player.print('Too close to another warp: ' .. name, Color.fail)
+                player.print('[Warp] Too close to another warp: ' .. name, Color.fail)
                 p.creating = false
                 return
             end
@@ -593,7 +607,7 @@ end
 
 function Public.is_spam(p, player)
     if p.spam > game.tick then
-        player.print('Please wait ' .. math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.', Color.warning)
+        player.print('[Warp] Please wait ' .. math.ceil((p.spam - game.tick) / 60) .. ' seconds before trying to warp or add warps again.', Color.warning)
         return true
     end
     return false
@@ -795,9 +809,9 @@ Gui.on_click(
 
         Public.remove_warp_point(event.element.parent.name)
         if p.shared == true then
-            game.print(player.name .. ' removed warp: ' .. event.element.parent.name, Color.warning)
+            game.print('[Warp] ' .. player.name .. ' removed warp: ' .. event.element.parent.name, Color.warning)
         elseif p.shared == false then
-            player.print('Removed warp: ' .. event.element.parent.name, Color.warning)
+            player.print('[Warp] Removed warp: ' .. event.element.parent.name, Color.warning)
         end
         Public.clear_player_table(player)
         Public.refresh_gui()
@@ -875,12 +889,12 @@ warp_icon_button =
             }
 
             if not Public.contains_positions(area) then
-                player.print('You are not standing on a warp platform.', Color.warning)
+                player.print('[Warp] You are not standing on a warp platform.', Color.warning)
                 return
             end
 
             if (warp.position.x - position.x) ^ 2 + (warp.position.y - position.y) ^ 2 < 1024 then
-                player.print('Destination is source warp: ' .. element, Color.fail)
+                player.print('[Warp] Destination is source warp: ' .. element, Color.fail)
                 return
             end
         else
@@ -898,7 +912,7 @@ warp_icon_button =
         end
 
         player.teleport(warp.surface.find_non_colliding_position('character', warp.position, 32, 1), warp.surface)
-        player.print('Warped you over to: ' .. element, Color.success)
+        player.print('[Warp] Warped you over to: ' .. element, Color.success)
         player.play_sound {path = 'utility/armor_insert', volume_modifier = 1}
         p.spam = game.tick + 900
 
@@ -920,12 +934,11 @@ Gui.on_click(
 
         local p = get_player_data(player)
 
+        local position = player.position
         if not Roles.allowed(player, 'always-warp') then
             if Public.is_spam(p, player) then
                 return
             end
-
-            local position = player.position
 
             local area = {
                 left_top = {x = position.x - 100, y = position.y - 100},
@@ -933,8 +946,32 @@ Gui.on_click(
             }
 
             if Public.contains_positions(area) then
-                player.print('You are too close to another warp!', Color.warning)
+                player.print('[Warp] You are too close to another warp!', Color.warning)
                 return
+            end
+        end
+
+        local offset = {x = math.floor(position.x), y = math.floor(position.y)}
+        local i = 0
+        for x = -radius - 2, radius + 2 do
+            for y = -radius - 2, radius + 2 do
+                if x ^ 2 + y ^ 2 < radius ^ 2 then
+                    local check_entities =
+                        player.surface.find_entities_filtered {
+                        area = {{x + offset.x - 1, y + offset.y - 1}, {x + offset.x, y + offset.y}}
+                    }
+                    if check_entities then
+                        for _, entity in pairs(check_entities) do
+                            if entity.name ~= 'character' then
+                                i = i + 1
+                            end
+                        end
+                        if i >= 1 then
+                            player.print('[Warp] There are entities nearby and warp cannot be created.', Color.warning)
+                            return
+                        end
+                    end
+                end
             end
         end
 
@@ -946,23 +983,24 @@ Gui.on_click(
 
         local new = p.frame.new_name.text
         if new == '' or new == 'Spawn' or new == 'Name:' or new == 'Warp name:' then
-            return player.print('Warp name is not valid.', Color.fail)
+            return player.print('[Warp] Warp name is not valid.', Color.fail)
         end
         if string.len(new) > 30 then
-            player.print('Warp name is too long!', Color.fail)
+            player.print('[Warp] Warp name is too long!', Color.fail)
             return
         end
         local position = player.position
         if warp_table[new] then
-            player.print('Warp name already exists!', Color.fail)
+            player.print('[Warp] Warp name already exists!', Color.fail)
             return
         end
         p.spam = game.tick + 900
         Public.make_warp_point(player, position, player.surface, icon, player.force, new, shared)
+
         if p.shared == true then
-            game.print(player.name .. ' created warp: ' .. new, Color.success)
+            game.print('[Warp] ' .. player.name .. ' created warp: ' .. new, Color.success)
         elseif p.shared == false then
-            player.print('Created warp: ' .. new, Color.success)
+            player.print('[Warp] Created warp: ' .. new, Color.success)
         end
         Public.refresh_gui()
         Public.clear_player_table(player)

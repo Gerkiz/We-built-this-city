@@ -34,8 +34,7 @@ local function startCommand(command)
     if player then
         if player ~= nil then
             if not Roles.allowed(player, 'interface') then
-                local p = Server.player_return
-                p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
+                player.print('[ERROR] Only admins are allowed to run this command!', Color.fail)
                 return
             else
                 Profiler.Start(command.parameter ~= nil)
@@ -48,8 +47,7 @@ local function stopCommand(command)
     if player then
         if player ~= nil then
             if not Roles.allowed(player, 'interface') then
-                local p = Server.player_return
-                p('[ERROR] Only admins are allowed to run this command!', Color.fail, player)
+                player.print('[ERROR] Only admins are allowed to run this command!', Color.fail)
                 return
             else
                 Profiler.Stop(command.parameter ~= nil, nil)

@@ -7,6 +7,17 @@ local Public = {}
 Public.reset = IC.reset
 Public.get_table = IC.get
 
+local valid_cars = {
+    ['car'] = true,
+    ['spider-vehicle'] = true
+}
+
+local valid_belts_to_link = {
+    ['loader'] = true,
+    ['transport-belt'] = true,
+    ['underground-belt'] = true
+}
+
 local function on_entity_died(event)
     local entity = event.entity
     if not entity or not entity.valid then
@@ -15,7 +26,11 @@ local function on_entity_died(event)
 
     local ic = IC.get()
 
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    if valid_belts_to_link[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity, true)
+    end
+
+    if valid_cars[entity.type] then
         Functions.kill_car(ic, entity)
     end
 end
@@ -28,13 +43,13 @@ local function on_player_mined_entity(event)
 
     local ic = IC.get()
 
-    if entity.name == 'steel-chest' then
-        Functions.on_player_and_robot_mined_entity(event, ic)
+    if valid_belts_to_link[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity, true)
     end
 
-    Minimap.kill_minimap(game.players[event.player_index])
-
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    if valid_cars[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity, true)
+        Minimap.kill_minimap(game.players[event.player_index])
         Functions.save_car(ic, event)
     end
 end
@@ -47,34 +62,30 @@ local function on_robot_mined_entity(event)
     end
     local ic = IC.get()
 
-    if entity.name == 'steel-chest' or entity.name == 'iron-chest' then
-        Functions.on_player_and_robot_mined_entity(event, ic)
+    if valid_belts_to_link[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity, true)
     end
 
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    if valid_cars[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity, true)
         Functions.kill_car(ic, entity)
     end
 end
 
 local function on_built_entity(event)
-    local ce = event.created_entity
+    local entity = event.created_entity
 
-    if not ce or not ce.valid then
+    if not entity or not entity.valid then
         return
     end
 
     local ic = IC.get()
 
-    local valid = {
-        ['steel-chest'] = true,
-        ['iron-chest'] = true
-    }
-
-    if valid[ce.name] then
-        Functions.on_built_entity(event, ic)
+    if valid_belts_to_link[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity)
     end
 
-    if not ce.type == 'car' or not ce.name == 'spidertron' then
+    if not event.player_index then
         return
     end
 
@@ -82,25 +93,51 @@ local function on_built_entity(event)
     if not player or not player.valid then
         return
     end
+    if valid_cars[entity.type] then
+        Functions.create_car(ic, event)
+    end
+end
 
-    Functions.create_car(ic, event)
+local function on_player_rotated_entity(event)
+    local entity = event.entity
+
+    if not entity or not entity.valid then
+        return
+    end
+
+    local ic = IC.get()
+
+    if valid_belts_to_link[entity.type] then
+        Functions.check_if_link_is_valid(ic.cars, entity)
+    end
 end
 
 local function on_player_driving_changed_state(event)
+    local entity = event.entity
+
+    if not entity or not entity.valid then
+        return
+    end
+
     local ic = IC.get()
     local player = game.players[event.player_index]
 
-    Functions.use_door_with_entity(ic, player, event.entity)
-    Functions.validate_owner(ic, player, event.entity)
+    if valid_cars[entity.type] then
+        Functions.use_door_with_entity(ic, player, event.entity)
+        Functions.validate_owner(ic, player, event.entity)
+    end
 end
 
 local function on_tick()
     local ic = IC.get()
     local tick = game.tick
 
-    if tick % 60 == 0 then
+    if tick % 3 == 1 then
+        Functions.ticking_belts(ic)
+    end
+
+    if tick % 10 == 1 then
         Functions.item_transfer(ic)
-        Functions.divide_contents(ic)
     end
 
     if tick % 240 == 0 then
@@ -183,12 +220,6 @@ local function trigger_on_player_kicked_from_surface(data)
     Functions.kick_player_from_surface(this, player, target)
 end
 
-local function on_player_created(event)
-    local player = game.players[event.player_index]
-    player.gui.top.style = 'slot_table_spacing_horizontal_flow'
-    player.gui.left.style = 'slot_table_spacing_vertical_flow'
-end
-
 local function on_init()
     Public.reset()
 end
@@ -197,15 +228,16 @@ local changed_surface = Minimap.changed_surface
 
 Event.on_init(on_init)
 Event.add(defines.events.on_tick, on_tick)
-Event.add(defines.events.on_player_created, on_player_created)
 Event.add(defines.events.on_gui_opened, on_gui_opened)
 Event.add(defines.events.on_gui_closed, on_gui_closed)
 Event.add(defines.events.on_player_driving_changed_state, on_player_driving_changed_state)
 Event.add(defines.events.on_entity_died, on_entity_died)
 Event.add(defines.events.on_built_entity, on_built_entity)
+Event.add(defines.events.on_robot_built_entity, on_built_entity)
 Event.add(defines.events.on_player_mined_entity, on_player_mined_entity)
 Event.add(defines.events.on_robot_mined_entity, on_robot_mined_entity)
 Event.add(defines.events.on_gui_click, on_gui_click)
 Event.add(defines.events.on_player_changed_surface, changed_surface)
 Event.add(IC.events.on_player_kicked_from_surface, trigger_on_player_kicked_from_surface)
+Event.add(defines.events.on_player_rotated_entity, on_player_rotated_entity)
 return Public

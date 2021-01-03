@@ -6,7 +6,7 @@ local type = type
 local concat = table.concat
 local inspect = table.inspect
 local pcall = pcall
-local loadstring = loadstring
+local load = load
 local rawset = rawset
 
 local Public = {}
@@ -126,7 +126,7 @@ function Public.dump_function(func)
 end
 
 function Public.dump_text(text, player)
-    local func = loadstring('return ' .. text)
+    local func = load('return ' .. text)
     if not func then
         return false
     end

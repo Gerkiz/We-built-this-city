@@ -99,6 +99,7 @@ local EventCore = require 'utils.event_core'
 local Global = require 'utils.global'
 local Token = require 'utils.token'
 local Debug = require 'utils.debug'
+local Color = require 'utils.color_presets'
 
 local table_remove = table.remove
 local core_add = EventCore.add
@@ -110,8 +111,6 @@ local stage_load = _STAGE.load
 local script_on_event = script.on_event
 local script_on_nth_tick = script.on_nth_tick
 local generate_event_name = script.generate_event_name
-local function_table = function_table
-local function_nth_tick_table = function_nth_tick_table
 
 local Event = {}
 
@@ -281,41 +280,45 @@ function Event.add_removable_function(event_name, func, name)
         error('cannot call during on_load', 2)
     end
 
+    local print
+    if game.player then
+        print = game.player.print
+    end
+
     if not event_name or not func or not name then
         return
     end
 
-    local f = assert(load('return ' .. func))()
+    local handler = assert(load('return (' .. func .. ')'))()
 
-    if type(f) ~= 'function' then
-        error('func must be a function', 2)
+    if type(handler) ~= 'function' then
+        if print then
+            print('[HotPatch] Function is not a function.', Color.fail)
+        end
+        return
     end
 
-    if Debug.is_closure(f) then
-        error(
-            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.',
-            2
-        )
+    if Debug.is_closure(handler) then
+        if print then
+            print('[HotPatch] Function is a closure.', Color.fail)
+        end
+        return
     end
 
-    local funcs = function_handlers[name]
-    if not funcs then
-        function_handlers[name] = {}
-        funcs = function_handlers[name]
+    if function_handlers[name] then
+        if print then
+            print('[HotPatch] Function with name: ' .. name .. ' already exists.', Color.fail)
+        end
+        return
     end
 
-    funcs[#funcs + 1] = {event_name = event_name, handler = func}
-
-    local func_table = function_table[name]
-    if not func_table then
-        function_table[name] = {}
-        func_table = function_table[name]
+    if print then
+        print('[HotPatch] Function loaded successfully.', Color.success)
     end
-
-    func_table[#func_table + 1] = {event_name = event_name, handler = f}
 
     if handlers_added then
-        core_add(event_name, f)
+        local id = core_add(event_name, handler)
+        function_handlers[name] = {id = id, event_name = event_name, handler = func}
     end
 end
 
@@ -333,29 +336,30 @@ function Event.remove_removable_function(event_name, name)
         return
     end
 
-    local funcs = function_handlers[name]
+    local print
+    if game.player then
+        print = game.player.print
+    end
 
-    if not funcs then
+    local handler = function_handlers[name]
+
+    if not handler then
+        if print then
+            print('[HotPatch] Function could not be removed - must be a function that exists.', Color.fail)
+        end
         return
     end
 
     local handlers = event_handlers[event_name]
 
-    for k, v in pairs(function_table[name]) do
-        local n = v.event_name
-        if n == event_name then
-            local f = v.handler
-            function_handlers[name][k] = nil
-            remove(handlers, f)
-        end
+    handlers[handler.id] = nil
+    function_handlers[name] = nil
+    if print then
+        print('[HotPatch] Function with name: ' .. name .. ' removed successfully.', Color.success)
     end
 
     if #handlers == 0 then
         script_on_event(event_name, nil)
-    end
-
-    if #function_handlers[name] == 0 then
-        function_handlers[name] = nil
     end
 end
 
@@ -426,37 +430,40 @@ function Event.add_removable_nth_tick_function(tick, func, name)
         return
     end
 
-    local f = assert(load('return ' .. func))()
-
-    if type(f) ~= 'function' then
-        error('func must be a function', 2)
+    local print
+    if game.player then
+        print = game.player.print
     end
 
-    if Debug.is_closure(f) then
-        error(
-            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.',
-            2
-        )
+    local handler = assert(load('return (' .. func .. ')'))()
+
+    if type(handler) ~= 'function' then
+        if print then
+            print('[HotPatch] Function on_nth_tick must be a function.', Color.fail)
+        end
     end
 
-    local funcs = function_nth_tick_handlers[name]
-    if not funcs then
-        function_nth_tick_handlers[name] = {}
-        funcs = function_nth_tick_handlers[name]
+    if Debug.is_closure(handler) then
+        if print then
+            print('[HotPatch] Function on_nth_tick is a closure.', Color.fail)
+        end
+        return
     end
 
-    funcs[#funcs + 1] = {tick = tick, handler = func}
-
-    local func_table = function_nth_tick_table[name]
-    if not func_table then
-        function_nth_tick_table[name] = {}
-        func_table = function_nth_tick_table[name]
+    if function_nth_tick_handlers[name] then
+        if print then
+            print('[HotPatch] Function with name: ' .. name .. ' already exists.', Color.fail)
+        end
+        return
     end
 
-    func_table[#func_table + 1] = {tick = tick, handler = f}
+    if print then
+        print('[HotPatch] Function on_nth_tick added successfully.', Color.success)
+    end
 
     if handlers_added then
-        core_on_nth_tick(tick, f)
+        local id = core_on_nth_tick(tick, handler)
+        function_nth_tick_handlers[name] = {id = id, tick = tick, handler = func}
     end
 end
 
@@ -473,34 +480,27 @@ function Event.remove_removable_nth_tick_function(tick, name)
     if not tick or not name then
         return
     end
+    local print
+    if game.player then
+        print = game.player.print
+    end
 
-    local funcs = function_nth_tick_handlers[name]
+    local handler = function_nth_tick_handlers[name]
 
-    if not funcs then
+    if not handler then
+        if print then
+            print('[HotPatch] On_nth_tick could not be removed - must be a function that exists.', Color.fail)
+        end
         return
     end
 
     local handlers = on_nth_tick_event_handlers[tick]
-    local f = function_nth_tick_table[name]
 
-    for k, v in pairs(function_nth_tick_table[name]) do
-        local t = v.tick
-        if t == tick then
-            f = v.handler
-        end
-    end
+    function_nth_tick_handlers[name] = nil
+    handlers[handler.id] = nil
 
-    remove(handlers, f)
-
-    for k, v in pairs(function_nth_tick_handlers[name]) do
-        local t = v.tick
-        if t == tick then
-            function_nth_tick_handlers[name][k] = nil
-        end
-    end
-
-    if #function_nth_tick_handlers[name] == 0 then
-        function_nth_tick_handlers[name] = nil
+    if print then
+        print('[HotPatch] Function on_nth_tick with name: ' .. name .. ' successfully.', Color.success)
     end
 
     if #handlers == 0 then
@@ -534,12 +534,6 @@ function Event.add_event_filter(event, filter)
 end
 
 local function add_handlers()
-    if not function_table then
-        function_table = {}
-    end
-    if not function_nth_tick_table then
-        function_nth_tick_table = {}
-    end
     for event_name, tokens in pairs(token_handlers) do
         for i = 1, #tokens do
             local handler = Token.get(tokens[i])
@@ -547,20 +541,12 @@ local function add_handlers()
         end
     end
 
-    for name, funcs in pairs(function_handlers) do
-        for i = 1, #funcs do
-            local e_name = funcs[i].event_name
-            local func = funcs[i].handler
-            local handler = assert(load('return ' .. func))()
-            local func_handler = function_table[name]
-            if not func_handler then
-                function_table[name] = {}
-                func_handler = function_table[name]
-            end
+    for _, handler_to_add in pairs(function_handlers) do
+        local e_name = handler_to_add.event_name
+        local func = handler_to_add.handler
+        local handler = assert(load('return (' .. func .. ')'))()
 
-            func_handler[#func_handler + 1] = {event_name = e_name, handler = handler}
-            core_add(e_name, handler)
-        end
+        core_add(e_name, handler)
     end
 
     for tick, tokens in pairs(token_nth_tick_handlers) do
@@ -570,20 +556,12 @@ local function add_handlers()
         end
     end
 
-    for name, funcs in pairs(function_nth_tick_handlers) do
-        for i = 1, #funcs do
-            local tick = funcs[i].tick
-            local func = funcs[i].handler
-            local handler = assert(load('return ' .. func))()
-            local func_handler = function_nth_tick_table[name]
-            if not func_handler then
-                function_nth_tick_table[name] = {}
-                func_handler = function_nth_tick_table[name]
-            end
+    for _, handler_to_add in pairs(function_nth_tick_handlers) do
+        local tick = handler_to_add.tick
+        local func = handler_to_add.handler
+        local handler = assert(load('return ' .. func))()
 
-            func_handler[#func_handler + 1] = {tick = tick, handler = handler}
-            core_on_nth_tick(tick, handler)
-        end
+        core_on_nth_tick(tick, handler)
     end
 
     handlers_added = true
@@ -591,7 +569,5 @@ end
 
 core_on_init(add_handlers)
 core_on_load(add_handlers)
-function_table = {}
-function_nth_tick_table = {}
 
 return Event

@@ -56,9 +56,7 @@ commands.add_command(
 
         if not this.reset_are_you_sure then
             this.reset_are_you_sure = true
-            p(
-                '[WARNING] This command will disable the soft-reset feature, run this command again if you really want to do this!'
-            )
+            p('[WARNING] This command will disable the soft-reset feature, run this command again if you really want to do this!')
             return
         end
 
@@ -131,7 +129,7 @@ function Public.map_reset_callback(data, callback)
         local success, err = pcall(callback, data)
         return success, err
     else
-        local success, err = pcall(loadstring(callback), data)
+        local success, err = pcall(load(callback), data)
         return success, err
     end
 end

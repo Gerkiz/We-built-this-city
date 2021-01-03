@@ -102,6 +102,18 @@ local function kill_doors(ic, car)
     end
 end
 
+local function get_entity_object(cars, entity)
+    for k, car in pairs(cars) do
+        if not entity or not car.entity then
+            return false
+        end
+        if car.entity.unit_number == entity.unit_number then
+            return k
+        end
+    end
+    return false
+end
+
 local function get_owner_car_object(cars, player)
     for k, car in pairs(cars) do
         if car.owner == player.index then
@@ -116,7 +128,7 @@ local function get_entity_from_player_surface(cars, player)
         if validate_entity(car.entity) then
             if validate_entity(car.surface) then
                 if car.surface.index == player.surface.index then
-                    return car.entity
+                    return car.entity, car
                 end
             end
         end
@@ -151,33 +163,6 @@ local function get_player_surface(ic, player)
         end
     end
     return false
-end
-
-local function contains_positions(area, ic, entity)
-    local function inside(pos)
-        local lt = area.left_top
-        local rb = area.right_bottom
-
-        return pos.x >= lt.x and pos.y >= lt.y and pos.x <= rb.x and pos.y <= rb.y
-    end
-
-    local cars = ic.cars
-    for _, car in pairs(cars) do
-        if car.entity and car.entity.valid then
-            if car.entity.type == 'car' or car.entity.name == 'spidertron' then
-                if inside(car.entity.position, area) then
-                    if entity and entity.name == 'steel-chest' then
-                        return true, car.transfer_entities[1]
-                    elseif entity and entity.name == 'iron-chest' then
-                        return true, car.entity
-                    else
-                        return true, car.entity
-                    end
-                end
-            end
-        end
-    end
-    return false, nil
 end
 
 local function get_player_entity(ic, player)
@@ -231,7 +216,10 @@ local function replace_entity(cars, entity, index)
             cars[unit_number].unit_number = entity.unit_number
             cars[unit_number].saved_entity = nil
             cars[unit_number].transfer_entities = car.transfer_entities
+
             cars[k] = nil
+
+            return car, k
         end
     end
 end
@@ -247,6 +235,390 @@ local function replace_doors(doors, entity, index)
         end
     end
 end
+
+------------------------
+--- start belt functions
+------------------------
+
+local function remove_belts(car)
+    local belts = car.belts
+    for k, belt in pairs(belts) do
+        if belt.render then
+            rendering.destroy(belt.render)
+        end
+    end
+    car.belts = {}
+end
+
+local outside_positions = {
+    ['car'] = (function(x, y, left, pos)
+        local outside
+        local position
+        local rend_position
+
+        if left then
+            position = {x = x + 0.5, y = y + 0.5}
+            rend_position = {x = x + 0.5, y = y}
+            if y > 10 and y < 25 then
+                -- upper left
+                outside = {x = pos.x - 1.5, y = pos.y - 1}
+            elseif y > 30 and y < 40 then
+                -- lower left
+                outside = {x = pos.x - 1.5, y = pos.y + 1}
+            end
+        else
+            position = {x = x - 0.5, y = y + 0.5}
+            rend_position = {x = x - 0.5, y = y}
+            if y > 10 and y < 25 then
+                -- upper right
+                outside = {x = pos.x + 2, y = pos.y - 1}
+            elseif y > 30 and y < 40 then
+                -- lower right
+                outside = {x = pos.x + 2, y = pos.y + 1}
+            end
+        end
+        return rend_position, position, outside
+    end),
+    ['tank'] = (function(x, y, left, pos)
+        local outside
+        local position
+        local rend_position
+        if left then
+            position = {x = x + 0.5, y = y + 1}
+            rend_position = {x = x + 0.5, y = y + 0.5}
+            if y > 10 and y < 28 then
+                -- upper left
+                outside = {x = pos.x - 2, y = pos.y - 1.5}
+            elseif y > 35 and y < 50 then
+                -- lower left
+                outside = {x = pos.x - 2, y = pos.y + 1.5}
+            end
+        else
+            position = {x = x - 0.5, y = y + 1}
+            rend_position = {x = x - 0.5, y = y + 0.5}
+            if y > 10 and y < 28 then
+                -- upper right
+                outside = {x = pos.x + 2, y = pos.y - 1.5}
+            elseif y > 35 and y < 50 then
+                -- lower right
+                outside = {x = pos.x + 2, y = pos.y + 1.5}
+            end
+        end
+        return rend_position, position, outside
+    end),
+    ['spidertron'] = (function(x, y, left, pos)
+        local outside
+        local position
+        local rend_position
+        if left then
+            position = {x = x + 0.5, y = y + 0.5}
+            rend_position = {x = x + 0.5, y = y}
+            if y > 15 and y < 32 then
+                -- upper left
+                outside = {x = pos.x - 2, y = pos.y - 1.5}
+            elseif y > 40 and y < 60 then
+                -- lower left
+                outside = {x = pos.x - 2, y = pos.y + 1.5}
+            end
+        else
+            position = {x = x - 0.5, y = y + 0.5}
+            rend_position = {x = x - 0.5, y = y}
+            if y > 15 and y < 32 then
+                -- upper right
+                outside = {x = pos.x + 2, y = pos.y - 1.5}
+            elseif y > 40 and y < 60 then
+                -- lower right
+                outside = {x = pos.x + 2, y = pos.y + 1.5}
+            end
+        end
+        return rend_position, position, outside
+    end)
+}
+
+local function draw_arrows(sy, s, po)
+    local rend =
+        rendering.draw_text {
+        text = sy,
+        surface = s,
+        target = po,
+        target_offset = {0, 0},
+        scale = 2,
+        color = {r = 255, g = 165, b = 0},
+        alignment = 'center'
+    }
+    return rend
+end
+
+local function construct_belts(car, update_positions)
+    local area = car.area
+    local surface = car.surface
+
+    if not car.belts then
+        car.belts = {}
+    end
+
+    local pos = car.entity.position
+    local is_type = car.entity.name
+    local outside
+    local position
+    local rend_position
+
+    local inc = 0.05
+    for i = 1, 2 do
+        inc = inc + 0.3
+        for _, x in pairs({area.left_top.x, area.right_bottom.x}) do
+            local y = area.left_top.y + ((area.right_bottom.y - area.left_top.y) * inc)
+
+            local p = {x = x, y = area.left_top.y + ((area.right_bottom.y - area.left_top.y) * 0.5)}
+
+            if p.x < 0 then
+                rend_position, position, outside = outside_positions[is_type](x, y, true, pos)
+
+                if update_positions then
+                    car.belts['L' .. i].outside = outside
+                else
+                    car.belts['L' .. i] = {
+                        position = position,
+                        outside = outside,
+                        taken = false,
+                        direction = 2,
+                        render = draw_arrows('⇨', surface, rend_position),
+                        direction_in = defines.direction.west,
+                        direction_out = defines.direction.east
+                    }
+                end
+            else
+                rend_position, position, outside = outside_positions[is_type](x, y, false, pos)
+
+                if update_positions then
+                    car.belts['R' .. i].outside = outside
+                else
+                    car.belts['R' .. i] = {
+                        position = position,
+                        outside = outside,
+                        taken = false,
+                        direction = 6,
+                        render = draw_arrows('⇦', surface, rend_position),
+                        direction_in = defines.direction.east,
+                        direction_out = defines.direction.west
+                    }
+                end
+            end
+        end
+    end
+end
+
+local function get_direction(outside, inside, belt)
+    local direction_out, direction_in, outside_type, inside_type = 0, 0, outside.type, inside.type
+    if outside_type == 'transport-belt' or outside_type == 'loader' then
+        direction_out = outside.direction
+    elseif outside_type == 'underground-belt' then
+        direction_out = outside.direction
+        if outside.belt_to_ground_type == 'input' then
+            if belt.direction_out ~= direction_out then
+                return nil
+            end
+        else
+            if belt.direction_in ~= direction_out then
+                return nil
+            end
+        end
+    end
+    if inside_type == 'transport-belt' or inside_type == 'loader' then
+        direction_in = inside.direction
+    elseif inside_type == 'underground-belt' then
+        direction_in = inside.direction
+        if inside.belt_to_ground_type == 'input' then
+            if belt.direction_in ~= direction_out then
+                return nil
+            end
+        else
+            if belt.direction_out ~= direction_out then
+                return nil
+            end
+        end
+    end
+    if direction_out ~= direction_in then
+        return nil
+    end
+
+    if direction_out == 6 and belt.direction == 2 then
+        direction_out = 2
+    elseif direction_out == 2 and belt.direction == 2 then
+        direction_out = 6
+    elseif direction_out == 2 and belt.direction == 6 then
+        direction_out = 2
+    elseif direction_out == 6 and belt.direction == 6 then
+        direction_out = 6
+    end
+    return direction_out
+end
+
+local function in_area(x, y, area)
+    return (x >= area.left_top.x and x <= area.right_bottom.x and y >= area.left_top.y and y <= area.right_bottom.y)
+end
+
+local function connect_belts_together(belt, outside, inside)
+    local insert_at = {
+        ['loader'] = 0.75,
+        ['transport-belt'] = 0.75,
+        ['underground-belt'] = 0.25
+    }
+    local direction = get_direction(outside, inside, belt)
+
+    if direction == 6 then
+        local connection = {
+            from = outside,
+            from_unit_number = outside.unit_number,
+            f_l1 = outside.get_transport_line(1),
+            f_l2 = outside.get_transport_line(2),
+            to = inside,
+            to_unit_number = inside.unit_number,
+            to_l1 = inside.get_transport_line(1),
+            to_l2 = inside.get_transport_line(2),
+            direction_at = 6,
+            insert_pos = insert_at[inside.type],
+            valid = true
+        }
+        return connection
+    elseif direction == 2 then
+        local connection = {
+            from = inside,
+            from_unit_number = outside.unit_number,
+            f_l1 = inside.get_transport_line(1),
+            f_l2 = inside.get_transport_line(2),
+            to = outside,
+            to_unit_number = inside.unit_number,
+            to_l1 = outside.get_transport_line(1),
+            to_l2 = outside.get_transport_line(2),
+            direction_at = 2,
+            insert_pos = insert_at[outside.type],
+            valid = true
+        }
+        return connection
+    end
+    return nil
+end
+
+local function show_text(entity, text, delay)
+    entity.surface.create_entity(
+        {
+            name = 'flying-text',
+            position = entity.position,
+            text = text,
+            speed = delay or 0,
+            time_to_live = delay or 0,
+            color = {r = 100, g = 160, b = 30}
+        }
+    )
+end
+
+local function init_link(car, id, belt)
+    local outside_entities =
+        car.entity.surface.find_entities_filtered {
+        area = {{belt.outside.x - 1.5, belt.outside.y - 1.5}, {belt.outside.x + 1.5, belt.outside.y + 1.5}},
+        force = car.force
+    }
+
+    if (outside_entities == nil or next(outside_entities) == nil) then
+        return
+    end
+
+    local inside_entities =
+        car.surface.find_entities_filtered {
+        position = belt.position,
+        force = car.force
+    }
+
+    if (inside_entities == nil or next(inside_entities) == nil) then
+        return
+    end
+
+    for _, outside in pairs(outside_entities) do
+        local o_t = outside.type
+        if outside.type ~= nil then
+            for _, inside in pairs(inside_entities) do
+                local i_t = inside.type
+                if (o_t == i_t) then
+                    local conn = connect_belts_together(belt, outside, inside)
+                    if conn then
+                        if car.state and car.active_links == 0 then
+                            if validate_entity(car.entity) then
+                                car.entity.active = false
+                                car.state = false
+                            end
+                        end
+                        belt.taken = true
+                        car.links[id] = conn
+                        car.links[id].id = id
+                        show_text(car.links[id].to, 'Connected! ✓')
+                        show_text(car.links[id].from, 'Connected! ✓')
+                        car.active_links = car.active_links + 1
+                        if car.active_links > 4 then
+                            car.active_links = 4
+                        end
+                        return
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function deconstruct_link(car, link, belt)
+    if link and link.valid then
+        link.valid = false
+        car.links[link.id] = nil
+        belt.taken = false
+        car.active_links = car.active_links - 1
+
+        if car.active_links <= 0 then
+            car.active_links = 0
+            if not car.state then
+                if validate_entity(car.entity) then
+                    car.entity.active = true
+                end
+                car.state = true
+            end
+        end
+    end
+end
+
+local function recalibrate_car(car, outside_area, inside_area)
+    local clear_links = false
+    if not car.entity then
+        clear_links = true
+    end
+
+    for id, belt in pairs(car.belts) do
+        local is_near_car = outside_area == nil or in_area(belt.outside.x, belt.outside.y, outside_area)
+        if not is_near_car then
+            construct_belts(car, true)
+            is_near_car = outside_area == nil or in_area(belt.outside.x, belt.outside.y, outside_area)
+        end
+        local is_near_inside_car = inside_area == nil or in_area(belt.position.x, belt.position.y, inside_area)
+
+        if is_near_car and is_near_inside_car or clear_links then
+            local link = car.links[id]
+            if not car.entity then
+                deconstruct_link(car, link, belt)
+            elseif link then
+                if (link.from.valid and link.to.valid and link.direction_at == get_direction(link.from, link.to, belt)) then
+                    goto final
+                else
+                    deconstruct_link(car, link, belt)
+                end
+            else
+                init_link(car, id, belt)
+            end
+            ::final::
+        end
+    end
+end
+
+------------------------
+--- end belt functions
+------------------------
 
 local function replace_surface(surfaces, entity, index)
     if not validate_entity(entity) then
@@ -328,7 +700,9 @@ local function upgrade_surface(ic, player, entity)
         end
         set_new_area(ic, car)
         remove_logistics(car)
-        replace_entity(cars, ce, newIndex)
+        car, _ = replace_entity(cars, ce, newIndex)
+
+        remove_belts(car)
         replace_doors(door, ce, newIndex)
         replace_surface(surfaces, ce, newIndex)
         replace_surface_entity(cars, ce, newIndex)
@@ -452,6 +826,7 @@ local function restore_surface(ic, player, entity)
             return true
         end
         replace_entity(cars, ce, newIndex)
+
         replace_doors(door, ce, newIndex)
         replace_surface(surfaces, ce, newIndex)
         replace_surface_entity(cars, ce, newIndex)
@@ -594,7 +969,7 @@ local function get_player_data(ic, player)
 
     ic.players[player.index] = {
         surface = 1,
-        fallback_surface = 1,
+        fallback_surface = player.surface.index,
         notified = false
     }
     return ic.players[player.index]
@@ -769,11 +1144,6 @@ function Public.create_car_room(ic, car)
             tiles[#tiles + 1] = {name = main_tile_name, position = {x, y}}
         end
     end
-    for x = -3, 2, 1 do
-        for y = area.right_bottom.y - 4, area.right_bottom.y - 2, 1 do
-            tiles[#tiles + 1] = {name = main_tile_name, position = {x, y}}
-        end
-    end
 
     local fishes = {}
 
@@ -790,6 +1160,8 @@ function Public.create_car_room(ic, car)
     end
 
     construct_doors(ic, car)
+
+    construct_belts(car)
 
     local lx, ly, rx, ry = 4, 1, 5, 1
 
@@ -878,7 +1250,13 @@ function Public.create_car(ic, event)
         doors = {},
         owner = player.index,
         name = ce.name,
-        unit_number = ce.unit_number
+        belts = {},
+        state = true,
+        links = {},
+        active_links = 0,
+        unit_number = ce.unit_number,
+        outside_x = ce.position.x,
+        outside_y = ce.position.y
     }
 
     local car = ic.cars[un]
@@ -1020,209 +1398,104 @@ function Public.item_transfer(ic)
     end
 end
 
-function Public.on_built_entity(event, ic)
-    local entity = event.created_entity
-    if not entity.valid then
-        return
-    end
+------------------------
+--- start belt functions
+------------------------
 
-    local valid = {
-        ['steel-chest'] = true,
-        ['iron-chest'] = true
+local recalibrate_car_token =
+    Token.register(
+    function(data)
+        local car = data.car
+        local bbox2 = data.bbox2
+        local inside = data.inside
+        if inside then
+            recalibrate_car(car, nil, bbox2)
+        else
+            recalibrate_car(car, bbox2, nil)
+        end
+    end
+)
+
+function Public.check_if_link_is_valid(cars, entity, wait)
+    local surface = entity.surface
+    local bbox = entity.bounding_box
+    local bbox2 = {
+        left_top = {x = bbox.left_top.x - 1.5, y = bbox.left_top.y - 1.5},
+        right_bottom = {x = bbox.right_bottom.x + 1.5, y = bbox.right_bottom.y + 1.5}
     }
 
-    if not valid[entity.name] then
-        return
-    end
-
-    local map_name = 'wbtc'
-
-    if string.sub(entity.surface.name, 0, #map_name) ~= map_name then
-        return
-    end
-
-    local area = {
-        left_top = {x = entity.position.x - 3, y = entity.position.y - 3},
-        right_bottom = {x = entity.position.x + 3, y = entity.position.y + 3}
-    }
-
-    local success, car = contains_positions(area, ic, entity)
-
-    local symbol
-    if entity.name == 'steel-chest' then
-        symbol = '↑'
-    elseif entity.name == 'iron-chest' then
-        symbol = '↓'
-    end
-
-    if not success then
-        return
-    end
-
-    local outside_chests = ic.chests
-    local chests_linked_to = ic.chests_linked_to
-    local chest_created
-    local increased = false
-
-    for k, data in pairs(outside_chests) do
-        if data and data.chest.valid then
-            if chests_linked_to[car.unit_number] then
-                local linked_to = chests_linked_to[car.unit_number].count
-                outside_chests[entity.unit_number] = {chest = entity, position = entity.position, linked = car.unit_number}
-
-                if not increased then
-                    chests_linked_to[car.unit_number].count = linked_to + 1
-                    chests_linked_to[car.unit_number][entity.unit_number] = true
-                    increased = true
-                    goto continue
+    local found_car = false
+    local cars_in_surrounding = surface.find_entities_filtered {area = bbox2}
+    for _, found in pairs(cars_in_surrounding) do
+        if found ~= entity and cars[found.unit_number] then
+            local car = cars[found.unit_number]
+            if car then
+                found_car = true
+                if wait then
+                    Task.set_timeout_in_ticks(10, recalibrate_car_token, {car = car, bbox2 = bbox2})
+                else
+                    recalibrate_car(car, bbox2, nil)
                 end
+            end
+        end
+    end
+    if not found_car then
+        local _, car = get_entity_from_player_surface(cars, entity)
+        if not car then
+            car = get_entity_object(cars, entity)
+            car = cars[car]
+        end
+        if car then
+            if wait then
+                Task.set_timeout_in_ticks(10, recalibrate_car_token, {car = car, bbox2 = bbox2, inside = true})
             else
-                outside_chests[entity.unit_number] = {chest = entity, position = entity.position, linked = car.unit_number}
-                chests_linked_to[car.unit_number] = {count = 1}
+                recalibrate_car(car, nil, bbox2)
             end
-
-            ::continue::
-            rendering.draw_text {
-                text = symbol,
-                surface = entity.surface,
-                target = entity,
-                target_offset = {0, -0.6},
-                scale = 2,
-                color = {r = 0, g = 0.6, b = 1},
-                alignment = 'center'
-            }
-            chest_created = true
         end
-    end
-
-    if chest_created then
-        return
-    end
-
-    if next(outside_chests) == nil then
-        outside_chests[entity.unit_number] = {chest = entity, position = entity.position, linked = car.unit_number}
-        chests_linked_to[car.unit_number] = {count = 1}
-        chests_linked_to[car.unit_number][entity.unit_number] = true
-
-        rendering.draw_text {
-            text = symbol,
-            surface = entity.surface,
-            target = entity,
-            target_offset = {0, -0.6},
-            scale = 2,
-            color = {r = 0, g = 0.6, b = 1},
-            alignment = 'center'
-        }
-        return
     end
 end
 
-function Public.on_player_and_robot_mined_entity(event, ic)
-    local entity = event.entity
-
-    if not entity.valid then
-        return
-    end
-
-    local outside_chests = ic.chests
-    local chests_linked_to = ic.chests_linked_to
-
-    if outside_chests[entity.unit_number] then
-        for k, v in pairs(chests_linked_to) do
-            if v[entity.unit_number] then
-                v.count = v.count - 1
-                if v.count <= 0 then
-                    chests_linked_to[k] = nil
-                end
-            end
-            if chests_linked_to[k] and chests_linked_to[k][entity.unit_number] then
-                chests_linked_to[k][entity.unit_number] = nil
-            end
-        end
-        outside_chests[entity.unit_number] = nil
-    end
-end
-
-function Public.divide_contents(ic)
-    local outside_chests = ic.chests
-    local chests_linked_to = ic.chests_linked_to
-    local target_chest
-
-    if not next(outside_chests) then
+function Public.ticking_belts(ic)
+    local carId = next(ic.cars)
+    if not carId then
         goto final
     end
 
-    for key, data in pairs(outside_chests) do
-        local chest = data.chest
-        local area = {
-            left_top = {x = data.position.x - 4, y = data.position.y - 4},
-            right_bottom = {x = data.position.x + 4, y = data.position.y + 4}
-        }
-        if not (chest and chest.valid) then
-            if chests_linked_to[data.linked] then
-                if chests_linked_to[data.linked][key] then
-                    chests_linked_to[data.linked][key] = nil
-                    chests_linked_to[data.linked].count = chests_linked_to[data.linked].count - 1
-                    if chests_linked_to[data.linked].count <= 0 then
-                        chests_linked_to[data.linked] = nil
-                    end
+    local connection = ic.cars[carId] and ic.cars[carId].links
+    if not connection then
+        goto final
+    end
+
+    for _, belt in pairs(connection) do
+        local from = belt.from
+        local to = belt.to
+        if from.valid and to.valid then
+            local f1 = belt.f_l1
+            local t1 = belt.to_l1
+            local contents = f1.get_contents()
+            local t = next(contents)
+            if t ~= nil then
+                if t1.insert_at(belt.insert_pos, {name = t, count = 1}) then
+                    f1.remove_item {name = t, count = 1}
                 end
             end
-            outside_chests[key] = nil
-            goto continue
-        end
-        local success, entity = contains_positions(area, ic, chest)
-        if success then
-            target_chest = entity
-        else
-            if chests_linked_to[data.linked] then
-                if chests_linked_to[data.linked][key] then
-                    chests_linked_to[data.linked][key] = nil
-                    chests_linked_to[data.linked].count = chests_linked_to[data.linked].count - 1
-                    if chests_linked_to[data.linked].count <= 0 then
-                        chests_linked_to[data.linked] = nil
-                    end
-                end
-            end
-            data.chest.destroy()
-            outside_chests[key] = nil
-            goto continue
-        end
-
-        local chest1 = chest.get_inventory(defines.inventory.chest)
-        if chest.name == 'steel-chest' then
-            local chest2 = target_chest.get_inventory(defines.inventory.chest)
-            local free_slots = 0
-
-            for i = 1, chest2.get_bar() - 1, 1 do
-                if not chest2[i].valid_for_read then
-                    free_slots = free_slots + 1
-                end
-            end
-            if target_chest.get_request_slot(1) then
-                input_filtered(chest1, target_chest, chest2, free_slots)
-                goto continue
-            end
-        elseif chest.name == 'iron-chest' then
-            local chest2
-            if target_chest.type == 'car' then
-                chest2 = target_chest.get_inventory(defines.inventory.car_trunk)
-            elseif target_chest.name == 'spidertron' then
-                chest2 = target_chest.get_inventory(defines.inventory.spider_trunk)
-            end
-
-            for item, count in pairs(chest2.get_contents()) do
-                local t = {name = item, count = count}
-                local c = chest1.insert(t)
-                if (c > 0) then
-                    chest2.remove({name = item, count = c})
+            local f2 = belt.f_l2
+            local t2 = belt.to_l2
+            contents = f2.get_contents()
+            t = next(contents)
+            if t ~= nil then
+                if t2.insert_at(belt.insert_pos, {name = t, count = 1}) then
+                    f2.remove_item {name = t, count = 1}
                 end
             end
         end
-        ::continue::
     end
     ::final::
 end
+
+------------------------
+--- end belt functions
+------------------------
 
 Public.kick_player_from_surface = kick_player_from_surface
 Public.get_player_surface = get_player_surface

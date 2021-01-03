@@ -92,7 +92,7 @@ local function contains_turret(tbl, entity, rtn, remove)
                     end
 
                     if rtn then
-                        return entity
+                        return entity, data
                     else
                         return true, index
                     end
@@ -452,6 +452,10 @@ local function draw_container_frame(parent, entity, player)
 
     local force = Public.get_force(player)
 
+    if not force then
+        return
+    end
+
     local limit = this.valid_chest[entity.name] and this.valid_chest[entity.name].limit
     local placeholder = ''
 
@@ -623,6 +627,9 @@ end
 Public.add_chest_to_force = function(player, entity)
     if entity and entity.valid then
         local force = Public.get_force(player)
+        if not force then
+            return
+        end
         local refill_chests = force.refill_chests
         local render_targets = force.render_targets
         local chest = entity.get_inventory(defines.inventory.chest)
@@ -644,6 +651,9 @@ end
 
 Public.remove_chest_from_force = function(player, entity)
     local force = Public.get_force(player)
+    if not force then
+        return
+    end
     local refill_chests = force.refill_chests
     local render_targets = force.render_targets
 
@@ -662,6 +672,9 @@ end
 Public.add_turret_to_force = function(player, entity)
     if entity and entity.valid then
         local force = Public.get_force(player)
+        if not force then
+            return
+        end
         local refill_turrets = force.refill_turrets
         local turret_inv = entity.get_inventory(defines.inventory.turret_ammo)
 
@@ -676,6 +689,9 @@ end
 
 Public.remove_turret_from_force = function(player, entity)
     local force = Public.get_force(player)
+    if not force then
+        return
+    end
     local refill_turrets = force.refill_turrets
 
     contains_turret(refill_turrets, entity, false, true)
@@ -808,21 +824,25 @@ Event.add(
 
         local force = Public.get_force(player)
 
+        if not force then
+            return
+        end
+
         if not this.valid_turrets[entity.name] then
             return
         end
 
         local refill_turrets = force.refill_turrets
 
-        local t = contains_turret(refill_turrets, entity, true)
+        local ent, data = contains_turret(refill_turrets, entity, true)
 
-        if t then
+        if data then
             for index = 1, #chests do
                 local chest = chests[index]
-                remove_ammo(chest, t)
+                remove_ammo(chest, data.turret)
             end
 
-            Public.remove_turret_from_force(player, t)
+            Public.remove_turret_from_force(player, ent)
         end
         return
     end

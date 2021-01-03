@@ -58,7 +58,7 @@ local functions = {
         if event.element.switch_state == 'left' then
             global.enable_scramble = true
         else
-            global.enable_scramble = true
+            global.enable_scramble = false
         end
     end,
     ['panel_town_shape'] = function(event)
@@ -211,7 +211,7 @@ local build_config_gui = (function(player, frame)
     end
 end)
 
-local function on_gui_click(event)
+local function on_gui_switch_state_changed(event)
     local player = game.players[event.player_index]
     if not (player and player.valid) then
         return
@@ -234,4 +234,4 @@ end
 
 Gui.tabs['Config'] = build_config_gui
 
-Event.add(defines.events.on_gui_switch_state_changed, on_gui_click)
+Event.add(defines.events.on_gui_switch_state_changed, on_gui_switch_state_changed)

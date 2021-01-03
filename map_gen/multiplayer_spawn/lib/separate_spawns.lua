@@ -768,8 +768,9 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
                 Public.GenerateStartingResources_Classic(game.surfaces[surface_name], delayedSpawn.pos)
             end
         elseif delayedSpawn.layout == 'square_shape' then
+            local p = {x = delayedSpawn.pos.x + water_data.x_offset + 16, y = delayedSpawn.pos.y + water_data.y_offset}
             if pvp then
-                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, false, false, true)
+                Towny.create_new_town(game.surfaces[surface_name], player, p, false, false, true)
                 Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)
                 Utils.CreateWaterStrip(
                     game.surfaces[surface_name],
@@ -779,7 +780,7 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
                 Utils.GivePlayerStarterItems(player, true)
                 Public.GenerateStartingResources_New(game.surfaces[surface_name], delayedSpawn.pos)
             else
-                Towny.create_new_town(game.surfaces[surface_name], player, delayedSpawn.pos, true, delayedSpawn.own_team, true)
+                Towny.create_new_town(game.surfaces[surface_name], player, p, true, delayedSpawn.own_team, true)
                 Team.set_player_to_outlander(player)
                 Utils.GivePlayerStarterItems(player)
                 Utils.CreateWaterStrip(game.surfaces[surface_name], {x = delayedSpawn.pos.x + water_data.x_offset, y = delayedSpawn.pos.y + water_data.y_offset}, water_data.length)

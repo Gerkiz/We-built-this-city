@@ -93,6 +93,7 @@ function Public.add(event_name, handler)
             script_on_event(event_name, on_event)
         end
     end
+    return #event_handlers[event_name]
 end
 
 --- Do not use this function, use Event.on_configuration_changed instead as it has safety checks.
@@ -149,6 +150,7 @@ function Public.on_nth_tick(tick, handler)
             script_on_nth_tick(tick, on_nth_tick_event)
         end
     end
+    return #on_nth_tick_event_handlers[tick]
 end
 
 function Public.get_event_handlers()

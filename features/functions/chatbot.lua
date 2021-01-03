@@ -95,12 +95,14 @@ local function on_console_command(event)
         return
     end
 
+    if string.find(cmd, 'interface') then
+        return
+    end
+
     if player then
         if param then
             print(player.name .. ' ran: ' .. cmd .. ' "' .. param .. '" ' .. server_time)
-            Server.to_admin_embed(
-                table.concat {'[Info] ', player.name, ' ran: ', cmd, ' "', param, '" ', server_time, '.'}
-            )
+            Server.to_admin_embed(table.concat {'[Info] ', player.name, ' ran: ', cmd, ' "', param, '" ', server_time, '.'})
         else
             print(player.name .. ' ran: ' .. cmd .. server_time)
             Server.to_admin_embed(table.concat {'[Info] ', player.name, ' ran: ', cmd, ' ', server_time, '.'})

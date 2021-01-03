@@ -38,7 +38,7 @@ Event.add(
             return
         end
         for _, message in pairs(msg) do
-            Server.player_return({'chat-bot.message', message}, Color.success, player)
+            player.print({'chat-bot.message', message}, Color.success)
         end
     end
 )
@@ -142,13 +142,13 @@ Event.add(
                     end
                     game.print {'chat-bot.message', message}
                 else
-                    Server.player_return({'chat-bot.role-error'}, nil, player)
+                    player.print({'chat-bot.role-error'})
                 end
             elseif player_message:match(to_find) then
                 if Server.is_type(message, 'function') then
                     message = message(player)
                 end
-                Server.player_return({'chat-bot.message', message}, nil, player)
+                player.print({'chat-bot.message', message})
             end
         end
         for to_find, message in pairs(commands) do
@@ -159,7 +159,7 @@ Event.add(
                     end
                     game.print {'chat-bot.message', message}
                 else
-                    Server.player_return({'chat-bot.role-error'}, nil, player)
+                    player.print({'chat-bot.role-error'})
                 end
             end
         end
