@@ -251,7 +251,7 @@ local function remove_belts(car)
 end
 
 local outside_positions = {
-    ['car'] = (function(x, y, left, pos)
+    ['car'] = (function(id, x, y, left, pos)
         local outside
         local position
         local rend_position
@@ -259,74 +259,74 @@ local outside_positions = {
         if left then
             position = {x = x + 0.5, y = y + 0.5}
             rend_position = {x = x + 0.5, y = y}
-            if y > 10 and y < 25 then
+            if id == 'L1' then
                 -- upper left
                 outside = {x = pos.x - 1.5, y = pos.y - 1}
-            elseif y > 30 and y < 40 then
+            elseif id == 'L2' then
                 -- lower left
                 outside = {x = pos.x - 1.5, y = pos.y + 1}
             end
         else
             position = {x = x - 0.5, y = y + 0.5}
             rend_position = {x = x - 0.5, y = y}
-            if y > 10 and y < 25 then
+            if id == 'R1' then
                 -- upper right
                 outside = {x = pos.x + 2, y = pos.y - 1}
-            elseif y > 30 and y < 40 then
+            elseif id == 'R2' then
                 -- lower right
                 outside = {x = pos.x + 2, y = pos.y + 1}
             end
         end
         return rend_position, position, outside
     end),
-    ['tank'] = (function(x, y, left, pos)
+    ['tank'] = (function(id, x, y, left, pos)
         local outside
         local position
         local rend_position
         if left then
             position = {x = x + 0.5, y = y + 1}
             rend_position = {x = x + 0.5, y = y + 0.5}
-            if y > 10 and y < 28 then
+            if id == 'L1' then
                 -- upper left
                 outside = {x = pos.x - 2, y = pos.y - 1.5}
-            elseif y > 35 and y < 50 then
+            elseif id == 'L2' then
                 -- lower left
                 outside = {x = pos.x - 2, y = pos.y + 1.5}
             end
         else
             position = {x = x - 0.5, y = y + 1}
             rend_position = {x = x - 0.5, y = y + 0.5}
-            if y > 10 and y < 28 then
+            if id == 'R1' then
                 -- upper right
                 outside = {x = pos.x + 2, y = pos.y - 1.5}
-            elseif y > 35 and y < 50 then
+            elseif id == 'R2' then
                 -- lower right
                 outside = {x = pos.x + 2, y = pos.y + 1.5}
             end
         end
         return rend_position, position, outside
     end),
-    ['spidertron'] = (function(x, y, left, pos)
+    ['spidertron'] = (function(id, x, y, left, pos)
         local outside
         local position
         local rend_position
         if left then
             position = {x = x + 0.5, y = y + 0.5}
             rend_position = {x = x + 0.5, y = y}
-            if y > 15 and y < 32 then
+            if id == 'L1' then
                 -- upper left
                 outside = {x = pos.x - 2, y = pos.y - 1.5}
-            elseif y > 40 and y < 60 then
+            elseif id == 'L2' then
                 -- lower left
                 outside = {x = pos.x - 2, y = pos.y + 1.5}
             end
         else
             position = {x = x - 0.5, y = y + 0.5}
             rend_position = {x = x - 0.5, y = y}
-            if y > 15 and y < 32 then
+            if id == 'R1' then
                 -- upper right
                 outside = {x = pos.x + 2, y = pos.y - 1.5}
-            elseif y > 40 and y < 60 then
+            elseif id == 'R2' then
                 -- lower right
                 outside = {x = pos.x + 2, y = pos.y + 1.5}
             end
@@ -372,7 +372,7 @@ local function construct_belts(car, update_positions)
             local p = {x = x, y = area.left_top.y + ((area.right_bottom.y - area.left_top.y) * 0.5)}
 
             if p.x < 0 then
-                rend_position, position, outside = outside_positions[is_type](x, y, true, pos)
+                rend_position, position, outside = outside_positions[is_type]('L' .. i, x, y, true, pos)
 
                 if update_positions then
                     car.belts['L' .. i].outside = outside
@@ -388,7 +388,7 @@ local function construct_belts(car, update_positions)
                     }
                 end
             else
-                rend_position, position, outside = outside_positions[is_type](x, y, false, pos)
+                rend_position, position, outside = outside_positions[is_type]('R' .. i, x, y, false, pos)
 
                 if update_positions then
                     car.belts['R' .. i].outside = outside
@@ -700,7 +700,7 @@ local function upgrade_surface(ic, player, entity)
         end
         set_new_area(ic, car)
         remove_logistics(car)
-        car, _ = replace_entity(cars, ce, newIndex)
+        car = replace_entity(cars, ce, newIndex)
 
         remove_belts(car)
         replace_doors(door, ce, newIndex)
@@ -1377,21 +1377,16 @@ function Public.use_door_with_entity(ic, player, door)
 end
 
 function Public.item_transfer(ic)
-    local car = next(ic.cars)
+    local car
+    ic.current_car_index, car = next(ic.cars, ic.current_car_index)
     if not car then
         return
     end
-    car = ic.cars[car]
-    if not car then
-        return
-    end
-    if type(car.entity) ~= 'number' then
-        if validate_entity(car.entity) then
-            if car.transfer_entities then
-                for k, e in pairs(car.transfer_entities) do
-                    if validate_entity(e) then
-                        transfer_functions[e.name](car, e)
-                    end
+    if validate_entity(car.entity) then
+        if car.transfer_entities then
+            for k, e in pairs(car.transfer_entities) do
+                if validate_entity(e) then
+                    transfer_functions[e.name](car, e)
                 end
             end
         end

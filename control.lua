@@ -79,7 +79,7 @@ require 'features.modules.bp'
 -- require 'features.modules.winter'
 
 ---! load from config/map
--- require 'map_loader'
+require 'map_loader'
 --require 'map_builder'
 
 local function is_game_modded()
@@ -100,6 +100,7 @@ end
 --         player.insert({name = 'car'})
 --         player.insert({name = 'express-transport-belt', count = 100})
 --         player.insert({name = 'coin', count = 100000})
+--         player.insert({name = 'infinity-chest', count = 10})
 --     end
 -- )
 

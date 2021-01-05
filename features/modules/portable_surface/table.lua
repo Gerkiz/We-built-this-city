@@ -45,13 +45,13 @@ function Public.reset()
         ['spider-vehicle'] = true
     }
     this.car_areas = {
-        ['car'] = {left_top = {x = -40, y = 0}, right_bottom = {x = 40, y = 60}},
-        ['tank'] = {left_top = {x = -50, y = 0}, right_bottom = {x = 50, y = 70}},
-        ['spidertron'] = {left_top = {x = -60, y = 0}, right_bottom = {x = 60, y = 80}},
+        ['car'] = {left_top = {x = -20, y = 0}, right_bottom = {x = 20, y = 20}},
+        ['tank'] = {left_top = {x = -30, y = 0}, right_bottom = {x = 30, y = 40}},
+        ['spidertron'] = {left_top = {x = -40, y = 0}, right_bottom = {x = 40, y = 60}},
         ['spider-vehicle'] = {left_top = {x = -60, y = 0}, right_bottom = {x = 60, y = 80}}
     }
-    this.disable_multiple_surfaces = false
-    this.disable_multiple_vehicles = false
+    this.disable_multiple_surfaces = true
+    this.disable_multiple_vehicles = true
 end
 
 function Public.get(key)
