@@ -68,14 +68,14 @@ local functions = {
             global.enable_town_shape = true
             global.enable_buddy_spawn = false
             if SS then
-                SS.DisplaySpawnOptions(player, true)
+                SS.DisplaySpawnOptions(player)
             end
         end
         if event.element.switch_state == 'right' then
             global.enable_town_shape = false
             global.enable_buddy_spawn = true
             if SS then
-                SS.DisplaySpawnOptions(player, true)
+                SS.DisplaySpawnOptions(player)
             end
         end
     end,

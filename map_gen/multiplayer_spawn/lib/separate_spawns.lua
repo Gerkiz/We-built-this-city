@@ -1146,7 +1146,7 @@ function Public.WelcomeTextGuiClick(event)
 end
 
 -- Display the spawn options and explanation
-function Public.DisplaySpawnOptions(player, remove)
+function Public.DisplaySpawnOptions(player)
     if (player == nil) then
         log('DisplaySpawnOptions with no valid player...')
         return
@@ -1156,12 +1156,8 @@ function Public.DisplaySpawnOptions(player, remove)
         player.gui.screen.welcome_msg.destroy()
     end
 
-    if player.gui.screen.spawn_opts then
-        if remove then
-            player.gui.screen.spawn_opts.destroy()
-        else
-            return
-        end
+    if (player.gui.screen.spawn_opts ~= nil) then
+        player.gui.screen.spawn_opts.destroy()
     end
 
     local elem =
@@ -1381,17 +1377,18 @@ function Public.SpawnOptsRadioSelect(event)
     if not (event and event.element and event.element.valid) then
         return
     end
-    local elemName = event.element.name
+    local element = event.element
+    local elemName = element.name
 
     if (elemName == 'isolated_spawn_main_team_radio') then
-        event.element.parent.isolated_spawn_new_team_radio.state = false
+        element.parent.isolated_spawn_new_team_radio.state = false
     elseif (elemName == 'isolated_spawn_new_team_radio') then
-        event.element.parent.isolated_spawn_main_team_radio.state = false
+        element.parent.isolated_spawn_main_team_radio.state = false
     end
 
-    local layout_elem = event.element.parent
-    local solo_flow_elem = event.element.parent.parent.parent.spawn_solo_flow
-    local upperTable = event.element.parent.parent
+    local layout_elem = element.parent
+    local solo_flow_elem = element.parent.parent.parent.spawn_solo_flow
+    local upperTable = element.parent.parent
 
     if not global.enable_town_shape then
         if (elemName == 'layout_towny_non_pvp') then
@@ -1408,11 +1405,19 @@ function Public.SpawnOptsRadioSelect(event)
             solo_flow_elem.isolated_spawn_main_team_radio.enabled = true
             solo_flow_elem.isolated_spawn_new_team_radio.state = false
         elseif (elemName == 'layout_square') then
-            layout_elem.layout_towny_non_pvp.state = false
-            layout_elem.layout_circle.state = false
+            if layout_elem.layout_towny_non_pvp then
+                layout_elem.layout_towny_non_pvp.state = false
+            end
+            if layout_elem.layout_circle then
+                layout_elem.layout_circle.state = false
+            end
         elseif (elemName == 'layout_circle') then
-            layout_elem.layout_towny_non_pvp.state = false
-            layout_elem.layout_square.state = false
+            if layout_elem.layout_towny_non_pvp then
+                layout_elem.layout_towny_non_pvp.state = false
+            end
+            if layout_elem.layout_square then
+                layout_elem.layout_square.state = false
+            end
         end
     else
         if (elemName == 'pvp') then
@@ -1435,14 +1440,14 @@ function Public.SpawnOptsRadioSelect(event)
     end
 
     if (elemName == 'buddy_spawn_main_team_radio') then
-        event.element.parent.buddy_spawn_new_team_radio.state = false
-        event.element.parent.buddy_spawn_buddy_team_radio.state = false
+        element.parent.buddy_spawn_new_team_radio.state = false
+        element.parent.buddy_spawn_buddy_team_radio.state = false
     elseif (elemName == 'buddy_spawn_new_team_radio') then
-        event.element.parent.buddy_spawn_main_team_radio.state = false
-        event.element.parent.buddy_spawn_buddy_team_radio.state = false
+        element.parent.buddy_spawn_main_team_radio.state = false
+        element.parent.buddy_spawn_buddy_team_radio.state = false
     elseif (elemName == 'buddy_spawn_buddy_team_radio') then
-        event.element.parent.buddy_spawn_main_team_radio.state = false
-        event.element.parent.buddy_spawn_new_team_radio.state = false
+        element.parent.buddy_spawn_main_team_radio.state = false
+        element.parent.buddy_spawn_new_team_radio.state = false
     end
 end
 

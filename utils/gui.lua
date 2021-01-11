@@ -11,7 +11,7 @@ local on_pre_hidden_handlers = {}
 local top_elements = {}
 
 local Gui = {
-    uid = 0,
+    uid = 1000,
     events = {},
     defines = {},
     _old = {},

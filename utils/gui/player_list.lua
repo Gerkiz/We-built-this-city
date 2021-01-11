@@ -2,6 +2,7 @@ local Event = require 'utils.event'
 local play_time = require 'utils.datastore.session_data'
 local Gui = require 'utils.gui.core'
 local Roles = require 'utils.role.main'
+local Where = require 'features.commands.where'
 local SpamProtection = require 'utils.spam_protection'
 
 local symbol_asc = '▲'
@@ -146,9 +147,6 @@ local pokemessages = {
 }
 
 local function get_formatted_playtime(x)
-    local time_one = 216000
-    local time_two = 3600
-
     if x < 5184000 then
         local y = x / 216000
         y = tostring(y)
@@ -467,24 +465,30 @@ local function player_list_show(player, frame, sort_by)
         sprite.style.stretch_image_to_widget_size = true
 
         -- Name
-        local label =
+        local p = game.players[player_list[i].name]
+        if not p or not p.valid then
+            return
+        end
+
+        local name_label =
             player_list_panel_table.add {
             type = 'label',
-            name = 'player_list_panel_player_names_' .. i,
-            caption = player_list[i].name
+            name = p.index,
+            caption = player_list[i].name,
+            tooltip = 'Left-click to show this person on map!'
         }
-        label.style.font = 'default'
-        label.style.font_color = {
-            r = .4 + game.players[player_list[i].player_index].color.r * 0.6,
-            g = .4 + game.players[player_list[i].player_index].color.g * 0.6,
-            b = .4 + game.players[player_list[i].player_index].color.b * 0.6
+        name_label.style.font = 'default'
+        name_label.style.font_color = {
+            r = .4 + p.color.r * 0.6,
+            g = .4 + p.color.g * 0.6,
+            b = .4 + p.color.b * 0.6
         }
-        label.style.minimal_width = column_widths[2]
-        label.style.maximal_width = column_widths[2]
+        name_label.style.minimal_width = column_widths[2]
+        name_label.style.maximal_width = column_widths[2]
 
-        local label
+        local role_label
         if Roles.get_role(player_list[i].name).is_admin then
-            label =
+            role_label =
                 player_list_panel_table.add {
                 type = 'label',
                 name = 'player_list_panel_role_' .. i,
@@ -492,7 +496,7 @@ local function player_list_show(player, frame, sort_by)
                 tooltip = 'Admin'
             }
         elseif Roles.get_role(player_list[i].name).power <= 6 then
-            label =
+            role_label =
                 player_list_panel_table.add {
                 type = 'label',
                 name = 'player_list_panel_role_' .. i,
@@ -500,7 +504,7 @@ local function player_list_show(player, frame, sort_by)
                 tooltip = 'Trusted'
             }
         else
-            label =
+            role_label =
                 player_list_panel_table.add {
                 type = 'label',
                 name = 'player_list_panel_role_' .. i,
@@ -508,29 +512,29 @@ local function player_list_show(player, frame, sort_by)
                 tooltip = 'Not trusted :<'
             }
         end
-        label.style.font_color = Roles.get_role(player_list[i].name).color
-        label.style.minimal_width = column_widths[3]
-        label.style.maximal_width = column_widths[3]
+        role_label.style.font_color = Roles.get_role(player_list[i].name).color
+        role_label.style.minimal_width = column_widths[3]
+        role_label.style.maximal_width = column_widths[3]
 
         -- Total time
-        local label =
+        local total_label =
             player_list_panel_table.add {
             type = 'label',
             name = 'player_list_panel_player_total_time_played_' .. i,
             caption = player_list[i].total_played_time
         }
-        label.style.minimal_width = column_widths[4]
-        label.style.maximal_width = column_widths[4]
+        total_label.style.minimal_width = column_widths[4]
+        total_label.style.maximal_width = column_widths[4]
 
         -- Current time
-        local label =
+        local current_label =
             player_list_panel_table.add {
             type = 'label',
             name = 'player_list_panel_player_time_played_' .. i,
             caption = player_list[i].played_time
         }
-        label.style.minimal_width = column_widths[5]
-        label.style.maximal_width = column_widths[5]
+        current_label.style.minimal_width = column_widths[5]
+        current_label.style.maximal_width = column_widths[5]
 
         -- Poke
         local flow = player_list_panel_table.add {type = 'flow', name = 'button_flow_' .. i, direction = 'horizontal'}
@@ -624,6 +628,16 @@ local function on_gui_click(event)
     if not event.element.valid then
         return
     end
+    --Locate other players
+    local index = tonumber(event.element.name)
+    if index and game.players[index] and index == game.players[index].index then
+        local target = game.players[index]
+        if not target or not target.valid then
+            return
+        end
+        return Where.create_mini_camera_gui(player, target.name, target.position, target.surface.index)
+    end
+
     --Poke other players
     if string.sub(event.element.name, 1, 11) == 'poke_player' then
         local poked_player = string.sub(event.element.name, 13, string.len(event.element.name))
@@ -661,7 +675,6 @@ local function refresh()
 end
 
 local function on_player_joined_game(event)
-    local player = game.players[event.player_index]
     if not global.player_list.last_poke_tick[event.player_index] then
         global.player_list.pokes[event.player_index] = 0
         global.player_list.last_poke_tick[event.player_index] = 0

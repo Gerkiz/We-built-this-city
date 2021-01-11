@@ -67,12 +67,12 @@ commands.add_command('stopProfiler', 'Stops profiling', stopCommand)
 --		Profiler.Stop(false, "Assertion failed")
 --	end
 --	assert_raw(expr, ...)
---end
-local error_raw = error
-function error(...)
-    Profiler.Stop(false, 'Error raised')
-    error_raw(...)
-end
+-- --end
+-- local error_raw = error
+-- function error(...)
+--     Profiler.Stop(false, 'Error raised')
+--     error_raw(...)
+-- end
 
 function Profiler.Start(excludeCalledMs)
     if Profiler.IsRunning then
