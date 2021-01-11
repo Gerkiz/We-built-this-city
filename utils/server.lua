@@ -645,14 +645,13 @@ function Public.set_start_data(data)
     end
 end
 
---- Gets the server's id e.g. '7'. Empty string if not known.
 -- This is the current server's id, in the case the save has been loaded on multiple servers.
 -- @return string
 function Public.get_server_id()
     return start_data.server_id or ''
 end
 
---- Gets the server's name e.g. '[color=red]RedMew[/color] - Crash Site Desert'. Empty string if not known.
+--- Gets the server's name. Empty string if not known.
 -- This is the current server's name, in the case the save has been loaded on multiple servers.
 -- @return string
 function Public.get_server_name()
@@ -660,8 +659,6 @@ function Public.get_server_name()
 end
 
 --- Gets the server's start time as a unix epoch timestamp. nil if not known.
--- This is the time that the save was fist started/loaded on any Redmew server in the
--- case that the save has been loaded multiple times.
 -- @return number?
 function Public.get_start_time()
     return start_data.start_time
