@@ -160,10 +160,7 @@ local function respawn_player(player)
     local SS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
     local name = Surface.get_surface_name()
     local pos = game.surfaces[name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
-    local TownyTable = is_loaded('features.modules.towny.table')
-    if TownyTable then
-        TownyTable.reset_force_with_players(player.force)
-    elseif SS then
+    if SS then
         SS.SeparateSpawnsPlayerCreated(player.index)
     end
     player.teleport(pos, game.surfaces[name])

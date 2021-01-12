@@ -44,14 +44,6 @@ commands.add_command(
                 end
             end
         end
-        if is_loaded('features.modules.towny.table') then
-            local TownyTable = is_loaded('features.modules.towny.table')
-            local towny = TownyTable.get('towny')
-            if towny.town_centers[tostring(player.name)] then
-                player.print("Bonus can't be applied. You are in PVP-mode.", Color.warning)
-                return
-            end
-        end
         local bonus = tonumber(args.parameter)
         if not bonus or bonus < 0 or bonus > 50 then
             player.print('Invalid range.', Color.fail)

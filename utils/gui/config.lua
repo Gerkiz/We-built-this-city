@@ -78,19 +78,6 @@ local functions = {
                 SS.DisplaySpawnOptions(player)
             end
         end
-    end,
-    ['panel_towny_isolation'] = function(event)
-        local TownyTable = is_loaded('features.modules.towny.table')
-        if event.element.switch_state == 'left' then
-            if TownyTable then
-                TownyTable.set_build_isolation(true)
-            end
-        end
-        if event.element.switch_state == 'right' then
-            if TownyTable then
-                TownyTable.set_build_isolation(false)
-            end
-        end
     end
 }
 
@@ -188,24 +175,6 @@ local build_config_gui = (function(player, frame)
                 panel_scrambled_ores_switch = 'left'
             end
             add_switch(frame, panel_scrambled_ores_switch, 'panel_scrambled_ores', 'Enable scrambled ores?')
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
-        end
-        local TownyTable = is_loaded('features.modules.towny.table')
-
-        if global.scenario_config and TownyTable.get_towny_enabled() then
-            local panel_town_shape_switch = 'right'
-            if global.enable_town_shape then
-                panel_town_shape_switch = 'left'
-            end
-            add_switch(frame, panel_town_shape_switch, 'panel_town_shape', 'Enable ONLY Town shapes when creating a new base?')
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
-        end
-        if global.scenario_config and TownyTable.get_towny_enabled() then
-            local panel_towny_isolation = 'right'
-            if TownyTable.get_build_isolation() then
-                panel_towny_isolation = 'left'
-            end
-            add_switch(frame, panel_towny_isolation, 'panel_towny_isolation', 'Restrict users from building outside of their spawn area?')
             line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
     end

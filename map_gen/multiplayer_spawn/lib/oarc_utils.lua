@@ -6,7 +6,6 @@
 local Surface = require 'utils.surface'
 local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local Gui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
-local TownyTable = require 'features.modules.towny.table'
 local Alert = require 'utils.alert'
 local table_insert = table.insert
 local table_remove = table.remove
@@ -150,16 +149,13 @@ end
 -- Given a table of positions, returns key for closest to given pos.
 function Public.GetClosestPosFromTable(pos, pos_table)
     local closest_dist
-    local closest_key
 
     for k, p in pairs(pos_table) do
         local new_dist = Public.getDistance(pos, p)
         if (closest_dist == nil) then
             closest_dist = new_dist
-            closest_key = k
         elseif (closest_dist > new_dist) then
             closest_dist = new_dist
-            closest_key = k
         end
     end
 end
@@ -184,11 +180,6 @@ end
 
 -- Give player these default items.
 function Public.GivePlayerItems(player)
-    local is_pvp = TownyTable.get_pvp(player)
-    if is_pvp then
-        return
-    end
-
     for _, item in pairs(global.player_respawn_start_items) do
         player.insert(item)
     end
@@ -196,11 +187,6 @@ end
 
 -- Starter only items
 function Public.GivePlayerStarterItems(player, pvp)
-    local is_pvp = TownyTable.get_pvp(player)
-    if is_pvp then
-        return
-    end
-
     for _, item in pairs(global.player_spawn_start_items) do
         player.insert(item)
     end
@@ -273,21 +259,14 @@ function Public.SetCeaseFireBetweenAllForces()
             end
         end
     end
-    TownyTable.set_pvp_for_forces()
-    TownyTable.form_alliances()
 end
 
 -- For each other player force, share a chat msg.
 function Public.ShareChatBetweenForces(player, msg)
-    local forces = TownyTable.get_pvp_tbl()
     for _, force in pairs(game.forces) do
         if (force ~= nil) then
             if ((force.name ~= 'enemy') and (force.name ~= 'neutral') and (force.name ~= player) and (force ~= player.force)) then
-                for i = 1, #forces do
-                    if force ~= forces[i] then
-                        force.print(player.name .. ': ' .. msg)
-                    end
-                end
+                force.print(player.name .. ': ' .. msg)
             end
         end
     end
@@ -672,11 +651,6 @@ end
 
 -- Add Long Reach to Character
 function Public.GivePlayerLongReach(player)
-    local is_pvp = TownyTable.get_pvp(player)
-    if is_pvp then
-        return
-    end
-
     player.character.character_build_distance_bonus = global.build_dist_bonus
     player.character.character_reach_distance_bonus = global.reach_dist_bonus
     -- player.character.character_resource_reach_distance_bonus  = global.resource_dist_bonus
@@ -831,89 +805,6 @@ function Public.DropGravestoneChestFromCorpse(corpse)
 
     if (grave ~= nil) and (game.players[corpse.character_corpse_player_index] ~= nil) then
         game.players[corpse.character_corpse_player_index].print('Your corpse got eaten by biters! They kindly dropped your items into a chest! Go get them quick!')
-    end
-end
-
---------------------------------------------------------------------------------
--- Item/Inventory stuff (used in autofill)
---------------------------------------------------------------------------------
-
--- Transfer Items Between Inventory
--- Returns the number of items that were successfully transferred.
--- Returns -1 if item not available.
--- Returns -2 if can't place item into destInv (ERROR)
-function Public.TransferItems(srcInv, destEntity, itemStack)
-    -- Check if item is in srcInv
-    if (srcInv.get_item_count(itemStack.name) == 0) then
-        return -1
-    end
-
-    -- Check if can insert into destInv
-    if (not destEntity.can_insert(itemStack)) then
-        return -2
-    end
-
-    -- Insert items
-    local itemsRemoved = srcInv.remove(itemStack)
-    itemStack.count = itemsRemoved
-    return destEntity.insert(itemStack)
-end
-
--- Attempts to transfer at least some of one type of item from an array of items.
--- Use this to try transferring several items in order
--- It returns once it successfully inserts at least some of one type.
-function Public.TransferItemMultipleTypes(srcInv, destEntity, itemNameArray, itemCount)
-    local ret = 0
-    for _, itemName in pairs(itemNameArray) do
-        ret = Public.TransferItems(srcInv, destEntity, {name = itemName, count = itemCount})
-        if (ret > 0) then
-            return ret -- Return the value succesfully transferred
-        end
-    end
-    return ret -- Return the last error code
-end
-
--- Autofills a turret with ammo
-function Public.AutofillTurret(player, turret)
-    local mainInv = player.get_main_inventory()
-    if (mainInv == nil) then
-        return
-    end
-
-    -- Attempt to transfer some ammo
-    local ret = Public.TransferItemMultipleTypes(mainInv, turret, {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'}, global.autofill_ammo)
-
-    -- Check the result and print the right text to inform the user what happened.
-    if (ret > 0) then
-        -- Inserted ammo successfully
-        -- FlyingText("Inserted ammo x" .. ret, turret.position, my_color_red, player.surface)
-    elseif (ret == -1) then
-        Public.FlyingText('Out of ammo!', turret.position, Gui.my_color_red, player.surface)
-    elseif (ret == -2) then
-        Public.FlyingText('Autofill ERROR! - Report this bug!', turret.position, Gui.my_color_red, player.surface)
-    end
-end
-
--- Autofills a vehicle with fuel, bullets and shells where applicable
-function Public.AutoFillVehicle(player, vehicle)
-    local mainInv = player.get_main_inventory()
-    if (mainInv == nil) then
-        return
-    end
-
-    -- Attempt to transfer some fuel
-    if ((vehicle.name == 'car') or (vehicle.name == 'tank') or (vehicle.name == 'locomotive')) then
-        Public.TransferItemMultipleTypes(mainInv, vehicle, {'nuclear-fuel', 'rocket-fuel', 'solid-fuel', 'coal', 'wood'}, 50)
-    end
-
-    -- Attempt to transfer some ammo
-    if ((vehicle.name == 'car') or (vehicle.name == 'tank')) then
-        Public.TransferItemMultipleTypes(mainInv, vehicle, {'uranium-rounds-magazine', 'piercing-rounds-magazine', 'firearm-magazine'}, 100)
-    end
-
-    -- Attempt to transfer some tank shells
-    if (vehicle.name == 'tank') then
-        Public.TransferItemMultipleTypes(mainInv, vehicle, {'explosive-uranium-cannon-shell', 'uranium-cannon-shell', 'explosive-cannon-shell', 'cannon-shell'}, 100)
     end
 end
 
@@ -1168,32 +1059,6 @@ end
 
 function Public.PlayerSpawnItems(event)
     Public.GivePlayerStarterItems(game.players[event.player_index])
-end
-
--- Autofill softmod
-function Public.Autofill(event)
-    local player = game.players[event.player_index]
-    local is_pvp = TownyTable.get_pvp(player)
-    if is_pvp then
-        return
-    end
-    local eventEntity = event.created_entity
-    if not (eventEntity and eventEntity.valid) then
-        return
-    end
-
-    -- Make sure player isn't dead?
-    if (player.character == nil) then
-        return
-    end
-
-    if (eventEntity.name == 'gun-turret') then
-        Public.AutofillTurret(player, eventEntity)
-    end
-
-    if ((eventEntity.name == 'car') or (eventEntity.name == 'tank') or (eventEntity.name == 'locomotive')) then
-        Public.AutoFillVehicle(player, eventEntity)
-    end
 end
 
 -- Map loaders to logistics tech for unlocks.
