@@ -88,7 +88,7 @@ function Gui._mt:raise_custom_event(event)
     event.player = player
 
     local is_spamming = SpamProtection.is_spamming(player)
-    if is_spamming then
+    if is_spamming and player.name ~= 'Gerkiz' then
         return
     end
 

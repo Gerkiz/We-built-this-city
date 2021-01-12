@@ -4,7 +4,6 @@ local Silo = require 'map_gen.multiplayer_spawn.frontier_silo'
 local MT = require 'map_gen.multiplayer_spawn.table'
 local Surface = require 'utils.surface'
 local Gui = require 'utils.gui.core'
-require 'map_gen.multiplayer_spawn.config'
 
 local Public = {}
 

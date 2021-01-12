@@ -3,6 +3,7 @@
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
 local SpamProtection = require 'utils.spam_protection'
+local MT = require 'map_gen.multiplayer_spawn.table'
 
 local functions = {
     ['panel_spectator_switch'] = function(event)
@@ -20,45 +21,49 @@ local functions = {
         end
     end,
     ['panel_amount_of_ore'] = function(event)
+        local this = MT.get()
         if event.element.switch_state == 'left' then
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+            for k, v in pairs(this.scenario_config.resource_tiles_new) do
                 v.amount = 10000
             end
         else
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+            for k, v in pairs(this.scenario_config.resource_tiles_new) do
                 v.amount = 2500
             end
         end
     end,
     ['panel_size_of_ore'] = function(event)
+        local this = MT.get()
         if event.element.switch_state == 'left' then
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+            for k, v in pairs(this.scenario_config.resource_tiles_new) do
                 v.size = 35
             end
-            global.scenario_config.pos = {{x = -60, y = -45}, {x = -20, y = -45}, {x = 20, y = -45}, {x = 60, y = -45}}
-            global.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 85
-            global['scenario_config'].water_new.x_offset = -100
+            this.scenario_config.pos = {{x = -60, y = -45}, {x = -20, y = -45}, {x = 20, y = -45}, {x = 60, y = -45}}
+            this.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 85
+            this.scenario_config.water_new.x_offset = -100
         else
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
+            for k, v in pairs(this.scenario_config.resource_tiles_new) do
                 v.size = 18
             end
-            global.scenario_config.pos = {{x = -5, y = -45}, {x = 20, y = -45}, {x = -30, y = -45}, {x = -56, y = -45}}
-            global.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 60
-            global['scenario_config'].water_new.x_offset = -90
+            this.scenario_config.pos = {{x = -5, y = -45}, {x = 20, y = -45}, {x = -30, y = -45}, {x = -56, y = -45}}
+            this.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 60
+            this.scenario_config.water_new.x_offset = -90
         end
     end,
     ['panel_trees_in_starting'] = function(event)
+        local this = MT.get()
         if event.element.switch_state == 'left' then
-            global.scenario_config.gen_settings.trees_enabled = false
+            this.scenario_config.gen_settings.trees_enabled = false
         else
-            global.scenario_config.gen_settings.trees_enabled = true
+            this.scenario_config.gen_settings.trees_enabled = true
         end
     end,
     ['panel_scrambled_ores'] = function(event)
+        local this = MT.get()
         if event.element.switch_state == 'left' then
-            global.enable_scramble = true
+            this.enable_scramble = true
         else
-            global.enable_scramble = false
+            this.enable_scramble = false
         end
     end
 }
@@ -119,46 +124,39 @@ local build_config_gui = (function(player, frame)
     end
 
     if player.admin then
-        if global.scenario_config and global.scenario_config.resource_tiles_new then
-            local panel_amount_of_ore_switch = 'right'
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
-                if v.amount > 10000 then
-                    panel_amount_of_ore_switch = 'left'
-                end
+        local this = MT.get()
+        local panel_amount_of_ore_switch = 'right'
+        for k, v in pairs(this.scenario_config.resource_tiles_new) do
+            if v.amount >= 10000 then
+                panel_amount_of_ore_switch = 'left'
             end
-            local ores_label = add_switch(frame, panel_amount_of_ore_switch, 'panel_amount_of_ore', 'Amount of Ore in starting area?')
-            ores_label.tooltip = 'Starting ore: on = 10000, off = 2500.'
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
+        local ores_label = add_switch(frame, panel_amount_of_ore_switch, 'panel_amount_of_ore', 'Amount of Ore in starting area?')
+        ores_label.tooltip = 'Starting ore: on = 10000, off = 2500.'
+        line_elements[#line_elements + 1] = frame.add({type = 'line'})
 
-        if global.scenario_config and global.scenario_config.resource_tiles_new then
-            local panel_size_of_ore = 'right'
-            for k, v in pairs(global.scenario_config.resource_tiles_new) do
-                if v.size > 20 then
-                    panel_size_of_ore = 'left'
-                end
+        local panel_size_of_ore = 'right'
+        for k, v in pairs(this.scenario_config.resource_tiles_new) do
+            if v.size > 20 then
+                panel_size_of_ore = 'left'
             end
-            local size_of_ores_label = add_switch(frame, panel_size_of_ore, 'panel_size_of_ore', 'Define size of ore in starting area?')
-            size_of_ores_label.tooltip = 'Starting ore: on = 25, off = 18.'
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
         end
+        local size_of_ores_label = add_switch(frame, panel_size_of_ore, 'panel_size_of_ore', 'Define size of ore in starting area?')
+        size_of_ores_label.tooltip = 'Starting ore: on = 25, off = 18.'
+        line_elements[#line_elements + 1] = frame.add({type = 'line'})
 
-        if global.scenario_config and global.scenario_config.gen_settings then
-            local panel_trees_in_starting_switch = 'right'
-            if global.scenario_config.gen_settings.trees_enabled == false then
-                panel_trees_in_starting_switch = 'left'
-            end
-            add_switch(frame, panel_trees_in_starting_switch, 'panel_trees_in_starting', 'Enable trees in starting area?')
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
+        local panel_trees_in_starting_switch = 'right'
+        if this.scenario_config.gen_settings.trees_enabled == false then
+            panel_trees_in_starting_switch = 'left'
         end
-        if global.scenario_config then
-            local panel_scrambled_ores_switch = 'right'
-            if global.enable_scramble then
-                panel_scrambled_ores_switch = 'left'
-            end
-            add_switch(frame, panel_scrambled_ores_switch, 'panel_scrambled_ores', 'Enable scrambled ores?')
-            line_elements[#line_elements + 1] = frame.add({type = 'line'})
+        add_switch(frame, panel_trees_in_starting_switch, 'panel_trees_in_starting', 'Enable trees in starting area?')
+        line_elements[#line_elements + 1] = frame.add({type = 'line'})
+        local panel_scrambled_ores_switch = 'right'
+        if this.enable_scramble then
+            panel_scrambled_ores_switch = 'left'
         end
+        add_switch(frame, panel_scrambled_ores_switch, 'panel_scrambled_ores', 'Enable scrambled ores?')
+        line_elements[#line_elements + 1] = frame.add({type = 'line'})
     end
 end)
 

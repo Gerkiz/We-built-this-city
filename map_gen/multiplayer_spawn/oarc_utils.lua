@@ -73,7 +73,11 @@ end
 -- Broadcast messages to all connected players
 function Public.SendBroadcastMsg(msg)
     local color = {r = 0, g = 255, b = 171}
-    game.print(msg, color)
+    local players = game.connected_players
+    for i = 1, #players do
+        local player = players[i]
+        Alert.alert_player(player, 10, msg, color)
+    end
 end
 
 -- Send a message to a player, safely checks if they exist and are online.

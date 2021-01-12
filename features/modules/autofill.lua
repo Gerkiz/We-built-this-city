@@ -453,7 +453,7 @@ local function draw_container_frame(parent, entity, player)
     local force = Public.get_force(player)
 
     if not force then
-        return
+        Public.create_force(player)
     end
 
     local limit = this.valid_chest[entity.name] and this.valid_chest[entity.name].limit

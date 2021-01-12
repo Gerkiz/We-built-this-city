@@ -2,7 +2,6 @@
 -- Jan 2018
 -- My take on frontier silos for my Oarc scenario
 
-require('map_gen.multiplayer_spawn.config')
 local Utils = require('map_gen.multiplayer_spawn.oarc_utils')
 local Surface = require 'utils.surface'
 local MT = require 'map_gen.multiplayer_spawn.table'

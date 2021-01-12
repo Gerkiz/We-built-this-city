@@ -15,7 +15,6 @@ require 'features.modules.custom_death_messages'
 require 'features.modules.spawn_area'
 --require 'features.modules.splice'
 --require 'features.modules.oarc_enemies.main'
-require 'map_gen.multiplayer_spawn.config'
 
 local Event = require 'utils.event'
 local market_items = require 'features.modules.map_market_items'
@@ -174,6 +173,35 @@ Event.add(
         local player = game.players[event.player_index]
         local surface_name = Surface.get_surface_name()
 
+        if event.player_index == 1 then
+            local enable_market = MT.get('enable_market')
+
+            if enable_market then
+                local this = MT.get()
+                local surface = game.surfaces[surface_name]
+                local pos = {{x = -10, y = -10}, {x = 10, y = 10}, {x = -10, y = -10}, {x = 10, y = -10}}
+                local _pos = Utils.shuffle(pos)
+                local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
+
+                this.market = surface.create_entity {name = 'market', position = p, force = this.main_force_name}
+
+                rendering.draw_text {
+                    text = 'Spawn Market',
+                    surface = surface,
+                    target = this.market,
+                    target_offset = {0, 2},
+                    color = {r = 0.98, g = 0.66, b = 0.22},
+                    alignment = 'center'
+                }
+
+                this.market.destructible = false
+
+                for _, item in pairs(market_items.spawn) do
+                    this.market.add_market_item(item)
+                end
+            end
+        end
+
         -- Move the player to the game surface immediately.
         local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
         player.teleport(pos, surface_name)
@@ -233,35 +261,6 @@ Event.add(
         if frontier_rocket_silo_mode then
             Silo.DelayedSiloCreationOnTick(game.surfaces[surface_name])
         end
-
-        local enable_market = MT.get('enable_market')
-
-        if enable_market then
-            if game.tick == 150 then
-                local this = MT.get()
-                local surface = game.surfaces[surface_name]
-                local pos = {{x = -10, y = -10}, {x = 10, y = 10}, {x = -10, y = -10}, {x = 10, y = -10}}
-                local _pos = Utils.shuffle(pos)
-                local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
-
-                this.market = surface.create_entity {name = 'market', position = p, force = this.main_force_name}
-
-                rendering.draw_text {
-                    text = 'Market',
-                    surface = surface,
-                    target = this.market,
-                    target_offset = {0, 2},
-                    color = {r = 0.98, g = 0.66, b = 0.22},
-                    alignment = 'center'
-                }
-
-                this.market.destructible = false
-
-                for _, item in pairs(market_items.spawn) do
-                    this.market.add_market_item(item)
-                end
-            end
-        end
     end
 )
 
@@ -279,6 +278,7 @@ Event.add(
         if e.type ~= 'tree' then
             return
         end
+
         if e and e.valid and math_random(1, 4) == 1 then
             player.insert({name = 'coin', count = math_random(1, 3)})
         end

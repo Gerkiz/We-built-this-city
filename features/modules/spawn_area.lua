@@ -82,66 +82,63 @@ end
 
 function Public.spawn_on_chunk_generated()
     local get_surface = Surface.get_surface()
-    if not global.spawn_generated then
-        local surface = game.surfaces[get_surface]
-        local offset = {x = -0, y = 0}
-        local base_tiles = {}
-        local tiles = {}
-        local tile = false
-        if not tile then
-            tile = generate_random_tile()
-        end
-        for x = -p_radius - 5, p_radius + 5 do
-            for y = -p_radius - 5, p_radius + 5 do
-                if x ^ 2 + y ^ 2 < decon_radius ^ 2 then
-                    base_tiles[#base_tiles + 1] = {name = tile, position = {x + offset.x, y + offset.y}}
-                    if not global.custom_spawn then
-                        local entities =
-                            surface.find_entities_filtered {
-                            area = {{x + offset.x - 1, y + offset.y - 1}, {x + offset.x, y + offset.y}}
-                        }
-                        for _, entity in pairs(entities) do
-                            if entity.name ~= 'character' then
-                                entity.destroy()
-                            end
+    local surface = game.surfaces[get_surface]
+    local offset = {x = -0, y = 0}
+    local base_tiles = {}
+    local tiles = {}
+    local tile = false
+    if not tile then
+        tile = generate_random_tile()
+    end
+    for x = -p_radius - 5, p_radius + 5 do
+        for y = -p_radius - 5, p_radius + 5 do
+            if x ^ 2 + y ^ 2 < decon_radius ^ 2 then
+                base_tiles[#base_tiles + 1] = {name = tile, position = {x + offset.x, y + offset.y}}
+                if not global.custom_spawn then
+                    local entities =
+                        surface.find_entities_filtered {
+                        area = {{x + offset.x - 1, y + offset.y - 1}, {x + offset.x, y + offset.y}}
+                    }
+                    for _, entity in pairs(entities) do
+                        if entity.name ~= 'character' then
+                            entity.destroy()
                         end
                     end
                 end
             end
         end
-        surface.set_tiles(base_tiles)
-        for _, position in pairs(tile_positions) do
-            table.insert(
-                tiles,
-                {
-                    name = p_tile,
-                    position = {position[1] + offset.x + global_offset.x, position[2] + offset.y + global_offset.y}
-                }
-            )
-        end
-        surface.set_tiles(tiles)
-        for _, name in pairs(place_blocks) do
-            local entity =
-                surface.create_entity {
-                name = name[1],
-                position = {name[2] + offset.x + global_offset.x, name[3] + offset.y + global_offset.y},
-                force = 'neutral'
+    end
+    surface.set_tiles(base_tiles)
+    for _, position in pairs(tile_positions) do
+        table.insert(
+            tiles,
+            {
+                name = p_tile,
+                position = {position[1] + offset.x + global_offset.x, position[2] + offset.y + global_offset.y}
             }
-            entity.destructible = false
-            entity.health = 0
-            entity.minable = false
-            entity.rotatable = false
-            if entity.energy then
-                entity.energy = 100000000
-            end
+        )
+    end
+    surface.set_tiles(tiles)
+    for _, name in pairs(place_blocks) do
+        local entity =
+            surface.create_entity {
+            name = name[1],
+            position = {name[2] + offset.x + global_offset.x, name[3] + offset.y + global_offset.y},
+            force = 'neutral'
+        }
+        entity.destructible = false
+        entity.health = 0
+        entity.minable = false
+        entity.rotatable = false
+        if entity.energy then
+            entity.energy = 100000000
         end
-        global.spawn_generated = true
     end
 end
 Event.add(
-    defines.events.on_chunk_generated,
+    defines.events.on_player_created,
     function(event)
-        if event.tick > 4 then
+        if event.player_index == 1 then
             Public.spawn_on_chunk_generated(event)
         end
     end
