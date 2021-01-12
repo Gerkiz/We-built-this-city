@@ -60,24 +60,6 @@ local functions = {
         else
             global.enable_scramble = false
         end
-    end,
-    ['panel_town_shape'] = function(event)
-        local player = game.get_player(event.player_index)
-        local SS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
-        if event.element.switch_state == 'left' then
-            global.enable_town_shape = true
-            global.enable_buddy_spawn = false
-            if SS then
-                SS.DisplaySpawnOptions(player)
-            end
-        end
-        if event.element.switch_state == 'right' then
-            global.enable_town_shape = false
-            global.enable_buddy_spawn = true
-            if SS then
-                SS.DisplaySpawnOptions(player)
-            end
-        end
     end
 }
 

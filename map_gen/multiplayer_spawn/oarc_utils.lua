@@ -1,11 +1,5 @@
--- oarc_utils.lua
--- Nov 2016
---
--- My general purpose utility functions for factorio
--- Also contains some constants and gui styles
 local Surface = require 'utils.surface'
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
-local Gui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
+local MT = require 'map_gen.multiplayer_spawn.table'
 local Alert = require 'utils.alert'
 local table_insert = table.insert
 local table_remove = table.remove
@@ -35,10 +29,10 @@ end
 
 -- Requires having an on_tick handler.
 function Public.DisplaySpeechBubble(player, text, timeout_secs)
-    local global_data = MPS.get()
+    local this = MT.get()
 
-    if (global.oarc_speech_bubbles == nil) then
-        global.oarc_speech_bubbles = {}
+    if (this.oarc_speech_bubbles == nil) then
+        this.oarc_speech_bubbles = {}
     end
 
     if (player and player.character) then
@@ -50,10 +44,10 @@ function Public.DisplaySpeechBubble(player, text, timeout_secs)
             source = player.character
         }
         table_insert(
-            global.oarc_speech_bubbles,
+            this.oarc_speech_bubbles,
             {
                 entity = sp,
-                timeout_tick = game.tick + (timeout_secs * global_data.ticks_per_second)
+                timeout_tick = game.tick + (timeout_secs * this.ticks_per_second)
             }
         )
     end
@@ -61,15 +55,15 @@ end
 
 -- Every second, check a global table to see if we have any speech bubbles to kill.
 function Public.TimeoutSpeechBubblesOnTick()
-    local global_data = MPS.get()
-    if ((game.tick % (global_data.ticks_per_second)) == 3) then
-        if (global.oarc_speech_bubbles and (#global.oarc_speech_bubbles > 0)) then
-            for k, sp in pairs(global.oarc_speech_bubbles) do
+    local this = MT.get()
+    if ((game.tick % (this.ticks_per_second)) == 3) then
+        if (this.oarc_speech_bubbles and (#this.oarc_speech_bubbles > 0)) then
+            for k, sp in pairs(this.oarc_speech_bubbles) do
                 if (game.tick > sp.timeout_tick) then
                     if (sp.entity ~= nil) and (sp.entity.valid) then
                         sp.entity.start_fading_out()
                     end
-                    table_remove(global.oarc_speech_bubbles, k)
+                    table_remove(this.oarc_speech_bubbles, k)
                 end
             end
         end
@@ -162,17 +156,17 @@ end
 
 -- Chart area for a force
 function Public.ChartArea(force, position, chunkDist, surface)
-    local global_data = MPS.get()
+    local this = MT.get()
     force.chart(
         surface,
         {
             {
-                position.x - (global_data.chunk_size * chunkDist),
-                position.y - (global_data.chunk_size * chunkDist)
+                position.x - (this.chunk_size * chunkDist),
+                position.y - (this.chunk_size * chunkDist)
             },
             {
-                position.x + (global_data.chunk_size * chunkDist),
-                position.y + (global_data.chunk_size * chunkDist)
+                position.x + (this.chunk_size * chunkDist),
+                position.y + (this.chunk_size * chunkDist)
             }
         }
     )
@@ -180,22 +174,20 @@ end
 
 -- Give player these default items.
 function Public.GivePlayerItems(player)
-    for _, item in pairs(global.player_respawn_start_items) do
+    local this = MT.get()
+    for _, item in pairs(this.player_respawn_start_items) do
         player.insert(item)
     end
 end
 
 -- Starter only items
-function Public.GivePlayerStarterItems(player, pvp)
-    for _, item in pairs(global.player_spawn_start_items) do
+function Public.GivePlayerStarterItems(player)
+    local this = MT.get()
+    for _, item in pairs(this.player_spawn_start_items) do
         player.insert(item)
     end
 
-    if pvp then
-        return
-    end
-
-    if global.enable_power_armor then
+    if this.enable_power_armor then
         Public.GiveQuickStartPowerArmor(player)
     end
 end
@@ -376,7 +368,7 @@ end
 -- function Public.to find coordinates of ungenerated map area in a given direction
 -- starting from the center of the map
 function Public.FindMapEdge(directionVec, surface)
-    local global_data = MPS.get()
+    local this = MT.get()
     local position = {x = 0, y = 0}
     local chunkPos = {x = 0, y = 0}
 
@@ -396,8 +388,8 @@ function Public.FindMapEdge(directionVec, surface)
 
             -- Check there are no generated chunks in a 10x10 area.
             if Public.IsChunkAreaUngenerated(chunkPos, 10, surface) then
-                position.x = (chunkPos.x * global_data.chunk_size) + (global_data.chunk_size / 2)
-                position.y = (chunkPos.y * global_data.chunk_size) + (global_data.chunk_size / 2)
+                position.x = (chunkPos.x * this.chunk_size) + (this.chunk_size / 2)
+                position.y = (chunkPos.y * this.chunk_size) + (this.chunk_size / 2)
                 break
             end
         end
@@ -410,7 +402,7 @@ end
 -- Find random coordinates within a given distance away
 -- maxTries is the recursion limit basically.
 function Public.FindUngeneratedCoordinates(minDistChunks, maxDistChunks, surface)
-    local global_data = MPS.get()
+    local this = MT.get()
     local position = {x = 0, y = 0}
     local chunkPos = {x = 0, y = 0}
 
@@ -435,9 +427,9 @@ function Public.FindUngeneratedCoordinates(minDistChunks, maxDistChunks, surface
         elseif ((distSqrd < minDistSqr) or (distSqrd > maxDistSqr)) then
             -- Keep searching!
             -- Check there are no generated chunks in a 10x10 area.
-        elseif Public.IsChunkAreaUngenerated(chunkPos, global.check_spawn_ungenerated_chunk_radius, surface) then
-            position.x = (chunkPos.x * global_data.chunk_size) + (global_data.chunk_size / 2)
-            position.y = (chunkPos.y * global_data.chunk_size) + (global_data.chunk_size / 2)
+        elseif Public.IsChunkAreaUngenerated(chunkPos, this.check_spawn_ungenerated_chunk_radius, surface) then
+            position.x = (chunkPos.x * this.chunk_size) + (this.chunk_size / 2)
+            position.y = (chunkPos.y * this.chunk_size) + (this.chunk_size / 2)
             break -- SUCCESS
         end
     end
@@ -537,15 +529,16 @@ end
 
 -- Create another surface so that we can modify map settings and not have a screwy nauvis map.
 function Public.CreateGameSurface()
+    local this = MT.get()
     -- Get starting surface settings.
     local nauvis_settings = game.surfaces['nauvis'].map_gen_settings
 
-    if global.enable_vanilla_spawns then
+    if this.enable_vanilla_spawns then
         Surface.set_island(true)
-        nauvis_settings.starting_points = Public.CreateVanillaSpawns(global.vanilla_spawn_count, global.vanilla_spawn_distance)
+        nauvis_settings.starting_points = Public.CreateVanillaSpawns(this.vanilla_spawn_count, this.vanilla_spawn_distance)
 
         -- ENFORCE ISLAND MAP GEN
-        if (global.silo_island_mode) then
+        if (this.silo_island_mode) then
             nauvis_settings.property_expression_names.elevation = '0_17-island'
         end
     end
@@ -609,12 +602,12 @@ function Public.DowngradeWormsInArea(surface, area, small_percent, medium_percen
 end
 
 function Public.DowngradeWormsDistanceBasedOnChunkGenerate(event)
-    local global_data = MPS.get()
-    if (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (global.near_max_dist * global_data.chunk_size)) then
+    local this = MT.get()
+    if (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (this.near_max_dist * this.chunk_size)) then
         Public.DowngradeWormsInArea(event.surface, event.area, 100, 100, 100)
-    elseif (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (global.far_min_dist * global_data.chunk_size)) then
+    elseif (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (this.far_min_dist * this.chunk_size)) then
         Public.DowngradeWormsInArea(event.surface, event.area, 50, 90, 100)
-    elseif (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (global.far_max_dist * global_data.chunk_size)) then
+    elseif (Public.getDistance({x = 0, y = 0}, event.area.left_top) < (this.far_max_dist * this.chunk_size)) then
         Public.DowngradeWormsInArea(event.surface, event.area, 20, 80, 97)
     else
         Public.DowngradeWormsInArea(event.surface, event.area, 0, 20, 90)
@@ -651,9 +644,10 @@ end
 
 -- Add Long Reach to Character
 function Public.GivePlayerLongReach(player)
-    player.character.character_build_distance_bonus = global.build_dist_bonus
-    player.character.character_reach_distance_bonus = global.reach_dist_bonus
-    -- player.character.character_resource_reach_distance_bonus  = global.resource_dist_bonus
+    local this = MT.get()
+    player.character.character_build_distance_bonus = this.build_dist_bonus
+    player.character.character_reach_distance_bonus = this.reach_dist_bonus
+    -- player.character.character_resource_reach_distance_bonus  = this.resource_dist_bonus
 end
 
 -- General purpose cover an area in tiles.
@@ -672,20 +666,14 @@ end
 --------------------------------------------------------------------------------
 function Public.AntiGriefing(force)
     force.zoom_to_world_deconstruction_planner_enabled = false
-    Public.SetForceGhostTimeToLive(force)
-end
-
-function Public.SetForceGhostTimeToLive(force)
-    if global.ghost_ttl ~= 0 then
-        force.global.ghost_ttl = global.ghost_ttl + 1
-    end
 end
 
 function Public.SetItemBlueprintTimeToLive(event)
     local type = event.created_entity.type
     if type == 'entity-ghost' or type == 'tile-ghost' then
-        if global.ghost_ttl ~= 0 then
-            event.created_entity.time_to_live = global.ghost_ttl
+        local ghost_ttl = MT.get('ghost_ttl')
+        if ghost_ttl ~= 0 then
+            event.created_entity.time_to_live = ghost_ttl
         end
     end
 end
@@ -815,6 +803,7 @@ end
 -- Enforce a circle of land, also adds trees in a ring around the area.
 function Public.CreateCropCircle(surface, centerPos, chunkArea, tileRadius, fillTile)
     local tileRadSqr = tileRadius ^ 2
+    local scenario_config = MT.get('scenario_config')
 
     local dirtTiles = {}
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
@@ -825,12 +814,12 @@ function Public.CreateCropCircle(surface, centerPos, chunkArea, tileRadius, fill
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
-                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
+                if (surface.get_tile(i, j).collides_with('water-tile') or scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
 
-            if global.scenario_config.gen_settings.trees_enabled then
+            if scenario_config.gen_settings.trees_enabled then
                 -- Create a circle of trees around the spawn point.
                 if ((distVar < tileRadSqr - 200) and (distVar > tileRadSqr - 400)) then
                     surface.create_entity({name = 'tree-02', amount = 2, position = {i, j}})
@@ -844,6 +833,7 @@ end
 
 function Public.CreateCropCircleNoTrees(surface, centerPos, chunkArea, tileRadius, fillTile)
     local tileRadSqr = tileRadius ^ 2
+    local scenario_config = MT.get('scenario_config')
 
     local dirtTiles = {}
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
@@ -854,7 +844,7 @@ function Public.CreateCropCircleNoTrees(surface, centerPos, chunkArea, tileRadiu
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadSqr) then
-                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
+                if (surface.get_tile(i, j).collides_with('water-tile') or scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
@@ -867,6 +857,7 @@ end
 function Public.CreateCropSquare(surface, centerPos, area, tileRadius, fillTile)
     local left_top = area.left_top
     local right_bottom = area.right_bottom
+    local scenario_config = MT.get('scenario_config')
 
     local dirtTiles = {}
     for i = left_top.x, right_bottom.x - 1, 1 do
@@ -879,11 +870,11 @@ function Public.CreateCropSquare(surface, centerPos, area, tileRadius, fillTile)
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius) then
-                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass) then
+                if (surface.get_tile(i, j).collides_with('water-tile') or scenario_config.gen_settings.force_grass) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
-            if global.scenario_config.gen_settings.trees_enabled then
+            if scenario_config.gen_settings.trees_enabled then
                 -- Create a circle of trees around the spawn point.
                 if ((distVar < tileRadius) and (distVar > tileRadius - 3)) then
                     surface.create_entity({name = 'tree-02', amount = 1, position = {i, j}})
@@ -900,6 +891,7 @@ end
 -- this is equivalent to the CreateCropCircle code
 function Public.CreateCropOctagon(surface, centerPos, chunkArea, tileRadius, fillTile)
     local dirtTiles = {}
+    local scenario_config = MT.get('scenario_config')
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
         for j = chunkArea.left_top.y, chunkArea.right_bottom.y, 1 do
             local distVar1 = math_floor(max(abs(centerPos.x - i), abs(centerPos.y - j)))
@@ -908,12 +900,12 @@ function Public.CreateCropOctagon(surface, centerPos, chunkArea, tileRadius, fil
 
             -- Fill in all unexpected water in a circle
             if (distVar < tileRadius + 2) then
-                if (surface.get_tile(i, j).collides_with('water-tile') or global.scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
+                if (surface.get_tile(i, j).collides_with('water-tile') or scenario_config.gen_settings.force_grass or (game.active_mods['oarc-restricted-build'])) then
                     table_insert(dirtTiles, {name = fillTile, position = {i, j}})
                 end
             end
 
-            if global.scenario_config.gen_settings.trees_enabled then
+            if scenario_config.gen_settings.trees_enabled then
                 -- Create a tree ring
                 if ((distVar < tileRadius) and (distVar > tileRadius - 2)) then
                     surface.create_entity({name = 'tree-01', amount = 1, position = {i, j}})
@@ -927,6 +919,7 @@ end
 function Public.CreateMoat(surface, centerPos, chunkArea, tileRadius)
     local tileRadSqr = tileRadius ^ 2
     local waterTiles = {}
+    local scenario_config = MT.get('scenario_config')
     for i = chunkArea.left_top.x, chunkArea.right_bottom.x, 1 do
         for j = chunkArea.left_top.y, chunkArea.right_bottom.y, 1 do
             -- This ( X^2 + Y^2 ) is used to calculate if something
@@ -934,7 +927,7 @@ function Public.CreateMoat(surface, centerPos, chunkArea, tileRadius)
             local distVar = math_floor((centerPos.x - i) ^ 2 + (centerPos.y - j) ^ 2)
 
             -- Create a circle of water
-            if ((distVar < tileRadSqr + (1500 * global.scenario_config.gen_settings.moat_size_modifier)) and (distVar > tileRadSqr)) then
+            if ((distVar < tileRadSqr + (1500 * scenario_config.gen_settings.moat_size_modifier)) and (distVar > tileRadSqr)) then
                 table_insert(waterTiles, {name = 'water', position = {i, j}})
             end
         end
@@ -973,9 +966,10 @@ function Public.GenerateResourcePatch(surface, resourceName, diameter, pos, amou
     if (diameter == 0) then
         return
     end
+    local scenario_config = MT.get('scenario_config')
     for y = -midPoint, midPoint do
         for x = -midPoint, midPoint do
-            if (not global.scenario_config.gen_settings.resources_circle_shape or ((x) ^ 2 + (y) ^ 2 < midPoint ^ 2)) then
+            if (not scenario_config.gen_settings.resources_circle_shape or ((x) ^ 2 + (y) ^ 2 < midPoint ^ 2)) then
                 surface.create_entity(
                     {
                         name = resourceName,
@@ -992,7 +986,8 @@ end
 -- Holding pen for new players joining the map
 --------------------------------------------------------------------------------
 function Public.CreateWall(surface, pos)
-    local wall = surface.create_entity({name = 'stone-wall', position = pos, force = global.main_force_name})
+    local main_force_name = MT.get('main_force_name')
+    local wall = surface.create_entity({name = 'stone-wall', position = pos, force = main_force_name})
     if wall then
         wall.destructible = false
         wall.minable = false
@@ -1000,10 +995,10 @@ function Public.CreateWall(surface, pos)
 end
 
 function Public.CreateHoldingPen(surface, chunkArea, sizeTiles, sizeMoat)
-    local global_data = MPS.get()
+    local this = MT.get()
     if
-        (((chunkArea.left_top.x >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and (chunkArea.left_top.x <= (sizeTiles + sizeMoat + global_data.chunk_size))) and
-            ((chunkArea.left_top.y >= -(sizeTiles + sizeMoat + global_data.chunk_size)) and (chunkArea.left_top.y <= (sizeTiles + sizeMoat + global_data.chunk_size))))
+        (((chunkArea.left_top.x >= -(sizeTiles + sizeMoat + this.chunk_size)) and (chunkArea.left_top.x <= (sizeTiles + sizeMoat + this.chunk_size))) and
+            ((chunkArea.left_top.y >= -(sizeTiles + sizeMoat + this.chunk_size)) and (chunkArea.left_top.y <= (sizeTiles + sizeMoat + this.chunk_size))))
      then
         -- Remove stuff
         Public.RemoveAliensInArea(surface, chunkArea)
@@ -1040,7 +1035,8 @@ end
 -- Display messages to a user everytime they join
 function Public.PlayerJoinedMessages(event)
     local player = game.players[event.player_index]
-    player.print(global.welcome_msg)
+    local welcome_msg = MT.get('welcome_msg')
+    player.print(welcome_msg)
 end
 
 -- Remove decor to save on file size

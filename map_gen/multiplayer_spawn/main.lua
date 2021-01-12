@@ -22,17 +22,19 @@ local market_items = require 'features.modules.map_market_items'
 local Ores = require 'features.modules.scramble'
 local Autostash = require 'features.modules.autostash'
 local Map = require 'features.modules.map_info'
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
-local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
-local R_launch = require 'map_gen.multiplayer_spawn.lib.rocket_launch'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
+local Silo = require 'map_gen.multiplayer_spawn.frontier_silo'
+local R_launch = require 'map_gen.multiplayer_spawn.rocket_launch'
 local Surface = require 'utils.surface'
-local SS = require 'map_gen.multiplayer_spawn.lib.separate_spawns'
+local SS = require 'map_gen.multiplayer_spawn.separate_spawns'
 local Alert = require 'utils.alert'
+local MT = require 'map_gen.multiplayer_spawn.table'
 
 local math_random = math.random
 
 local function on_start()
     Autostash.insert_into_furnace(true)
+    local this = MT.get()
     local T = Map.Pop_info()
     T.main_caption = 'Shrine of the Ancients'
     T.sub_caption = '    launch the rocket!    '
@@ -67,35 +69,36 @@ local function on_start()
 
     Utils.CreateGameSurface()
 
-    for k, v in pairs(global.scenario_config.resource_tiles_new) do
+    for k, v in pairs(this.scenario_config.resource_tiles_new) do
         v.amount = 10000
         v.size = 35
     end
 
-    global.scenario_config.pos = {{x = -60, y = -45}, {x = -20, y = -45}, {x = 20, y = -45}, {x = 60, y = -45}}
-    global.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 85
-    global['scenario_config'].water_new.x_offset = -100
+    this.scenario_config.pos = {{x = -60, y = -45}, {x = -20, y = -45}, {x = 20, y = -45}, {x = 60, y = -45}}
+    this.scenario_config.resource_patches_new['crude-oil'].x_offset_start = 85
+    this.scenario_config.water_new.x_offset = -100
 
     -- MUST be before other stuff, but after surface creation.
     SS.InitSpawnGlobalsAndForces()
 
-    if global.enable_town_shape then
-        global.enable_buddy_spawn = false
+    if this.enable_town_shape then
+        this.enable_buddy_spawn = false
     end
 
     -- Frontier Silo Area Generation
-    if (global.frontier_rocket_silo_mode) then
+    if (this.frontier_rocket_silo_mode) then
         Silo.SpawnSilosAndGenerateSiloAreas()
     end
     -- Everyone do the shuffle. Helps avoid always starting at the same location.
-    global.vanillaSpawns = Utils.shuffle(global.vanillaSpawns)
+    this.vanillaSpawns = Utils.shuffle(this.vanillaSpawns)
 end
 Event.on_init(on_start)
 
 Event.add(
     defines.events.on_rocket_launched,
     function(event)
-        if global.frontier_rocket_silo_mode then
+        local frontier_rocket_silo_mode = MT.get('frontier_rocket_silo_mode')
+        if frontier_rocket_silo_mode then
             R_launch.RocketLaunchEvent(event)
         end
     end
@@ -117,11 +120,13 @@ Event.add(
     defines.events.on_chunk_generated,
     function(event)
         if event.surface.name == 'wbtc' then
-            if global.enable_scramble then
+            local enable_scramble = MT.get('enable_scramble')
+            local enable_undecorator = MT.get('enable_undecorator')
+            if enable_scramble then
                 Ores.scramble(event)
             end
 
-            if global.enable_undecorator then
+            if enable_undecorator then
                 Utils.UndecorateOnChunkGenerate(event)
             end
 
@@ -173,7 +178,9 @@ Event.add(
         local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
         player.teleport(pos, surface_name)
 
-        if global.enable_longreach then
+        local enable_longreach = MT.get('enable_longreach')
+
+        if enable_longreach then
             Utils.GivePlayerLongReach(player)
         end
 
@@ -190,7 +197,9 @@ Event.add(
 
         Utils.PlayerRespawnItems(event)
 
-        if global.enable_longreach then
+        local enable_longreach = MT.get('enable_longreach')
+
+        if enable_longreach then
             Utils.GivePlayerLongReach(player)
         end
     end
@@ -206,7 +215,8 @@ Event.add(
 Event.add(
     defines.events.on_built_entity,
     function(event)
-        if global.frontier_rocket_silo_mode then
+        local frontier_rocket_silo_mode = MT.get('frontier_rocket_silo_mode')
+        if frontier_rocket_silo_mode then
             Silo.BuildSiloAttempt(event)
         end
     end
@@ -218,32 +228,37 @@ Event.add(
         SS.DelayedSpawnOnTick()
         local surface_name = Surface.get_surface_name()
 
-        if global.frontier_rocket_silo_mode then
+        local frontier_rocket_silo_mode = MT.get('frontier_rocket_silo_mode')
+
+        if frontier_rocket_silo_mode then
             Silo.DelayedSiloCreationOnTick(game.surfaces[surface_name])
         end
 
-        if global.enable_market then
+        local enable_market = MT.get('enable_market')
+
+        if enable_market then
             if game.tick == 150 then
+                local this = MT.get()
                 local surface = game.surfaces[surface_name]
                 local pos = {{x = -10, y = -10}, {x = 10, y = 10}, {x = -10, y = -10}, {x = 10, y = -10}}
                 local _pos = Utils.shuffle(pos)
                 local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
 
-                global.market = surface.create_entity {name = 'market', position = p, force = global.main_force_name}
+                this.market = surface.create_entity {name = 'market', position = p, force = this.main_force_name}
 
                 rendering.draw_text {
                     text = 'Market',
                     surface = surface,
-                    target = global.market,
+                    target = this.market,
                     target_offset = {0, 2},
                     color = {r = 0.98, g = 0.66, b = 0.22},
                     alignment = 'center'
                 }
 
-                global.market.destructible = false
+                this.market.destructible = false
 
                 for _, item in pairs(market_items.spawn) do
-                    global.market.add_market_item(item)
+                    this.market.add_market_item(item)
                 end
             end
         end
@@ -276,7 +291,8 @@ Event.add(
 Event.add(
     defines.events.on_robot_built_entity,
     function(event)
-        if global.frontier_rocket_silo_mode then
+        local frontier_rocket_silo_mode = MT.get('frontier_rocket_silo_mode')
+        if frontier_rocket_silo_mode then
             local e = event.entity
             if e and e.valid then
                 Silo.BuildSiloAttempt(event)
@@ -292,7 +308,8 @@ Event.add(
 Event.add(
     defines.events.on_console_chat,
     function(event)
-        if (global.team_chat) then
+        local team_chat = MT.get('team_chat')
+        if (team_chat) then
             if (event.player_index ~= nil) then
                 Utils.ShareChatBetweenForces(game.players[event.player_index], event.message)
             end
@@ -316,16 +333,21 @@ Event.add(
             game.forces[force_name].play_sound {path = 'utility/new_objective', volume_modifier = 0.75}
         end
 
+        local frontier_rocket_silo_mode = MT.get('frontier_rocket_silo_mode')
+        local enable_silo_player_build = MT.get('enable_silo_player_build')
+        local enable_loaders = MT.get('enable_loaders')
+        local disable_nukes = MT.get('disable_nukes')
+
         -- Never allows players to build rocket-silos in "frontier" mode.
-        if global.frontier_rocket_silo_mode and not global.enable_silo_player_build then
+        if frontier_rocket_silo_mode and not enable_silo_player_build then
             Utils.RemoveRecipe(event.research.force, 'rocket-silo')
         end
 
-        if global.enable_loaders then
+        if enable_loaders then
             Utils.EnableLoaders(event)
         end
 
-        if global.disable_nukes then
+        if disable_nukes then
             Utils.DisableTech(research.force, 'atomic-bomb')
         end
     end
@@ -338,7 +360,8 @@ Event.add(
 Event.add(
     defines.events.on_entity_spawned,
     function(event)
-        if (global.modded_enemy) then
+        local modded_enemy = MT.get('modded_enemy')
+        if (modded_enemy) then
             SS.ModifyEnemySpawnsNearPlayerStartingAreas(event)
         end
     end
@@ -346,7 +369,8 @@ Event.add(
 Event.add(
     defines.events.on_biter_base_built,
     function(event)
-        if (global.modded_enemy) then
+        local modded_enemy = MT.get('modded_enemy')
+        if (modded_enemy) then
             SS.ModifyEnemySpawnsNearPlayerStartingAreas(event)
         end
     end
@@ -363,16 +387,16 @@ Event.add(
     end
 )
 
---[[
-setmetatable(_G, {
-    __newindex = function(_, n, v)
-        log ("Desync warning: attempt to write to undeclared var " .. n)
-        --game.print ("Attempt to write to undeclared var " .. n)
-        global[n] = v;
-    end,
-    __index = function(_, n)
-        return global[n];
-    end
-})
-]]
---
+setmetatable(
+    _G,
+    {
+        __newindex = function(_, n, v)
+            log('Desync warning: attempt to write to undeclared var ' .. n)
+            --game.print ("Attempt to write to undeclared var " .. n)
+            global[n] = v
+        end,
+        __index = function(_, n)
+            return global[n]
+        end
+    }
+)

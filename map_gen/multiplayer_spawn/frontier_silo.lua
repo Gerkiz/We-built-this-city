@@ -3,9 +3,9 @@
 -- My take on frontier silos for my Oarc scenario
 
 require('map_gen.multiplayer_spawn.config')
-local Utils = require('map_gen.multiplayer_spawn.lib.oarc_utils')
+local Utils = require('map_gen.multiplayer_spawn.oarc_utils')
 local Surface = require 'utils.surface'
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
+local MT = require 'map_gen.multiplayer_spawn.table'
 
 --------------------------------------------------------------------------------
 -- Frontier style rocket silo stuff
@@ -14,14 +14,15 @@ local MPS = require 'map_gen.multiplayer_spawn.lib.table'
 local Public = {}
 
 function Public.SpawnSilosAndGenerateSiloAreas()
+    local this = MT.get()
     -- Special silo islands mode "boogaloo"
-    if (global.silo_island_mode) then
+    if (this.silo_island_mode) then
         -- A set of fixed silo positions
-        local num_spawns = #global.vanillaSpawns
+        local num_spawns = #this.vanillaSpawns
         local new_spawn_list = {}
 
         -- Pick out every OTHER vanilla spawn for the rocket silos.
-        for k, v in pairs(global.vanillaSpawns) do
+        for k, v in pairs(this.vanillaSpawns) do
             if ((k <= num_spawns / 2) and (k % 2 == 1)) then
                 Public.SetFixedSiloPosition({x = v.x, y = v.y})
             elseif ((k > num_spawns / 2) and (k % 2 == 0)) then
@@ -30,14 +31,14 @@ function Public.SpawnSilosAndGenerateSiloAreas()
                 table.insert(new_spawn_list, v)
             end
         end
-        global.vanillaSpawns = new_spawn_list
-    elseif (global.silo_fixed_pos) then
+        this.vanillaSpawns = new_spawn_list
+    elseif (this.silo_fixed_pos) then
         -- Random locations on a circle.
-        for k, v in pairs(global.silo_pos) do
+        for k, v in pairs(this.silo_pos) do
             Public.SetFixedSiloPosition(v)
         end
     else
-        Public.SetRandomSiloPosition(global.silo_spawns)
+        Public.SetRandomSiloPosition(this.silo_spawns)
     end
 
     local surface = Surface.get_surface_name()
@@ -46,39 +47,40 @@ function Public.SpawnSilosAndGenerateSiloAreas()
     Public.GenerateRocketSiloAreas(game.surfaces[surface])
 end
 
--- This creates a random silo position, stored to global.siloPosition
--- It uses the config setting global.silo_distance and spawns the
+-- This creates a random silo position, stored to this.siloPosition
+-- It uses the config setting this.silo_distance and spawns the
 -- silo somewhere on a circle edge with radius using that distance.
 function Public.SetRandomSiloPosition(num_silos)
-    local global_data = MPS.get()
-    if (global.siloPosition == nil) then
-        global.siloPosition = {}
+    local this = MT.get()
+    if (this.siloPosition == nil) then
+        this.siloPosition = {}
     end
 
-    global_data.random_angle_offset = math.random(0, math.pi * 2)
+    this.random_angle_offset = math.random(0, math.pi * 2)
 
     for i = 1, num_silos do
-        global_data.theta = ((math.pi * 2) / num_silos)
-        global_data.angle = (global_data.theta * i) + global_data.random_angle_offset
+        this.theta = ((math.pi * 2) / num_silos)
+        this.angle = (this.theta * i) + this.random_angle_offset
 
-        global_data.tx = (global.silo_distance * global_data.chunk_size * math.cos(global_data.angle))
-        global_data.ty = (global.silo_distance * global_data.chunk_size * math.sin(global_data.angle))
+        this.tx = (this.silo_distance * this.chunk_size * math.cos(this.angle))
+        this.ty = (this.silo_distance * this.chunk_size * math.sin(this.angle))
 
-        table.insert(global.siloPosition, {x = math.floor(global_data.tx), y = math.floor(global_data.ty)})
+        table.insert(this.siloPosition, {x = math.floor(this.tx), y = math.floor(this.ty)})
 
-        --log("Silo position: " .. global_data.tx .. ", " .. global_data.ty .. ", " .. global_data.angle)
+        --log("Silo position: " .. this.tx .. ", " .. this.ty .. ", " .. this.angle)
     end
 end
 
--- Sets the global.siloPosition var to the set in the config file
+-- Sets the this.siloPosition var to the set in the config file
 function Public.SetFixedSiloPosition(pos)
-    table.insert(global.siloPosition, pos)
+    local this = MT.get()
+    table.insert(this.siloPosition, pos)
 end
 
 -- Create a rocket silo at the specified positionmmmm
 -- Also makes sure tiles and entities are cleared if required.
 local function CreateRocketSilo(surface, siloPosition, force)
-    local global_data = MPS.get()
+    local this = MT.get()
 
     -- Delete any entities beneath the silo?
     for _, entity in pairs(
@@ -103,12 +105,12 @@ local function CreateRocketSilo(surface, siloPosition, force)
         surface.find_entities_filtered {
             area = {
                 {
-                    siloPosition.x - (global_data.chunk_size * 4),
-                    siloPosition.y - (global_data.chunk_size * 4)
+                    siloPosition.x - (this.chunk_size * 4),
+                    siloPosition.y - (this.chunk_size * 4)
                 },
                 {
-                    siloPosition.x + (global_data.chunk_size * 4),
-                    siloPosition.y + (global_data.chunk_size * 4)
+                    siloPosition.x + (this.chunk_size * 4),
+                    siloPosition.y + (this.chunk_size * 4)
                 }
             },
             force = 'enemy'
@@ -125,7 +127,7 @@ local function CreateRocketSilo(surface, siloPosition, force)
                 table.insert(
                     tiles,
                     {
-                        name = global.ocfg.locked_build_area_tile,
+                        name = this.ocfg.locked_build_area_tile,
                         position = {siloPosition.x + dx, siloPosition.y + dy}
                     }
                 )
@@ -153,7 +155,7 @@ local function CreateRocketSilo(surface, siloPosition, force)
     surface.set_tiles(tiles, true)
 
     -- Create indestructible silo and assign to a force
-    if not global.enable_silo_player_build then
+    if not this.enable_silo_player_build then
         local silo =
             surface.create_entity {
             name = 'rocket-silo',
@@ -165,7 +167,7 @@ local function CreateRocketSilo(surface, siloPosition, force)
     end
 
     -- TAG it on the main force at least.
-    game.forces[global.main_force_name].add_chart_tag(
+    game.forces[this.main_force_name].add_chart_tag(
         surface,
         {
             position = siloPosition,
@@ -174,20 +176,21 @@ local function CreateRocketSilo(surface, siloPosition, force)
         }
     )
 
-    if global.enable_silo_beacon then
-        Public.PhilipsBeacons(surface, siloPosition, game.forces[global.main_force_name])
+    if this.enable_silo_beacon then
+        Public.PhilipsBeacons(surface, siloPosition, game.forces[this.main_force_name])
     end
-    if global.enable_silo_radar then
-        Public.PhilipsRadar(surface, siloPosition, game.forces[global.main_force_name])
+    if this.enable_silo_radar then
+        Public.PhilipsRadar(surface, siloPosition, game.forces[this.main_force_name])
     end
 end
 
 -- Generates all rocket silos, should be called after the areas are generated
 -- Includes a crop circle
 function Public.GenerateAllSilos(surface)
+    local this = MT.get()
     -- Create each silo in the list
-    for _, siloPos in pairs(global.siloPosition) do
-        CreateRocketSilo(surface, siloPos, global.main_force_name)
+    for _, siloPos in pairs(this.siloPosition) do
+        CreateRocketSilo(surface, siloPos, this.main_force_name)
     end
 end
 
@@ -215,7 +218,9 @@ function Public.BuildSiloAttempt(event)
     -- Check if it's in the right area.
     local epos = event.created_entity.position
 
-    for k, v in pairs(global.siloPosition) do
+    local this = MT.get()
+
+    for k, v in pairs(this.siloPosition) do
         if (Utils.getDistance(epos, v) < 5) then
             Utils.SendBroadcastMsg('Rocket silo has been built!')
             return
@@ -230,34 +235,32 @@ function Public.BuildSiloAttempt(event)
         else
             event.created_entity.last_user.mine_entity(event.created_entity, true)
         end
-    else
-        --log("ERROR! Rocket-silo had no valid last user?!?!")
     end
 end
 
 -- Generate clean land and trees around silo area on chunk generate event
 function Public.GenerateRocketSiloChunk(event)
-    local global_data = MPS.get()
+    local this = MT.get()
 
     -- Silo generation can take awhile depending on the number of silos.
-    if (game.tick < #global.siloPosition * 10 * global_data.ticks_per_second) then
+    if (game.tick < #this.siloPosition * 10 * this.ticks_per_second) then
         local surface = event.surface
         local chunkArea = event.area
 
         local chunkAreaCenter = {
-            x = chunkArea.left_top.x + (global_data.chunk_size / 2),
-            y = chunkArea.left_top.y + (global_data.chunk_size / 2)
+            x = chunkArea.left_top.x + (this.chunk_size / 2),
+            y = chunkArea.left_top.y + (this.chunk_size / 2)
         }
 
-        for i, siloPos in pairs(global.siloPosition) do
+        for i, siloPos in pairs(this.siloPosition) do
             local safeArea = {
                 left_top = {
-                    x = siloPos.x - (global_data.chunk_size * 4),
-                    y = siloPos.y - (global_data.chunk_size * 4)
+                    x = siloPos.x - (this.chunk_size * 4),
+                    y = siloPos.y - (this.chunk_size * 4)
                 },
                 right_bottom = {
-                    x = siloPos.x + (global_data.chunk_size * 4),
-                    y = siloPos.y + (global_data.chunk_size * 4)
+                    x = siloPos.x + (this.chunk_size * 4),
+                    y = siloPos.y + (this.chunk_size * 4)
                 }
             }
 
@@ -268,13 +271,13 @@ function Public.GenerateRocketSiloChunk(event)
                 end
 
                 -- Remove trees/resources inside the spawn area
-                Utils.RemoveInCircle(surface, chunkArea, 'tree', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
-                Utils.RemoveInCircle(surface, chunkArea, 'resource', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
-                Utils.RemoveInCircle(surface, chunkArea, 'cliff', siloPos, global.scenario_config.gen_settings.land_area_tiles + 5)
+                Utils.RemoveInCircle(surface, chunkArea, 'tree', siloPos, this.scenario_config.gen_settings.land_area_tiles + 5)
+                Utils.RemoveInCircle(surface, chunkArea, 'resource', siloPos, this.scenario_config.gen_settings.land_area_tiles + 5)
+                Utils.RemoveInCircle(surface, chunkArea, 'cliff', siloPos, this.scenario_config.gen_settings.land_area_tiles + 5)
                 Utils.RemoveDecorationsArea(surface, chunkArea)
 
                 -- Create rocket silo
-                Utils.CreateCropOctagon(surface, siloPos, chunkArea, global_data.chunk_size * 2, 'grass-1')
+                Utils.CreateCropOctagon(surface, siloPos, chunkArea, this.chunk_size * 2, 'grass-1')
             end
         end
     end
@@ -282,43 +285,43 @@ end
 
 -- Generate chunks where we plan to place the rocket silos.
 function Public.GenerateRocketSiloAreas(surface)
-    for _, siloPos in pairs(global.siloPosition) do
+    local this = MT.get()
+    for _, siloPos in pairs(this.siloPosition) do
         surface.request_to_generate_chunks({siloPos.x, siloPos.y}, 3)
     end
-    if (global.enable_silo_vision) then
-        Public.ChartRocketSiloAreas(surface, game.forces[global.main_force_name])
+    if (this.enable_silo_vision) then
+        Public.ChartRocketSiloAreas(surface, game.forces[this.main_force_name])
     end
 end
 
 -- Chart chunks where we plan to place the rocket silos.
 function Public.ChartRocketSiloAreas(surface, force)
-    local global_data = MPS.get()
-    for _, siloPos in pairs(global.siloPosition) do
+    local this = MT.get()
+    for _, siloPos in pairs(this.siloPosition) do
         force.chart(
             surface,
             {
                 {
-                    siloPos.x - (global_data.chunk_size * 2),
-                    siloPos.y - (global_data.chunk_size * 2)
+                    siloPos.x - (this.chunk_size * 2),
+                    siloPos.y - (this.chunk_size * 2)
                 },
                 {
-                    siloPos.x + (global_data.chunk_size * 2),
-                    siloPos.y + (global_data.chunk_size * 2)
+                    siloPos.x + (this.chunk_size * 2),
+                    siloPos.y + (this.chunk_size * 2)
                 }
             }
         )
     end
 end
 
-global.oarc_silos_generated = false
 function Public.DelayedSiloCreationOnTick(surface)
-    local global_data = MPS.get()
+    local this = MT.get()
 
     -- Delay the creation of the silos so we place them on already generated lands.
-    if (not global.oarc_silos_generated and (game.tick >= #global.siloPosition * 10 * global_data.ticks_per_second)) then
+    if (not this.oarc_silos_generated and (game.tick >= #this.siloPosition * 10 * this.ticks_per_second)) then
         --log("Frontier silos generated!")
         Utils.SendBroadcastMsg('Rocket silos are now available and can be built!')
-        global.oarc_silos_generated = true
+        this.oarc_silos_generated = true
         Public.GenerateAllSilos(surface)
     end
 end

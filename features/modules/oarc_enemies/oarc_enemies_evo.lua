@@ -2,7 +2,7 @@
 -- Aug 2019
 -- Stuff related to calculating group size and evo values.
 
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
+local MPS = require 'map_gen.multiplayer_spawn.table'
 local OE_Table = require 'features.modules.oarc_enemies.table'
 
 local Public = {}

@@ -30,8 +30,8 @@ local function create_time_gui(player)
     frame.style.maximal_height = 38
 
     local night_count = 0
-    if global.night_count then
-        night_count = global.night_count
+    if this.night_count then
+        night_count = this.night_count
     end
 
     local label = frame.add({type = 'label', caption = 'Night: ' .. night_count})
@@ -218,27 +218,27 @@ local function get_spawner(surface)
     end
     spawners = shuffle(spawners)
 
-    if not global.last_spawners then
-        global.last_spawners = {{x = spawners[1].position.x, y = spawners[1].position.y}}
+    if not this.last_spawners then
+        this.last_spawners = {{x = spawners[1].position.x, y = spawners[1].position.y}}
         return spawners[1]
     end
 
     for i = 1, #spawners, 1 do
         local spawner_valid = true
-        for i2 = #global.last_spawners, #global.last_spawners - 4, -1 do
+        for i2 = #this.last_spawners, #this.last_spawners - 4, -1 do
             if i2 < 1 then
                 break
             end
-            local distance = math.sqrt((spawners[i].position.x - global.last_spawners[i2].x) ^ 2 + (spawners[i].position.y - global.last_spawners[i2].y) ^ 2)
+            local distance = math.sqrt((spawners[i].position.x - this.last_spawners[i2].x) ^ 2 + (spawners[i].position.y - this.last_spawners[i2].y) ^ 2)
             if distance < 200 then
                 spawner_valid = false
                 break
             end
         end
         if spawner_valid then
-            global.last_spawners[#global.last_spawners + 1] = {x = spawners[i].position.x, y = spawners[i].position.y}
-            if #global.last_spawners > 8 then
-                global.last_spawners[#global.last_spawners - 8] = nil
+            this.last_spawners[#this.last_spawners + 1] = {x = spawners[i].position.x, y = spawners[i].position.y}
+            if #this.last_spawners > 8 then
+                this.last_spawners[#this.last_spawners - 8] = nil
             end
             return spawners[i]
         end
@@ -267,7 +267,7 @@ local function send_attack_group(surface)
 
     local unit_group = surface.create_unit_group({position = pos, force = 'enemy'})
 
-    local group_size = 6 + (global.night_count * 6)
+    local group_size = 6 + (this.night_count * 6)
     if group_size > 200 then
         group_size = 200
     end
@@ -279,7 +279,7 @@ local function send_attack_group(surface)
         unit_group.add_member(biters[i])
     end
 
-    if global.rocket_silo.valid then
+    if this.rocket_silo.valid then
         unit_group.set_command(
             {
                 type = defines.command.compound,
@@ -293,7 +293,7 @@ local function send_attack_group(surface)
                     },
                     {
                         type = defines.command.attack,
-                        target = global.rocket_silo,
+                        target = this.rocket_silo,
                         distraction = defines.distraction.by_enemy
                     }
                 }
@@ -342,11 +342,11 @@ local function set_nighttime_modifiers(surface)
         return
     end
 
-    if not global.night_count then
-        --global.splice_modifier = 1
-        global.night_count = 1
+    if not this.night_count then
+        --this.splice_modifier = 1
+        this.night_count = 1
     else
-        global.night_count = global.night_count + 1
+        this.night_count = this.night_count + 1
     end
 
     for _, player in pairs(game.connected_players) do
@@ -356,31 +356,31 @@ local function set_nighttime_modifiers(surface)
     surface.peaceful_mode = false
     game.map_settings.enemy_expansion.enabled = true
 
-    local max_expansion_distance = math.ceil(global.night_count / 3)
+    local max_expansion_distance = math.ceil(this.night_count / 3)
     if max_expansion_distance > 20 then
         max_expansion_distance = 20
     end
     game.map_settings.enemy_expansion.max_expansion_distance = max_expansion_distance
 
-    local settler_group_min_size = math.ceil(global.night_count / 6)
+    local settler_group_min_size = math.ceil(this.night_count / 6)
     if settler_group_min_size > 20 then
         settler_group_min_size = 20
     end
     game.map_settings.enemy_expansion.settler_group_min_size = settler_group_min_size
 
-    local settler_group_max_size = math.ceil(global.night_count / 3)
+    local settler_group_max_size = math.ceil(this.night_count / 3)
     if settler_group_max_size > 50 then
         settler_group_max_size = 50
     end
     game.map_settings.enemy_expansion.settler_group_max_size = settler_group_max_size
 
-    local min_expansion_cooldown = 54000 - global.night_count * 540
+    local min_expansion_cooldown = 54000 - this.night_count * 540
     if min_expansion_cooldown < 3600 then
         min_expansion_cooldown = 3600
     end
     game.map_settings.enemy_expansion.min_expansion_cooldown = min_expansion_cooldown
 
-    local max_expansion_cooldown = 108000 - global.night_count * 1080
+    local max_expansion_cooldown = 108000 - this.night_count * 1080
     if max_expansion_cooldown < 3600 then
         max_expansion_cooldown = 3600
     end
@@ -472,8 +472,8 @@ local function generate_spawn_area(surface)
         end
     end
 
-    global.rocket_silo = surface.create_entity({name = 'rocket-silo', position = {0, 0}, force = 'player'})
-    global.rocket_silo.minable = false
+    this.rocket_silo = surface.create_entity({name = 'rocket-silo', position = {0, 0}, force = 'player'})
+    this.rocket_silo.minable = false
 
     local p = game.permissions.get_group('Default')
     p.set_allows_action(defines.input_action.start_walking, true)
@@ -488,9 +488,9 @@ local function on_chunk_generated(event)
     local tiles = {}
 
     if left_top.x > 160 then
-        if not global.spawn_generated then
+        if not this.spawn_generated then
             generate_spawn_area(surface)
-            global.spawn_generated = true
+            this.spawn_generated = true
         end
     end
 
@@ -501,7 +501,7 @@ local function on_chunk_generated(event)
             local pos = {x = left_top.x + x, y = left_top.y + y}
 
             local tile_to_insert = false
-            if global.out_of_map_position == 1 then
+            if this.out_of_map_position == 1 then
                 if pos.x > out_of_map_start then
                     tile_to_insert = 'out-of-map'
                 end
@@ -509,7 +509,7 @@ local function on_chunk_generated(event)
                     tile_to_insert = 'out-of-map'
                 end
             end
-            if global.out_of_map_position == 2 then
+            if this.out_of_map_position == 2 then
                 if pos.x < out_of_map_start * -1 then
                     tile_to_insert = 'out-of-map'
                 end
@@ -517,7 +517,7 @@ local function on_chunk_generated(event)
                     tile_to_insert = 'out-of-map'
                 end
             end
-            if global.out_of_map_position == 3 then
+            if this.out_of_map_position == 3 then
                 if pos.x > out_of_map_start then
                     tile_to_insert = 'out-of-map'
                 end
@@ -525,7 +525,7 @@ local function on_chunk_generated(event)
                     tile_to_insert = 'out-of-map'
                 end
             end
-            if global.out_of_map_position == 4 then
+            if this.out_of_map_position == 4 then
                 if pos.y > out_of_map_start then
                     tile_to_insert = 'out-of-map'
                 end
@@ -552,8 +552,8 @@ end
 local function on_entity_damaged(event)
     if event.cause then
         if event.cause.force.name == 'enemy' then
-            if global.night_count then
-                event.entity.health = event.entity.health - (event.final_damage_amount * global.night_count * 0.05)
+            if this.night_count then
+                event.entity.health = event.entity.health - (event.final_damage_amount * this.night_count * 0.05)
                 if event.entity.health <= 0 then
                     event.entity.die()
                 end
@@ -564,7 +564,7 @@ local function on_entity_damaged(event)
         end
     end
     if event.entity.valid then
-        if event.entity == global.rocket_silo then
+        if event.entity == this.rocket_silo then
             event.entity.health = event.entity.health + event.final_damage_amount
         end
     end
@@ -589,8 +589,8 @@ local function on_player_joined_game(event)
     local player = game.players[event.player_index]
     local surface = game.surfaces[Surface]
 
-    if not global.fish_defense_init_done then
-        global.out_of_map_position = math_random(1, 4)
+    if not this.fish_defense_init_done then
+        this.out_of_map_position = math_random(1, 4)
 
         surface.ticks_per_day = surface.ticks_per_day * 2
 
@@ -605,7 +605,7 @@ local function on_player_joined_game(event)
 
         game.forces.player.set_ammo_damage_modifier('shotgun-shell', 1)
 
-        global.fish_defense_init_done = true
+        this.fish_defense_init_done = true
     end
 
     create_time_gui(player)

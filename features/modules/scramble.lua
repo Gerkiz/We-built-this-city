@@ -6,7 +6,7 @@ local Public = {}
 local insert = table.insert
 
 local this = {
-    diversity_quote = 0.50,
+    diversity_quote = 1,
     exempt_area = 200,
     stone_byproduct = false,
     stone_byproduct_ratio = 0.25,
@@ -29,7 +29,14 @@ local function init()
 end
 
 function Public.scramble(event)
-    local ores = event.surface.find_entities_filtered {type = 'resource', area = event.area}
+    local surface = event.surface
+    if not surface then
+        return
+    end
+
+    local area = event.area
+
+    local ores = surface.find_entities_filtered {type = 'resource', area = area}
     for k, v in pairs(ores) do
         if math.abs(v.position.x) > this.exempt_area or math.abs(v.position.y) > this.exempt_area then
             if v.prototype.resource_category == 'basic-solid' then
@@ -38,10 +45,10 @@ function Public.scramble(event)
                     v.destroy()
                 elseif random < this.diversity_quote then --Replace!
                     local o = this.diverse_ores[math.random(#this.diverse_ores)]
-                    event.surface.create_entity {name = o, position = v.position, amount = v.amount}
+                    surface.create_entity {name = o, position = v.position, amount = v.amount}
                     v.destroy()
                 elseif this.stone_byproduct and random < this.stone_byproduct_ratio then
-                    event.surface.create_entity {name = 'stone', position = v.position, amount = v.amount}
+                    surface.create_entity {name = 'stone', position = v.position, amount = v.amount}
                     v.destroy()
                 end
             end

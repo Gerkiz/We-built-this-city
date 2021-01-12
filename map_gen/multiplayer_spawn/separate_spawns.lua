@@ -1,15 +1,15 @@
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
-local UtilsGui = require 'map_gen.multiplayer_spawn.lib.oarc_gui_utils'
-local Silo = require 'map_gen.multiplayer_spawn.lib.frontier_silo'
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
+local UtilsGui = require 'map_gen.multiplayer_spawn.oarc_gui_utils'
+local Silo = require 'map_gen.multiplayer_spawn.frontier_silo'
+local MT = require 'map_gen.multiplayer_spawn.table'
 local Surface = require 'utils.surface'
 local Gui = require 'utils.gui.core'
 require 'map_gen.multiplayer_spawn.config'
 
 local Public = {}
-Public.removal = {}
 
 local main_style = 'changelog_subheader_frame'
+local insert = table.insert
 
 --------------------------------------------------------------------------------
 -- EVENT RELATED FUNCTIONS
@@ -20,6 +20,7 @@ local main_style = 'changelog_subheader_frame'
 -- without shouting.
 function Public.SeparateSpawnsPlayerCreated(player_index)
     local player = game.players[player_index]
+    local this = MT.get()
 
     -- Make sure spawn control tab is disabled
     Gui.set_tab(player, 'Spawn Controls', false)
@@ -31,7 +32,7 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
     end
 
     if game.forces[player.name] then
-        game.merge_forces(player.name, global.main_force_name)
+        game.merge_forces(player.name, this.main_force_name)
     end
 
     local i = player.get_main_inventory()
@@ -57,8 +58,10 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
         end
     end
 
-    player.force = global.main_force_name
+    player.force = this.main_force_name
     Public.DisplayWelcomeTextGui(player)
+
+    return this.main_force_name
 end
 
 -- Check if the player has a different spawn point than the default one
@@ -73,9 +76,10 @@ end
 function Public.SeparateSpawnsGenerateChunk(event)
     local surface = event.surface
     local chunkArea = event.area
+    local this = MT.get()
 
     -- Modify enemies first.
-    if global.modded_enemy then
+    if this.modded_enemy then
         Utils.DowngradeWormsDistanceBasedOnChunkGenerate(event)
     end
 
@@ -85,42 +89,40 @@ function Public.SeparateSpawnsGenerateChunk(event)
     Public.SetupAndClearSpawnAreas(surface, chunkArea)
 end
 
-function Public.Remove_area(pos, chunk_radius)
-    local data = Public.removal
+local function remove_area(pos, chunk_radius)
+    local data = {}
     local c_pos = Utils.GetChunkPosFromTilePos(pos)
     for i = -chunk_radius, chunk_radius do
         for k = -chunk_radius, chunk_radius do
             local x = c_pos.x + i
             local y = c_pos.y + k
-            table.insert(data, {pos = {x = x, y = y}})
+            insert(data, {pos = {x = x, y = y}})
         end
     end
-end
 
-function Public.Init_remove()
-    local data = Public.removal
-    local surface_name = Surface.get_surface_name()
-    while (#data > 0) do
-        local c_remove = table.remove(data)
-        local c_pos = c_remove.pos
-        game.surfaces[surface_name].delete_chunk(c_pos)
+    local function init_remove()
+        local surface_name = Surface.get_surface_name()
+        while (#data > 0) do
+            local c_remove = table.remove(data)
+            local remove_pos = c_remove.pos
+            game.surfaces[surface_name].delete_chunk(remove_pos)
+        end
     end
+
+    init_remove()
 end
 
 -- Call this if a player leaves the game or is reset
 function Public.FindUnusedSpawns(player, remove_player)
-    local global_data = MPS.get()
     local surface_name = Surface.get_surface_name()
     if not player then
         log('ERROR - FindUnusedSpawns on NIL Player!')
         return
     end
 
-    if #global.delayedSpawns <= 0 then
-        return
-    end
+    local this = MT.get()
 
-    if (player.online_time < (global.min_online * global_data.ticks_per_minute)) then
+    if (player.online_time < (this.min_online * this.ticks_per_minute)) then
         -- If this player is staying in the game, lets make sure we don't delete them
         -- along with the map chunks being cleared.
         player.teleport({x = 0, y = 0}, surface_name)
@@ -129,21 +131,21 @@ function Public.FindUnusedSpawns(player, remove_player)
         end
 
         -- Clear out global variables for that player
-        if (global.playerSpawns[player.name] ~= nil) then
-            global.playerSpawns[player.name] = nil
+        if (this.playerSpawns[player.name] ~= nil) then
+            this.playerSpawns[player.name] = nil
         end
 
         -- Remove them from the delayed spawn queue if they are in it
-        for i = #global.delayedSpawns, 1, -1 do
-            local delayedSpawn = global.delayedSpawns[i]
+        for i = #this.delayedSpawns, 1, -1 do
+            local delayedSpawn = this.delayedSpawns[i]
 
             if (player.name == delayedSpawn.playerName) then
                 if (delayedSpawn.vanilla) then
                     log('Returning a vanilla spawn back to available.')
-                    table.insert(global.vanillaSpawns, {x = delayedSpawn.pos.x, y = delayedSpawn.pos.y})
+                    insert(this.vanillaSpawns, {x = delayedSpawn.pos.x, y = delayedSpawn.pos.y})
                 end
 
-                table.remove(global.delayedSpawns, i)
+                table.remove(this.delayedSpawns, i)
                 log('Removing player from delayed spawn queue: ' .. player.name)
             end
         end
@@ -151,20 +153,20 @@ function Public.FindUnusedSpawns(player, remove_player)
         local surface = game.surfaces[surface_name]
 
         -- Transfer or remove a shared spawn if player is owner
-        if (global.sharedSpawns[player.name] ~= nil) then
-            local teamMates = global.sharedSpawns[player.name].players
+        if (this.sharedSpawns[player.name] ~= nil) then
+            local teamMates = this.sharedSpawns[player.name].players
 
             if (#teamMates >= 1) then
                 local newOwnerName = table.remove(teamMates)
                 Public.TransferOwnershipOfSharedSpawn(player.name, newOwnerName)
             else
-                global.sharedSpawns[player.name] = nil
+                this.sharedSpawns[player.name] = nil
             end
         end
 
         -- If a uniqueSpawn was created for the player, mark it as unused.
-        if (global.uniqueSpawns[player.name] ~= nil) then
-            local spawnPos = global.uniqueSpawns[player.name].pos
+        if (this.uniqueSpawns[player.name] ~= nil) then
+            local spawnPos = this.uniqueSpawns[player.name].pos
 
             local area = Utils.GetAreaAroundPos(spawnPos, 50)
             local nearOtherSpawn = false
@@ -178,34 +180,33 @@ function Public.FindUnusedSpawns(player, remove_player)
             end
 
             -- Check if it was near someone else's base.
-            for spawnPlayerName, otherSpawnPos in pairs(global.uniqueSpawns) do
-                if ((spawnPlayerName ~= player.name) and (Utils.getDistance(spawnPos, otherSpawnPos.pos) < (global.scenario_config.gen_settings.land_area_tiles * 3))) then
+            for spawnPlayerName, otherSpawnPos in pairs(this.uniqueSpawns) do
+                if ((spawnPlayerName ~= player.name) and (Utils.getDistance(spawnPos, otherSpawnPos.pos) < (this.scenario_config.gen_settings.land_area_tiles * 3))) then
                     log("Won't remove base as it's close to another spawn: " .. spawnPlayerName)
                     nearOtherSpawn = true
                 end
             end
 
-            if (global.uniqueSpawns[player.name].vanilla) then
+            if (this.uniqueSpawns[player.name].vanilla) then
                 log('Returning a vanilla spawn back to available.')
-                table.insert(global.vanillaSpawns, {x = spawnPos.x, y = spawnPos.y})
+                insert(this.vanillaSpawns, {x = spawnPos.x, y = spawnPos.y})
             end
 
-            global.uniqueSpawns[player.name] = nil
+            this.uniqueSpawns[player.name] = nil
 
             if not nearOtherSpawn then
                 log('Removing base: ' .. spawnPos.x .. ',' .. spawnPos.y)
-                Public.Remove_area(spawnPos, global.check_spawn_ungenerated_chunk_radius + 5)
-                Public.Init_remove()
+                remove_area(spawnPos, this.check_spawn_ungenerated_chunk_radius + 5)
             end
         end
 
         -- remove that player's cooldown setting
-        if (global.playerCooldowns[player.name] ~= nil) then
-            global.playerCooldowns[player.name] = nil
+        if (this.playerCooldowns[player.name] ~= nil) then
+            this.playerCooldowns[player.name] = nil
         end
 
         -- Remove from shared spawn player slots (need to search all)
-        for _, sharedSpawn in pairs(global.sharedSpawns) do
+        for _, sharedSpawn in pairs(this.sharedSpawns) do
             for key, playerName in pairs(sharedSpawn.players) do
                 if (player.name == playerName) then
                     sharedSpawn.players[key] = nil
@@ -214,8 +215,8 @@ function Public.FindUnusedSpawns(player, remove_player)
         end
 
         -- Remove a force if this player created it and they are the only one on it
-        if ((#player.force.players <= 1) and (player.force.name ~= global.main_force_name) and (player.force.name ~= 'player')) then
-            game.merge_forces(player.force, global.main_force_name)
+        if ((#player.force.players <= 1) and (player.force.name ~= this.main_force_name) and (player.force.name ~= 'player')) then
+            game.merge_forces(player.force, this.main_force_name)
         end
 
         -- Remove the character completely
@@ -231,16 +232,17 @@ end
 -- This clears enemies in the immediate area, creates a slightly safe area around it,
 -- It no LONGER generates the resources though as that is now handled in a delayed event!
 function Public.SetupAndClearSpawnAreas(surface, chunkArea)
-    local global_data = MPS.get()
-    for _, spawn in pairs(global.uniqueSpawns) do
+    local this = MT.get()
+
+    for _, spawn in pairs(this.uniqueSpawns) do
         -- Create a bunch of useful area and position variables
-        local landArea = Utils.GetAreaAroundPos(spawn.pos, global.scenario_config.gen_settings.land_area_tiles + global_data.chunk_size)
-        local safeArea = Utils.GetAreaAroundPos(spawn.pos, global.scenario_config.safe_area.safe_radius)
-        local warningArea = Utils.GetAreaAroundPos(spawn.pos, global.scenario_config.safe_area.warn_radius)
-        local reducedArea = Utils.GetAreaAroundPos(spawn.pos, global.scenario_config.safe_area.danger_radius)
+        local landArea = Utils.GetAreaAroundPos(spawn.pos, this.scenario_config.gen_settings.land_area_tiles + this.chunk_size)
+        local safeArea = Utils.GetAreaAroundPos(spawn.pos, this.scenario_config.safe_area.safe_radius)
+        local warningArea = Utils.GetAreaAroundPos(spawn.pos, this.scenario_config.safe_area.warn_radius)
+        local reducedArea = Utils.GetAreaAroundPos(spawn.pos, this.scenario_config.safe_area.danger_radius)
         local chunkAreaCenter = {
-            x = chunkArea.left_top.x + (global_data.chunk_size / 2),
-            y = chunkArea.left_top.y + (global_data.chunk_size / 2)
+            x = chunkArea.left_top.x + (this.chunk_size / 2),
+            y = chunkArea.left_top.y + (this.chunk_size / 2)
         }
 
         -- Make chunks near a spawn safe by removing enemies
@@ -249,11 +251,11 @@ function Public.SetupAndClearSpawnAreas(surface, chunkArea)
             Utils.RemoveAliensInArea(surface, chunkArea)
         elseif Utils.CheckIfInArea(chunkAreaCenter, warningArea) then
             -- Create a third area with moderatly reduced enemies
-            Utils.ReduceAliensInArea(surface, chunkArea, global.scenario_config.safe_area.warn_reduction)
+            Utils.ReduceAliensInArea(surface, chunkArea, this.scenario_config.safe_area.warn_reduction)
             -- DowngradeWormsInArea(surface, chunkArea, 100, 100, 100)
             Utils.RemoveWormsInArea(surface, chunkArea, false, true, true, true) -- remove all non-small worms.
         elseif Utils.CheckIfInArea(chunkAreaCenter, reducedArea) then
-            Utils.ReduceAliensInArea(surface, chunkArea, global.scenario_config.safe_area.danger_reduction)
+            Utils.ReduceAliensInArea(surface, chunkArea, this.scenario_config.safe_area.danger_reduction)
             -- DowngradeWormsInArea(surface, chunkArea, 50, 100, 100)
             Utils.RemoveWormsInArea(surface, chunkArea, false, false, true, true) -- remove all huge/behemoth worms.
         end
@@ -265,39 +267,40 @@ function Public.SetupAndClearSpawnAreas(surface, chunkArea)
                 if spawn.buddy_spawn then
                     -- Remove trees/resources inside the spawn area
                     if (spawn.layout == 'circle_shape') then
-                        Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, global.scenario_config.gen_settings.land_area_tiles)
+                        Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, this.scenario_config.gen_settings.land_area_tiles)
                     else
-                        Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 5)
+                        Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 5)
                     end
-                    Utils.RemoveInCircle(surface, chunkArea, 'resource', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 5)
-                    Utils.RemoveInCircle(surface, chunkArea, 'cliff', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'market', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'container', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'simple-entity', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'resource', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 5)
+                    Utils.RemoveInCircle(surface, chunkArea, 'cliff', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'market', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'container', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'simple-entity', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
                     Utils.RemoveDecorationsArea(surface, chunkArea)
                 else
                     -- Remove trees/resources inside the spawn area
-                    Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'resource', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'cliff', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'market', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'container', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
-                    Utils.RemoveInCircle(surface, chunkArea, 'simple-entity', spawn.pos, global.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'tree', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'resource', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'cliff', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'market', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'container', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
+                    Utils.RemoveInCircle(surface, chunkArea, 'simple-entity', spawn.pos, this.scenario_config.gen_settings.land_area_tiles + 50)
                     Utils.RemoveDecorationsArea(surface, chunkArea)
                 end
 
-                local fill_tile = 'dirt-' .. math.random(1, 6)
+                -- local fill_tile = 'dirt-' .. math.random(1, 6)
+                local fill_tile = 'tutorial-grid'
 
                 if (spawn.layout == 'circle_shape') then
-                    Utils.CreateCropCircle(surface, spawn.pos, chunkArea, global.scenario_config.gen_settings.land_area_tiles, fill_tile)
+                    Utils.CreateCropCircle(surface, spawn.pos, chunkArea, this.scenario_config.gen_settings.land_area_tiles, fill_tile)
                     if (spawn.moat) then
-                        Utils.CreateMoat(surface, spawn.pos, chunkArea, global.scenario_config.gen_settings.land_area_tiles, fill_tile)
+                        Utils.CreateMoat(surface, spawn.pos, chunkArea, this.scenario_config.gen_settings.land_area_tiles, fill_tile)
                     end
                 end
                 if (spawn.layout == 'square_shape') then
-                    Utils.CreateCropSquare(surface, spawn.pos, chunkArea, global_data.chunk_size * 3, fill_tile)
+                    Utils.CreateCropSquare(surface, spawn.pos, chunkArea, this.chunk_size * 3, fill_tile)
                     if (spawn.moat) then
-                        Utils.CreateMoatSquare(surface, spawn.pos, chunkArea, global.scenario_config.gen_settings.land_area_tiles, fill_tile)
+                        Utils.CreateMoatSquare(surface, spawn.pos, chunkArea, this.scenario_config.gen_settings.land_area_tiles, fill_tile)
                     end
                 end
             end
@@ -305,12 +308,13 @@ function Public.SetupAndClearSpawnAreas(surface, chunkArea)
     end
 end
 
--- Same as GetClosestPosFromTable but specific to global.uniqueSpawns
+-- Same as GetClosestPosFromTable but specific to this.uniqueSpawns
 function Public.GetClosestUniqueSpawn(pos)
     local closest_dist = nil
     local closest_key = nil
+    local this = MT.get()
 
-    for k, s in pairs(global.uniqueSpawns) do
+    for k, s in pairs(this.uniqueSpawns) do
         local new_dist = Utils.getDistance(pos, s.pos)
         if (closest_dist == nil) then
             closest_dist = new_dist
@@ -326,7 +330,7 @@ function Public.GetClosestUniqueSpawn(pos)
         return nil
     end
 
-    return global.uniqueSpawns[closest_key]
+    return this.uniqueSpawns[closest_key]
 end
 
 -- I wrote this to ensure everyone gets safer spawns regardless of evolution level.
@@ -349,11 +353,13 @@ function Public.ModifyEnemySpawnsNearPlayerStartingAreas(event)
         return
     end
 
+    local this = MT.get()
+
     -- No enemies inside safe radius!
-    if (Utils.getDistance(enemy_pos, closest_spawn.pos) < global.scenario_config.safe_area.safe_radius) then
+    if (Utils.getDistance(enemy_pos, closest_spawn.pos) < this.scenario_config.safe_area.safe_radius) then
         -- Warn distance is all SMALL only.
         event.entity.destroy()
-    elseif (Utils.getDistance(enemy_pos, closest_spawn.pos) < global.scenario_config.safe_area.warn_radius) then
+    elseif (Utils.getDistance(enemy_pos, closest_spawn.pos) < this.scenario_config.safe_area.warn_radius) then
         -- Danger distance is MEDIUM max.
         if ((enemy_name == 'big-biter') or (enemy_name == 'behemoth-biter') or (enemy_name == 'medium-biter')) then
             -- log("Downgraded biter close to spawn.")
@@ -368,7 +374,7 @@ function Public.ModifyEnemySpawnsNearPlayerStartingAreas(event)
             surface.create_entity {name = 'small-worm-turret', position = enemy_pos, force = game.forces.enemy}
         -- log("Downgraded worm close to spawn.")
         end
-    elseif (Utils.getDistance(enemy_pos, closest_spawn.pos) < global.scenario_config.safe_area.danger_radius) then
+    elseif (Utils.getDistance(enemy_pos, closest_spawn.pos) < this.scenario_config.safe_area.danger_radius) then
         if ((enemy_name == 'big-biter') or (enemy_name == 'behemoth-biter')) then
             -- log("Downgraded biter further from spawn.")
             event.entity.destroy()
@@ -391,8 +397,10 @@ end
 
 -- Generate the basic starter resource around a given location.
 function Public.GenerateStartingResources_New(surface, pos)
-    local g_res = global.scenario_config.resource_tiles_new
-    local g_pos = global.scenario_config.pos
+    local this = MT.get()
+
+    local g_res = this.scenario_config.resource_tiles_new
+    local g_pos = this.scenario_config.pos
 
     local ore_pos = Utils.shuffle(g_pos)
     local _pos_1 = {x = pos.x + ore_pos[1].x, y = pos.y + ore_pos[1].y}
@@ -409,7 +417,7 @@ function Public.GenerateStartingResources_New(surface, pos)
     Utils.GenerateResourcePatch(surface, 'coal', g_res[4].size, _pos_4, g_res[4].amount)
 
     -- Generate special resource patches (oil)
-    for p_name, p_data in pairs(global.scenario_config.resource_patches_new) do
+    for p_name, p_data in pairs(this.scenario_config.resource_patches_new) do
         local oil_patch_x = pos.x + p_data.x_offset_start
         local oil_patch_y = pos.y + p_data.y_offset_start
         for i = 1, p_data.num_patches do
@@ -427,20 +435,22 @@ function Public.GenerateStartingResources_New(surface, pos)
 end
 
 function Public.GenerateStartingResources_Classic(surface, pos)
-    local rand_settings = global.scenario_config.resource_rand_pos_settings
+    local this = MT.get()
+
+    local rand_settings = this.scenario_config.resource_rand_pos_settings
 
     -- Generate all resource tile patches
     if (not rand_settings.enabled) then
-        for t_name, t_data in pairs(global.scenario_config.resource_tiles_classic) do
+        for t_name, t_data in pairs(this.scenario_config.resource_tiles_classic) do
             local p = {x = pos.x + t_data.x_offset, y = pos.y + t_data.y_offset}
             Utils.GenerateResourcePatch(surface, t_name, t_data.size, p, t_data.amount)
         end
     else
         -- Create list of resource tiles
         local r_list = {}
-        for k, _ in pairs(global.scenario_config.resource_tiles_classic) do
+        for k, _ in pairs(this.scenario_config.resource_tiles_classic) do
             if (k ~= '') then
-                table.insert(r_list, k)
+                insert(r_list, k)
             end
         end
         local shuffled_list = Utils.shuffle(r_list)
@@ -448,7 +458,7 @@ function Public.GenerateStartingResources_Classic(surface, pos)
         -- This places resources in a semi-circle
         -- Tweak in config.lua
         local angle_offset = rand_settings.angle_offset
-        local num_resources = Utils.TableLength(global.scenario_config.resource_tiles_classic)
+        local num_resources = Utils.TableLength(this.scenario_config.resource_tiles_classic)
         local theta = ((rand_settings.angle_final - rand_settings.angle_offset) / num_resources)
         local count = 0
 
@@ -459,19 +469,13 @@ function Public.GenerateStartingResources_Classic(surface, pos)
             local ty = (rand_settings.radius * math.sin(angle)) + pos.y
 
             local p = {x = math.floor(tx), y = math.floor(ty)}
-            Utils.GenerateResourcePatch(
-                surface,
-                k_name,
-                global.scenario_config.resource_tiles_classic[k_name].size,
-                p,
-                global.scenario_config.resource_tiles_classic[k_name].amount
-            )
+            Utils.GenerateResourcePatch(surface, k_name, this.scenario_config.resource_tiles_classic[k_name].size, p, this.scenario_config.resource_tiles_classic[k_name].amount)
             count = count + 1
         end
     end
 
     -- Generate special resource patches (oil)
-    for p_name, p_data in pairs(global.scenario_config.resource_patches_classic) do
+    for p_name, p_data in pairs(this.scenario_config.resource_patches_classic) do
         local oil_patch_x = pos.x + p_data.x_offset_start
         local oil_patch_y = pos.y + p_data.y_offset_start
         for i = 1, p_data.num_patches do
@@ -492,31 +496,37 @@ end
 -- Used for tracking which players are assigned to it, where it is and if
 -- it is open for new players to join
 function Public.CreateNewSharedSpawn(player)
-    global.sharedSpawns[player.name] = {
+    local this = MT.get()
+
+    this.sharedSpawns[player.name] = {
         openAccess = false,
         AlwaysAccess = false,
-        position = global.playerSpawns[player.name],
+        position = this.playerSpawns[player.name],
         players = {}
     }
 end
 
 function Public.TransferOwnershipOfSharedSpawn(prevOwnerName, newOwnerName)
+    local this = MT.get()
+
     -- Transfer the shared spawn global
-    global.sharedSpawns[newOwnerName] = global.sharedSpawns[prevOwnerName]
-    global.sharedSpawns[newOwnerName].openAccess = false
-    global.sharedSpawns[newOwnerName].AlwaysAccess = false
-    global.sharedSpawns[prevOwnerName] = nil
+    this.sharedSpawns[newOwnerName] = this.sharedSpawns[prevOwnerName]
+    this.sharedSpawns[newOwnerName].openAccess = false
+    this.sharedSpawns[newOwnerName].AlwaysAccess = false
+    this.sharedSpawns[prevOwnerName] = nil
 
     -- Transfer the unique spawn global
-    global.uniqueSpawns[newOwnerName] = global.uniqueSpawns[prevOwnerName]
-    global.uniqueSpawns[prevOwnerName] = nil
+    this.uniqueSpawns[newOwnerName] = this.uniqueSpawns[prevOwnerName]
+    this.uniqueSpawns[prevOwnerName] = nil
 
     game.players[newOwnerName].print('You have been given ownership of this base!')
 end
 
 -- Returns the number of players currently online at the shared spawn
 function Public.GetOnlinePlayersAtSharedSpawn(ownerName)
-    if (global.sharedSpawns[ownerName] ~= nil) then
+    local this = MT.get()
+
+    if (this.sharedSpawns[ownerName] ~= nil) then
         -- Does not count base owner
         local count = 0
 
@@ -526,7 +536,7 @@ function Public.GetOnlinePlayersAtSharedSpawn(ownerName)
                 count = count + 1
             end
 
-            for _, playerName in pairs(global.sharedSpawns[ownerName].players) do
+            for _, playerName in pairs(this.sharedSpawns[ownerName].players) do
                 if (playerName == player.name) then
                     count = count + 1
                 end
@@ -543,11 +553,13 @@ end
 -- This means the base owner has enabled access AND the number of online players
 -- is below the threshold.
 function Public.GetNumberOfAvailableSharedSpawns()
+    local this = MT.get()
+
     local count = 0
 
-    for ownerName, sharedSpawn in pairs(global.sharedSpawns) do
+    for ownerName, sharedSpawn in pairs(this.sharedSpawns) do
         if (sharedSpawn.openAccess or sharedSpawn.AlwaysAccess and (game.players[ownerName] ~= nil) and game.players[ownerName].connected) then
-            if ((global.max_players == 0) or (#global.sharedSpawns[ownerName].players < global.max_players)) then
+            if ((this.max_players == 0) or (#this.sharedSpawns[ownerName].players < this.max_players)) then
                 count = count + 1
             end
         end
@@ -559,77 +571,20 @@ end
 -- Initializes the globals used to track the special spawn and player
 -- status information
 function Public.InitSpawnGlobalsAndForces()
-    -- This contains each player's spawn point. Literally where they will respawn.
-    -- There is a way in game to change this under one of the little menu features I added.
-    if (global.playerSpawns == nil) then
-        global.playerSpawns = {}
-    end
-
-    -- This is the most important table. It is a list of all the unique spawn points.
-    -- This is what chunk generation checks against.
-    -- Each entry looks like this: {pos={x,y},moat=bool,vanilla=bool}
-    if (global.uniqueSpawns == nil) then
-        global.uniqueSpawns = {}
-    end
-
-    -- List of available vanilla spawns
-    if (global.vanillaSpawns == nil) then
-        global.vanillaSpawns = {}
-    end
-
-    -- This keeps a list of any player that has shared their base.
-    -- Each entry contains information about if it's open, spawn pos, and players in the group.
-    if (global.sharedSpawns == nil) then
-        global.sharedSpawns = {}
-    end
-
-    -- This seems to be unused right now, but I had plans to re-use spawn points in the past.
-    -- if (global.unusedSpawns == nil) then
-    --     global.unusedSpawns = {}
-    -- end
-
-    -- Each player has an option to change their respawn which has a cooldown when used.
-    -- Other similar abilities/functions that require cooldowns could be added here.
-    if (global.playerCooldowns == nil) then
-        global.playerCooldowns = {}
-    end
-
-    -- List of players in the "waiting room" for a buddy spawn.
-    -- They show up in the list to select when doing a buddy spawn.
-    if (global.waitingBuddies == nil) then
-        global.waitingBuddies = {}
-    end
-
-    -- Players who have made a spawn choice get put into this list while waiting.
-    -- An on_tick event checks when it expires and then places down the base resources, and teleports the player.
-    -- Go look at DelayedSpawnOnTick() for more info.
-    if (global.delayedSpawns == nil) then
-        global.delayedSpawns = {}
-    end
-
-    -- This is what I use to communicate a buddy spawn request between the buddies.
-    -- This contains information of who is asking, and what options were selected.
-    if (global.buddySpawnOptions == nil) then
-        global.buddySpawnOptions = {}
-    end
-
-    -- Silo info
-    if (global.siloPosition == nil) then
-        global.siloPosition = {}
-    end
-
     local surface_name = Surface.get_surface_name()
+    local this = MT.get()
 
     -- Name a new force to be the default force.
     -- This is what any new player is assigned to when they join, even before they spawn.
-    local main_force_name = Public.CreateForce(global.main_force_name)
+    local main_force_name = Public.CreateForce(this.main_force_name)
     main_force_name.set_spawn_position({x = 0, y = 0}, surface_name)
     main_force_name.worker_robots_storage_bonus = 5
     main_force_name.worker_robots_speed_modifier = 2
 end
 
 function Public.DoesPlayerHaveCustomSpawn(player)
-    for name, _ in pairs(global.playerSpawns) do
+    local this = MT.get()
+    for name, _ in pairs(this.playerSpawns) do
         if (player.name == name) then
             return true
         end
@@ -638,18 +593,21 @@ function Public.DoesPlayerHaveCustomSpawn(player)
 end
 
 function Public.ChangePlayerSpawn(player, pos)
-    global.playerSpawns[player.name] = pos
-    global.playerCooldowns[player.name] = {setRespawn = game.tick}
+    local this = MT.get()
+
+    this.playerSpawns[player.name] = pos
+    this.playerCooldowns[player.name] = {setRespawn = game.tick}
 end
 
 function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoice, vanillaSpawn, own_team, buddy_spawn)
-    local global_data = MPS.get()
+    local this = MT.get()
     if not buddy_spawn then
         buddy_spawn = false
     end
+
     -- If we get a valid spawn point, setup the area
     if ((spawn.x ~= 0) or (spawn.y ~= 0)) then
-        global.uniqueSpawns[playerName] = {
+        this.uniqueSpawns[playerName] = {
             pos = spawn,
             layout = classic,
             moat = moatChoice,
@@ -659,11 +617,11 @@ function Public.QueuePlayerForDelayedSpawn(playerName, spawn, classic, moatChoic
             buddy_spawn = buddy_spawn
         }
 
-        local delay_spawn_seconds = 2 * (math.ceil(global.scenario_config.gen_settings.land_area_tiles / global_data.chunk_size))
+        local delay_spawn_seconds = 2 * (math.ceil(this.scenario_config.gen_settings.land_area_tiles / this.chunk_size))
         game.players[playerName].surface.request_to_generate_chunks(spawn, 4)
-        local delayedTick = game.tick + delay_spawn_seconds * global_data.ticks_per_second
-        table.insert(
-            global.delayedSpawns,
+        local delayedTick = game.tick + delay_spawn_seconds * this.ticks_per_second
+        insert(
+            this.delayedSpawns,
             {
                 playerName = playerName,
                 layout = classic,
@@ -687,24 +645,27 @@ end
 -- Check if we are past the delayed tick count
 -- Spawn the players and remove them from the table.
 function Public.DelayedSpawnOnTick()
-    if #global.delayedSpawns <= 0 then
+    local delayedSpawns = MT.get('delayedSpawns')
+    if #delayedSpawns <= 0 then
         return
     end
 
+    local this = MT.get()
+
     if ((game.tick % (30)) == 1) then
-        if ((global.delayedSpawns ~= nil) and (#global.delayedSpawns > 0)) then
-            for i = #global.delayedSpawns, 1, -1 do
-                local delayedSpawn = global.delayedSpawns[i]
+        if ((this.delayedSpawns ~= nil) and (#this.delayedSpawns > 0)) then
+            for i = #this.delayedSpawns, 1, -1 do
+                local delayedSpawn = this.delayedSpawns[i]
 
                 if (delayedSpawn.delayedTick < game.tick) then
                     -- TODO, add check here for if chunks around spawn are generated surface.is_chunk_generated(chunkPos)
                     if (game.players[delayedSpawn.playerName] ~= nil) then
                         if not game.players[delayedSpawn.playerName].connected then
-                            table.remove(global.delayedSpawns, i)
+                            table.remove(this.delayedSpawns, i)
                             return
                         else
                             Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
-                            table.remove(global.delayedSpawns, i)
+                            table.remove(this.delayedSpawns, i)
                         end
                     end
                 end
@@ -714,14 +675,16 @@ function Public.DelayedSpawnOnTick()
 end
 
 function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
+    local this = MT.get()
     -- DOUBLE CHECK and make sure the area is super safe.
     local surface_name = Surface.get_surface_name()
-    Utils.ClearNearbyEnemies(delayedSpawn.pos, global.scenario_config.safe_area.safe_radius, game.surfaces[surface_name])
+    Utils.ClearNearbyEnemies(delayedSpawn.pos, this.scenario_config.safe_area.safe_radius, game.surfaces[surface_name])
     local water_data
+
     if delayedSpawn.layout == 'circle_shape' then
-        water_data = global.scenario_config.water_classic
+        water_data = this.scenario_config.water_classic
     elseif delayedSpawn.layout == 'square_shape' then
-        water_data = global.scenario_config.water_new
+        water_data = this.scenario_config.water_new
     end
     local player = game.players[delayedSpawn.playerName]
 
@@ -765,7 +728,7 @@ function Public.SendPlayerToNewSpawnAndCreateIt(delayedSpawn)
     end
 
     -- Chart the area.
-    --Utils.ChartArea(player.force, delayedSpawn.pos, math.ceil(global.scenario_config.gen_settings.land_area_tiles/global_data.chunk_size), player.surface)
+    --Utils.ChartArea(player.force, delayedSpawn.pos, math.ceil(this.scenario_config.gen_settings.land_area_tiles/this.chunk_size), player.surface)
 
     if (player.gui.screen.wait_for_spawn_dialog ~= nil) then
         player.gui.screen.wait_for_spawn_dialog.destroy()
@@ -774,7 +737,9 @@ end
 
 function Public.SendPlayerToSpawn(player)
     local pos
-    local dest = global.playerSpawns[player.name]
+    local this = MT.get()
+
+    local dest = this.playerSpawns[player.name]
     if not dest then
         pos = player.surface.find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
     else
@@ -784,7 +749,7 @@ function Public.SendPlayerToSpawn(player)
         if pos then
             player.teleport(pos, player.surface)
         else
-            player.teleport(global.playerSpawns[player.name], player.surface)
+            player.teleport(this.playerSpawns[player.name], player.surface)
         end
         if player and player.character and player.character.valid then
             player.character.active = true
@@ -802,20 +767,21 @@ function Public.SendPlayerToSpawn(player)
 end
 
 function Public.SendPlayerToRandomSpawn(player)
-    local numSpawns = Utils.TableLength(global.uniqueSpawns)
+    local this = MT.get()
+    local numSpawns = Utils.TableLength(this.uniqueSpawns)
     local rndSpawn = math.random(0, numSpawns)
     local counter = 0
 
     local surface_name = Surface.get_surface_name()
 
     if (rndSpawn == 0) then
-        player.teleport(game.forces[global.main_force_name].get_spawn_position(surface_name), surface_name)
+        player.teleport(game.forces[this.main_force_name].get_spawn_position(surface_name), surface_name)
         if player and player.character and player.character.valid then
             player.character.active = true
         end
     else
         counter = counter + 1
-        for _, spawn in pairs(global.uniqueSpawns) do
+        for _, spawn in pairs(this.uniqueSpawns) do
             if (counter == rndSpawn) then
                 player.teleport(spawn.pos)
                 if player and player.character and player.character.valid then
@@ -829,27 +795,27 @@ function Public.SendPlayerToRandomSpawn(player)
 end
 
 function Public.CreateForce(force_name)
-    local global_data = MPS.get()
     local newForce = nil
     local surface_name = Surface.get_surface_name()
+    local this = MT.get()
 
     -- Check if force already exists
     if (game.forces[force_name] ~= nil) then
         -- Create a new force
         log('Force already exists!')
-        return game.forces[global.main_force_name]
-    elseif (Utils.TableLength(game.forces) < global_data.max_forces) then
+        return game.forces[this.main_force_name]
+    elseif (Utils.TableLength(game.forces) < this.max_forces) then
         newForce = game.create_force(force_name)
-        if global.enable_shared_team_vision then
+        if this.enable_shared_team_vision then
             newForce.share_chart = true
         end
-        if global.enable_r_queue then
+        if this.enable_r_queue then
             newForce.research_queue_enabled = true
         end
         newForce.worker_robots_storage_bonus = 5
         newForce.worker_robots_speed_modifier = 2
         -- Chart silo areas if necessary
-        if global.frontier_rocket_silo_mode and global.enable_silo_vision then
+        if this.frontier_rocket_silo_mode and this.enable_silo_vision then
             Silo.ChartRocketSiloAreas(game.surfaces[surface_name], newForce)
         end
 
@@ -857,7 +823,7 @@ function Public.CreateForce(force_name)
 
         newForce.friendly_fire = true
         newForce.zoom_to_world_deconstruction_planner_enabled = false
-        if (global.enable_antigrief) then
+        if (this.enable_antigrief) then
             Utils.AntiGriefing(newForce)
         end
     else
@@ -899,17 +865,18 @@ function Public.CreateVanillaSpawns(count, spacing)
         log('CreateVanillaSpawns less than 1!!')
         return
     end
+    local this = MT.get()
 
-    if (global.vanillaSpawns == nil) then
-        global.vanillaSpawns = {}
+    if (this.vanillaSpawns == nil) then
+        this.vanillaSpawns = {}
     end
 
     -- This should give me points centered around 0,0 I think.
     for i = -sqrt_half, sqrt_half, 1 do
         for j = -sqrt_half, sqrt_half, 1 do
             if (i ~= 0 or j ~= 0) then -- EXCEPT don't put 0,0
-                table.insert(points, {x = i * spacing, y = j * spacing})
-                table.insert(global.vanillaSpawns, {x = i * spacing, y = j * spacing})
+                insert(points, {x = i * spacing, y = j * spacing})
+                insert(this.vanillaSpawns, {x = i * spacing, y = j * spacing})
             end
         end
     end
@@ -935,11 +902,12 @@ end
 function Public.FindUnusedVanillaSpawn(surface, target_distance)
     local best_key = nil
     local best_distance = nil
+    local this = MT.get()
 
-    for k, v in pairs(global.vanillaSpawns) do
+    for k, v in pairs(this.vanillaSpawns) do
         -- Check if chunks nearby are not generated.
         local chunk_pos = Utils.GetChunkPosFromTilePos(v)
-        if Utils.IsChunkAreaUngenerated(chunk_pos, global.check_spawn_ungenerated_chunk_radius + 15, surface) then
+        if Utils.IsChunkAreaUngenerated(chunk_pos, this.check_spawn_ungenerated_chunk_radius + 15, surface) then
             -- If it's not a valid spawn anymore, let's remove it.
             -- Is this our first valid find?
             if ((best_key == nil) or (best_distance == nil)) then
@@ -955,27 +923,28 @@ function Public.FindUnusedVanillaSpawn(surface, target_distance)
             end
         else
             log('Removing vanilla spawn due to chunks generated: x=' .. v.x .. ',y=' .. v.y)
-            table.remove(global.vanillaSpawns, k)
+            table.remove(this.vanillaSpawns, k)
         end
     end
 
     local spawn_pos = {x = 0, y = 0}
-    if ((best_key ~= nil) and (global.vanillaSpawns[best_key] ~= nil)) then
-        spawn_pos.x = global.vanillaSpawns[best_key].x
-        spawn_pos.y = global.vanillaSpawns[best_key].y
-        table.remove(global.vanillaSpawns, best_key)
+    if ((best_key ~= nil) and (this.vanillaSpawns[best_key] ~= nil)) then
+        spawn_pos.x = this.vanillaSpawns[best_key].x
+        spawn_pos.y = this.vanillaSpawns[best_key].y
+        table.remove(this.vanillaSpawns, best_key)
     end
     log('Found unused vanilla spawn: x=' .. spawn_pos.x .. ',y=' .. spawn_pos.y)
     return spawn_pos
 end
 
 function Public.ValidateVanillaSpawns(surface)
-    for k, v in pairs(global.vanillaSpawns) do
+    local this = MT.get()
+    for k, v in pairs(this.vanillaSpawns) do
         -- Check if chunks nearby are not generated.
         local chunk_pos = Utils.GetChunkPosFromTilePos(v)
-        if not Utils.IsChunkAreaUngenerated(chunk_pos, global.check_spawn_ungenerated_chunk_radius + 15, surface) then
+        if not Utils.IsChunkAreaUngenerated(chunk_pos, this.check_spawn_ungenerated_chunk_radius + 15, surface) then
             log('Removing vanilla spawn due to chunks generated: x=' .. v.x .. ',y=' .. v.y)
-            table.remove(global.vanillaSpawns, k)
+            table.remove(this.vanillaSpawns, k)
         end
     end
 end
@@ -983,25 +952,9 @@ end
 local SPAWN_GUI_MAX_WIDTH = 500
 local SPAWN_GUI_MAX_HEIGHT = 1000
 
--- Use this for testing shared spawns...
--- local sharedSpawnExample1 = {openAccess=true,
---                             position={x=50,y=50},
---                             players={"ABC", "DEF"}}
--- local sharedSpawnExample2 = {openAccess=false,
---                             position={x=200,y=200},
---                             players={"ABC", "DEF"}}
--- local sharedSpawnExample3 = {openAccess=true,
---                             position={x=400,y=400},
---                             players={"A", "B", "C", "D"}}
--- global.sharedSpawns = {testName1=sharedSpawnExample1,
---                        testName2=sharedSpawnExample2,
---                        Oarc=sharedSpawnExample3}
-
--- A display gui message
--- Meant to be display the first time a player joins.
 function Public.DisplayWelcomeTextGui(player)
     if
-        ((player.gui.screen['global.welcome_msg'] ~= nil) or (player.gui.screen['spawn_opts'] ~= nil) or (player.gui.screen['shared_spawn_opts'] ~= nil) or
+        ((player.gui.screen['welcome_msg'] ~= nil) or (player.gui.screen['spawn_opts'] ~= nil) or (player.gui.screen['shared_spawn_opts'] ~= nil) or
             (player.gui.screen['join_shared_spawn_wait_menu'] ~= nil) or
             (player.gui.screen['buddy_spawn_opts'] ~= nil) or
             (player.gui.screen['buddy_wait_menu'] ~= nil) or
@@ -1016,12 +969,14 @@ function Public.DisplayWelcomeTextGui(player)
         player.gui.screen.welcome_msg.destroy()
     end
 
+    local this = MT.get()
+
     local wGui =
         player.gui.screen.add {
         name = 'welcome_msg',
         type = 'frame',
         direction = 'vertical',
-        caption = global.welcome_msg_title,
+        caption = this.welcome_msg_title,
         style = main_style
     }
     Gui.ignored_visibility(wGui.name)
@@ -1030,11 +985,11 @@ function Public.DisplayWelcomeTextGui(player)
     wGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
 
     -- Start with server message.
-    UtilsGui.AddLabel(wGui, 'server_msg_lbl1', global.server_msg, UtilsGui.my_label_style)
+    UtilsGui.AddLabel(wGui, 'server_msg_lbl1', this.server_msg, UtilsGui.my_label_style)
     UtilsGui.AddSpacer(wGui)
 
     -- Informational message about the scenario
-    UtilsGui.AddLabel(wGui, 'scenario_info_msg_lbl1', global.scenario_info_msg, UtilsGui.my_label_style)
+    UtilsGui.AddLabel(wGui, 'scenario_info_msg_lbl1', this.scenario_info_msg, UtilsGui.my_label_style)
     UtilsGui.AddSpacer(wGui)
 
     -- Warning about spawn creation time
@@ -1134,7 +1089,9 @@ function Public.DisplaySpawnOptions(player)
         style = 'bordered_frame'
     }
 
-    if global.enable_default_spawn then
+    local this = MT.get()
+
+    if this.enable_default_spawn then
         local vanilla =
             sGui.add {
             name = 'vanilla_flow',
@@ -1153,7 +1110,7 @@ function Public.DisplaySpawnOptions(player)
     end
 
     -- Radio buttons to pick your team.
-    if (global.enable_separate_teams) then
+    if (this.enable_separate_teams) then
         soloSpawnFlow.add {
             name = 'isolated_spawn_main_team_radio',
             type = 'radiobutton',
@@ -1173,7 +1130,7 @@ function Public.DisplaySpawnOptions(player)
     --     "Additional spawn options can be selected here. Not all are compatible with each other.", UtilsGui.my_label_style)
 
     -- Allow players to spawn with a moat around their area.
-    if (global.scenario_config.gen_settings.moat_choice_enabled and not global.enable_vanilla_spawns) then
+    if (this.scenario_config.gen_settings.moat_choice_enabled and not this.enable_vanilla_spawns) then
         soloSpawnFlow.add {
             name = 'isolated_spawn_moat_option_checkbox',
             type = 'checkbox',
@@ -1181,10 +1138,10 @@ function Public.DisplaySpawnOptions(player)
             state = false
         }
     end
-    -- if (global.enable_vanilla_spawns and (#global.vanillaSpawns > 0)) then
+    -- if (this.enable_vanilla_spawns and (#this.vanillaSpawns > 0)) then
     --     soloSpawnFlow.add{name = "isolated_spawn_vanilla_option_checkbox",
     --                     type = "checkbox",
-    --                     caption="Use a pre-set vanilla spawn point. " .. #global.vanillaSpawns .. " available.",
+    --                     caption="Use a pre-set vanilla spawn point. " .. #this.vanillaSpawns .. " available.",
     --                     state=false}
     -- end
 
@@ -1208,9 +1165,9 @@ function Public.DisplaySpawnOptions(player)
         caption = {'oarc-solo-spawn-far'}
     }
 
-    if (global.enable_vanilla_spawns) then
+    if (this.enable_vanilla_spawns) then
         UtilsGui.AddLabel(soloSpawnFlow, 'isolated_spawn_lbl1', {'oarc-starting-area-vanilla'}, UtilsGui.my_label_style)
-        UtilsGui.AddLabel(soloSpawnFlow, 'vanilla_spawn_lbl2', {'oarc-vanilla-spawns-available', #global.vanillaSpawns}, UtilsGui.my_label_style)
+        UtilsGui.AddLabel(soloSpawnFlow, 'vanilla_spawn_lbl2', {'oarc-vanilla-spawns-available', #this.vanillaSpawns}, UtilsGui.my_label_style)
     else
         UtilsGui.AddLabel(soloSpawnFlow, 'isolated_spawn_lbl1', {'oarc-starting-area-normal'}, UtilsGui.my_label_style)
     end
@@ -1223,7 +1180,7 @@ function Public.DisplaySpawnOptions(player)
         direction = 'vertical',
         style = 'bordered_frame'
     }
-    if global.enable_shared_spawns then
+    if this.enable_shared_spawns then
         local numAvailSpawns = Public.GetNumberOfAvailableSharedSpawns()
         if (numAvailSpawns > 0) then
             sharedSpawnFrame.add {
@@ -1246,8 +1203,8 @@ function Public.DisplaySpawnOptions(player)
     end
 
     -- Awesome buddy spawning system
-    if (not global.enable_vanilla_spawns) then
-        if global.enable_shared_spawns and global.enable_buddy_spawn then
+    if (not this.enable_vanilla_spawns) then
+        if this.enable_shared_spawns and this.enable_buddy_spawn then
             local buddySpawnFrame =
                 sGui.add {
                 name = 'spawn_buddy_flow',
@@ -1267,10 +1224,10 @@ function Public.DisplaySpawnOptions(player)
     end
 
     -- Some final notes
-    if (global.max_players > 0) then
-        UtilsGui.AddLabel(sGui, 'max_players_lbl2', {'oarc-max-players-shared-spawn', global.max_players - 1}, UtilsGui.my_note_style)
+    if (this.max_players > 0) then
+        UtilsGui.AddLabel(sGui, 'max_players_lbl2', {'oarc-max-players-shared-spawn', this.max_players - 1}, UtilsGui.my_note_style)
     end
-    --local spawn_distance_notes={"oarc-spawn-dist-notes", global.near_min_dist, global.near_max_dist, global.far_min_dist, global.far_max_dist}
+    --local spawn_distance_notes={"oarc-spawn-dist-notes", this.near_min_dist, this.near_max_dist, this.far_min_dist, this.far_max_dist}
     --UtilsGui.AddLabel(sGui, "note_lbl1", spawn_distance_notes, UtilsGui.my_note_style)
 end
 
@@ -1314,7 +1271,6 @@ end
 
 -- Handle the gui click of the spawn options
 function Public.SpawnOptsGuiClick(event)
-    local global_data = MPS.get()
     if not (event and event.element and event.element.valid) then
         return
     end
@@ -1346,6 +1302,8 @@ function Public.SpawnOptsGuiClick(event)
         layout = 'square_shape'
     end
 
+    local this = MT.get()
+
     -- Check if a valid button on the gui was pressed
     -- and delete the GUI
     if
@@ -1353,7 +1311,7 @@ function Public.SpawnOptsGuiClick(event)
             (elemName == 'buddy_spawn') or
             (elemName == 'join_other_spawn_check'))
      then
-        if (global.scenario_config.gen_settings.moat_choice_enabled and not global.enable_vanilla_spawns and (pgcs.spawn_solo_flow.isolated_spawn_moat_option_checkbox ~= nil)) then
+        if (this.scenario_config.gen_settings.moat_choice_enabled and not this.enable_vanilla_spawns and (pgcs.spawn_solo_flow.isolated_spawn_moat_option_checkbox ~= nil)) then
             moatChoice = pgcs.spawn_solo_flow.isolated_spawn_moat_option_checkbox.state
         end
     else
@@ -1366,7 +1324,7 @@ function Public.SpawnOptsGuiClick(event)
         Utils.GivePlayerStarterItems(player)
         Public.ChangePlayerSpawn(player, player.force.get_spawn_position(surface_name))
         Utils.SendBroadcastMsg({'oarc-player-is-joining-main-force', player.name})
-        Utils.ChartArea(player.force, player.position, math.ceil(global.scenario_config.gen_settings.land_area_tiles / global_data.chunk_size), player.surface)
+        Utils.ChartArea(player.force, player.position, math.ceil(this.scenario_config.gen_settings.land_area_tiles / this.chunk_size), player.surface)
         -- Unlock spawn control gui tab
         --Gui.set_tab(player, "Spawn Controls", true)
         if player and player.character and player.character.valid then
@@ -1381,7 +1339,7 @@ function Public.SpawnOptsGuiClick(event)
         local goto_new_team = pgcs.spawn_solo_flow.isolated_spawn_new_team_radio.state
 
         -- Create a new force for player if they choose that radio button
-        if global.enable_separate_teams then
+        if this.enable_separate_teams then
             if goto_new_team then
                 Public.CreatePlayerCustomForce(player)
                 own_team = true
@@ -1392,19 +1350,19 @@ function Public.SpawnOptsGuiClick(event)
 
         -- Find an unused vanilla spawn
         -- if (vanillaChoice) then
-        if (global.enable_vanilla_spawns) then
+        if (this.enable_vanilla_spawns) then
             -- Default OARC-type pre-set layout spawn.
             if (elemName == 'isolated_spawn_far') then
-                newSpawn = Public.FindUnusedVanillaSpawn(game.surfaces[surface_name], global.far_max_dist * global_data.chunk_size)
+                newSpawn = Public.FindUnusedVanillaSpawn(game.surfaces[surface_name], this.far_max_dist * this.chunk_size)
             elseif (elemName == 'isolated_spawn_near') then
-                newSpawn = Public.FindUnusedVanillaSpawn(game.surfaces[surface_name], global.near_min_dist * global_data.chunk_size)
+                newSpawn = Public.FindUnusedVanillaSpawn(game.surfaces[surface_name], this.near_min_dist * this.chunk_size)
             end
         else
             -- Find coordinates of a good place to spawn
             if (elemName == 'isolated_spawn_far') then
-                newSpawn = Utils.FindUngeneratedCoordinates(global.far_min_dist, global.far_max_dist, player.surface)
+                newSpawn = Utils.FindUngeneratedCoordinates(this.far_min_dist, this.far_max_dist, player.surface)
             elseif (elemName == 'isolated_spawn_near') then
-                newSpawn = Utils.FindUngeneratedCoordinates(global.near_min_dist, global.near_max_dist, player.surface)
+                newSpawn = Utils.FindUngeneratedCoordinates(this.near_min_dist, this.near_max_dist, player.surface)
             end
         end
 
@@ -1419,7 +1377,7 @@ function Public.SpawnOptsGuiClick(event)
 
         -- Send the player there
         -- QueuePlayerForDelayedSpawn(player.name, newSpawn, moatChoice, vanillaChoice)
-        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, layout, moatChoice, global.enable_vanilla_spawns, own_team, false)
+        Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, layout, moatChoice, this.enable_vanilla_spawns, own_team, false)
         if (elemName == 'isolated_spawn_near') then
             Utils.SendBroadcastMsg({'oarc-player-is-joining-near', player.name})
         elseif (elemName == 'isolated_spawn_far') then
@@ -1436,7 +1394,7 @@ function Public.SpawnOptsGuiClick(event)
         -- Hacky buddy spawn system
         Public.DisplaySpawnOptions(player)
     elseif (elemName == 'buddy_spawn') then
-        table.insert(global.waitingBuddies, player.name)
+        insert(this.waitingBuddies, player.name)
         Utils.SendBroadcastMsg({'oarc-looking-for-buddy', player.name})
 
         Public.DisplayBuddySpawnOptions(player)
@@ -1467,10 +1425,12 @@ function Public.DisplaySharedSpawnOptions(player)
     shGui.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
     shGui.horizontal_scroll_policy = 'never'
 
-    for spawnName, sharedSpawn in pairs(global.sharedSpawns) do
+    local this = MT.get()
+
+    for spawnName, sharedSpawn in pairs(this.sharedSpawns) do
         if (sharedSpawn.openAccess or sharedSpawn.AlwaysAccess and (game.players[spawnName] ~= nil) and game.players[spawnName].connected) then
-            local spotsRemaining = global.max_players - #global.sharedSpawns[spawnName].players
-            if (global.max_players == 0) then
+            local spotsRemaining = this.max_players - #this.sharedSpawns[spawnName].players
+            if (this.max_players == 0) then
                 shGui.add {type = 'button', caption = spawnName, name = spawnName}
             elseif (spotsRemaining > 0) then
                 shGui.add {
@@ -1513,6 +1473,8 @@ function Public.SharedSpwnOptsGuiClick(event)
         end
     end
 
+    local this = MT.get()
+
     -- Check for cancel button, return to spawn options
     if (buttonClicked == 'shared_spawn_cancel') then
         -- Else check for which spawn was selected
@@ -1522,9 +1484,9 @@ function Public.SharedSpwnOptsGuiClick(event)
             player.gui.screen.shared_spawn_opts.destroy()
         end
     else
-        for spawnName, _ in pairs(global.sharedSpawns) do
+        for spawnName, _ in pairs(this.sharedSpawns) do
             if ((buttonClicked == spawnName) and (game.players[spawnName] ~= nil) and (game.players[spawnName].connected)) then
-                if global.sharedSpawns[spawnName].AlwaysAccess then
+                if this.sharedSpawns[spawnName].AlwaysAccess then
                     local joiningPlayer = player
 
                     Utils.SendBroadcastMsg({'oarc-player-joining-base', player.name, spawnName})
@@ -1535,10 +1497,10 @@ function Public.SharedSpwnOptsGuiClick(event)
                     end
 
                     -- Spawn the player
-                    Public.ChangePlayerSpawn(joiningPlayer, global.sharedSpawns[spawnName].position)
+                    Public.ChangePlayerSpawn(joiningPlayer, this.sharedSpawns[spawnName].position)
                     Public.SendPlayerToSpawn(joiningPlayer)
                     Utils.GivePlayerStarterItems(joiningPlayer)
-                    table.insert(global.sharedSpawns[spawnName].players, joiningPlayer.name)
+                    insert(this.sharedSpawns[spawnName].players, joiningPlayer.name)
                     joiningPlayer.force = game.players[spawnName].force
 
                     -- Unlock spawn control gui tab
@@ -1549,10 +1511,10 @@ function Public.SharedSpwnOptsGuiClick(event)
                     return
                 else
                     -- Add the player to that shared spawns join queue.
-                    if (global.sharedSpawns[spawnName].joinQueue == nil) then
-                        global.sharedSpawns[spawnName].joinQueue = {}
+                    if (this.sharedSpawns[spawnName].joinQueue == nil) then
+                        this.sharedSpawns[spawnName].joinQueue = {}
                     end
-                    table.insert(global.sharedSpawns[spawnName].joinQueue, player.name)
+                    insert(this.sharedSpawns[spawnName].joinQueue, player.name)
 
                     -- Clear the shared spawn options gui.
                     if (player.gui.screen.shared_spawn_opts ~= nil) then
@@ -1617,13 +1579,14 @@ function Public.SharedSpawnJoinWaitMenuClick(event)
     if (elemName == 'cancel_shared_spawn_wait_menu') then
         player.gui.screen.join_shared_spawn_wait_menu.destroy()
         Public.DisplaySpawnOptions(player)
+        local this = MT.get()
 
         -- Find and remove the player from the joinQueue they were in.
-        for spawnName, sharedSpawn in pairs(global.sharedSpawns) do
+        for spawnName, sharedSpawn in pairs(this.sharedSpawns) do
             if (sharedSpawn.joinQueue ~= nil) then
                 for index, requestingPlayer in pairs(sharedSpawn.joinQueue) do
                     if (requestingPlayer == player.name) then
-                        table.remove(global.sharedSpawns[spawnName].joinQueue, index)
+                        table.remove(this.sharedSpawns[spawnName].joinQueue, index)
                         game.players[spawnName].print({'oarc-player-cancel-join-request', player.name})
                         return
                     end
@@ -1636,7 +1599,8 @@ function Public.SharedSpawnJoinWaitMenuClick(event)
 end
 
 local function IsSharedSpawnActive(player)
-    if ((global.sharedSpawns[player.name] == nil) or (global.sharedSpawns[player.name].openAccess == false)) then
+    local this = MT.get()
+    if ((this.sharedSpawns[player.name] == nil) or (this.sharedSpawns[player.name].openAccess == false)) then
         return false
     else
         return true
@@ -1644,7 +1608,8 @@ local function IsSharedSpawnActive(player)
 end
 
 local function IsSharedSpawnActiveAlways(player)
-    if ((global.sharedSpawns[player.name] == nil) or (global.sharedSpawns[player.name].AlwaysAccess == false)) then
+    local this = MT.get()
+    if ((this.sharedSpawns[player.name] == nil) or (this.sharedSpawns[player.name].AlwaysAccess == false)) then
         return false
     else
         return true
@@ -1653,11 +1618,12 @@ end
 
 -- Get a random warp point to go to
 function Public.GetRandomSpawnPoint()
-    local numSpawnPoints = Utils.TableLength(global.sharedSpawns)
+    local this = MT.get()
+    local numSpawnPoints = Utils.TableLength(this.sharedSpawns)
     if (numSpawnPoints > 0) then
         local randSpawnNum = math.random(1, numSpawnPoints)
         local counter = 1
-        for _, sharedSpawn in pairs(global.sharedSpawns) do
+        for _, sharedSpawn in pairs(this.sharedSpawns) do
             if (randSpawnNum == counter) then
                 return sharedSpawn.position
             end
@@ -1670,7 +1636,6 @@ end
 
 -- This is a toggle function, it either shows or hides the spawn controls
 function Public.CreateSpawnCtrlGuiTab(player, frame)
-    local global_data = MPS.get()
     frame.clear()
     local spwnCtrls =
         frame.add {
@@ -1681,9 +1646,10 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
     UtilsGui.ApplyStyle(spwnCtrls, UtilsGui.my_fixed_width_style)
     spwnCtrls.style.maximal_height = SPAWN_GUI_MAX_HEIGHT
     spwnCtrls.horizontal_scroll_policy = 'never'
+    local this = MT.get()
 
-    if global.enable_shared_spawns then
-        if (global.uniqueSpawns[player.name] ~= nil) then
+    if this.enable_shared_spawns then
+        if (this.uniqueSpawns[player.name] ~= nil) then
             -- This checkbox allows people to join your base when they first
             -- start the game.
             spwnCtrls.add {
@@ -1693,11 +1659,11 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
                 state = IsSharedSpawnActive(player)
             }
             if Public.DoesPlayerHaveCustomSpawn(player) then
-                if (global.sharedSpawns[player.name] == nil) then
+                if (this.sharedSpawns[player.name] == nil) then
                     Public.CreateNewSharedSpawn(player)
                 end
             end
-            if global.sharedSpawns[player.name].openAccess then
+            if this.sharedSpawns[player.name].openAccess then
                 spwnCtrls.add {
                     type = 'checkbox',
                     name = 'alwaysallowaccessToggle',
@@ -1710,7 +1676,7 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
     end
 
     -- Sets the player's custom spawn point to their current location
-    if ((game.tick - global.playerCooldowns[player.name].setRespawn) > (global.respawn_cooldown * global_data.ticks_per_minute)) then
+    if ((game.tick - this.playerCooldowns[player.name].setRespawn) > (this.respawn_cooldown * this.ticks_per_minute)) then
         spwnCtrls.add {type = 'button', name = 'setRespawnLocation', caption = {'oarc-set-respawn-loc'}}
         spwnCtrls['setRespawnLocation'].style.font = 'default-small-semibold'
     else
@@ -1719,7 +1685,7 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
             'respawn_cooldown_note1',
             {
                 'oarc-set-respawn-loc-cooldown',
-                Utils.formattime((global.respawn_cooldown * global_data.ticks_per_minute) - (game.tick - global.playerCooldowns[player.name].setRespawn))
+                Utils.formattime((this.respawn_cooldown * this.ticks_per_minute) - (game.tick - this.playerCooldowns[player.name].setRespawn))
             },
             UtilsGui.my_note_style
         )
@@ -1727,13 +1693,13 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
     UtilsGui.AddLabel(spwnCtrls, 'respawn_cooldown_note2', {'oarc-set-respawn-note'}, UtilsGui.my_note_style)
 
     -- Display a list of people in the join queue for your base.
-    if (global.enable_shared_spawns and IsSharedSpawnActive(player)) then
-        if ((global.sharedSpawns[player.name].joinQueue ~= nil) and (#global.sharedSpawns[player.name].joinQueue > 0)) then
+    if (this.enable_shared_spawns and IsSharedSpawnActive(player)) then
+        if ((this.sharedSpawns[player.name].joinQueue ~= nil) and (#this.sharedSpawns[player.name].joinQueue > 0)) then
             UtilsGui.AddLabel(spwnCtrls, 'drop_down_msg_lbl1', {'oarc-select-player-join-queue'}, UtilsGui.my_label_style)
             spwnCtrls.add {
                 name = 'join_queue_dropdown',
                 type = 'drop-down',
-                items = global.sharedSpawns[player.name].joinQueue
+                items = this.sharedSpawns[player.name].joinQueue
             }
             spwnCtrls.add {
                 name = 'accept_player_request',
@@ -1769,22 +1735,24 @@ function Public.SpawnCtrlGuiOptionsSelect(event)
         return
     end
 
+    local this = MT.get()
+
     -- Handle changes to spawn sharing.
     if (name == 'accessToggle') then
         if event.element.state then
             if Public.DoesPlayerHaveCustomSpawn(player) then
-                if (global.sharedSpawns[player.name] == nil) then
+                if (this.sharedSpawns[player.name] == nil) then
                     Public.CreateNewSharedSpawn(player)
                 else
-                    global.sharedSpawns[player.name].openAccess = true
+                    this.sharedSpawns[player.name].openAccess = true
                 end
 
                 Utils.SendBroadcastMsg({'oarc-start-shared-base', player.name})
             end
         else
-            if (global.sharedSpawns[player.name] ~= nil) then
-                global.sharedSpawns[player.name].openAccess = false
-                global.sharedSpawns[player.name].AlwaysAccess = false
+            if (this.sharedSpawns[player.name] ~= nil) then
+                this.sharedSpawns[player.name].openAccess = false
+                this.sharedSpawns[player.name].AlwaysAccess = false
                 Utils.SendBroadcastMsg({'oarc-stop-shared-base', player.name})
             end
         end
@@ -1793,17 +1761,17 @@ function Public.SpawnCtrlGuiOptionsSelect(event)
     if (name == 'alwaysallowaccessToggle') then
         if event.element.state then
             if Public.DoesPlayerHaveCustomSpawn(player) then
-                if (global.sharedSpawns[player.name] == nil) then
+                if (this.sharedSpawns[player.name] == nil) then
                     Public.CreateNewSharedSpawn(player)
                 else
-                    global.sharedSpawns[player.name].AlwaysAccess = true
+                    this.sharedSpawns[player.name].AlwaysAccess = true
                 end
 
                 Utils.SendBroadcastMsg({'oarc-start-always-shared-base', player.name})
             end
         else
-            if (global.sharedSpawns[player.name] ~= nil) then
-                global.sharedSpawns[player.name].AlwaysAccess = false
+            if (this.sharedSpawns[player.name] ~= nil) then
+                this.sharedSpawns[player.name].AlwaysAccess = false
                 Utils.SendBroadcastMsg({'oarc-stop-always-shared-base', player.name})
             end
         end
@@ -1856,6 +1824,8 @@ function Public.SpawnCtrlGuiClick(event)
             return
         end
 
+        local this = MT.get()
+
         if (elemName == 'reject_player_request') then
             player.print({'oarc-reject-joiner', joinQueuePlayerChoice})
             Utils.SendMsg(joinQueuePlayerChoice, {'oarc-your-request-rejected'})
@@ -1868,17 +1838,17 @@ function Public.SpawnCtrlGuiClick(event)
             end
 
             -- Find and remove the player from the joinQueue they were in.
-            for index, requestingPlayer in pairs(global.sharedSpawns[player.name].joinQueue) do
+            for index, requestingPlayer in pairs(this.sharedSpawns[player.name].joinQueue) do
                 if (requestingPlayer == joinQueuePlayerChoice) then
-                    table.remove(global.sharedSpawns[player.name].joinQueue, index)
+                    table.remove(this.sharedSpawns[player.name].joinQueue, index)
                     return
                 end
             end
         elseif (elemName == 'accept_player_request') then
             -- Find and remove the player from the joinQueue they were in.
-            for index, requestingPlayer in pairs(global.sharedSpawns[player.name].joinQueue) do
+            for index, requestingPlayer in pairs(this.sharedSpawns[player.name].joinQueue) do
                 if (requestingPlayer == joinQueuePlayerChoice) then
-                    table.remove(global.sharedSpawns[player.name].joinQueue, index)
+                    table.remove(this.sharedSpawns[player.name].joinQueue, index)
                 end
             end
             Gui.refresh(player)
@@ -1895,10 +1865,10 @@ function Public.SpawnCtrlGuiClick(event)
                 end
 
                 -- Spawn the player
-                Public.ChangePlayerSpawn(joiningPlayer, global.sharedSpawns[player.name].position)
+                Public.ChangePlayerSpawn(joiningPlayer, this.sharedSpawns[player.name].position)
                 Public.SendPlayerToSpawn(joiningPlayer)
                 Utils.GivePlayerStarterItems(joiningPlayer)
-                table.insert(global.sharedSpawns[player.name].players, joiningPlayer.name)
+                insert(this.sharedSpawns[player.name].players, joiningPlayer.name)
                 joiningPlayer.force = game.players[player.name].force
 
                 -- Unlock spawn control gui tab
@@ -1947,10 +1917,12 @@ function Public.DisplayBuddySpawnOptions(player)
         style = 'bordered_frame'
     }
 
-    global.buddyList = {}
-    for _, buddyName in pairs(global.waitingBuddies) do
+    local this = MT.get()
+
+    this.buddyList = {}
+    for _, buddyName in pairs(this.waitingBuddies) do
         if (buddyName ~= player.name) then
-            table.insert(global.buddyList, buddyName)
+            insert(this.buddyList, buddyName)
         end
     end
 
@@ -1958,7 +1930,7 @@ function Public.DisplayBuddySpawnOptions(player)
     buddySpawnFlow.add {
         name = 'waiting_buddies_dropdown',
         type = 'drop-down',
-        items = global.buddyList
+        items = this.buddyList
     }
     buddySpawnFlow.add {
         name = 'refresh_buddy_list',
@@ -1968,7 +1940,7 @@ function Public.DisplayBuddySpawnOptions(player)
     -- UtilsGui.AddSpacerLine(buddySpawnFlow)
 
     -- Allow picking of teams
-    if (global.enable_separate_teams) then
+    if (this.enable_separate_teams) then
         buddySpawnFlow.add {
             name = 'buddy_spawn_main_team_radio',
             type = 'radiobutton',
@@ -1988,7 +1960,7 @@ function Public.DisplayBuddySpawnOptions(player)
             state = false
         }
     end
-    --if (global.scenario_config.gen_settings.moat_choice_enabled) then
+    --if (this.scenario_config.gen_settings.moat_choice_enabled) then
     --    buddySpawnFlow.add{name = "buddy_spawn_moat_option_checkbox",
     --                    type = "checkbox",
     --                    caption={"oarc-moat-option"},
@@ -2017,15 +1989,15 @@ function Public.DisplayBuddySpawnOptions(player)
 
     -- Some final notes
     UtilsGui.AddSpacerLine(buddyGui)
-    if (global.max_players > 0) then
-        UtilsGui.AddLabel(buddyGui, 'buddy_max_players_lbl1', {'oarc-max-players-shared-spawn', global.max_players - 1}, UtilsGui.my_note_style)
+    if (this.max_players > 0) then
+        UtilsGui.AddLabel(buddyGui, 'buddy_max_players_lbl1', {'oarc-max-players-shared-spawn', this.max_players - 1}, UtilsGui.my_note_style)
     end
     local spawn_distance_notes = {
         'oarc-spawn-dist-notes',
-        global.near_min_dist,
-        global.near_max_dist,
-        global.far_min_dist,
-        global.far_max_dist
+        this.near_min_dist,
+        this.near_max_dist,
+        this.far_min_dist,
+        this.far_max_dist
     }
     UtilsGui.AddLabel(buddyGui, 'note_lbl1', spawn_distance_notes, UtilsGui.my_note_style)
 end
@@ -2052,11 +2024,13 @@ function Public.BuddySpawnOptsGuiClick(event)
 
     local waiting_buddies_dropdown = player.gui.screen.buddy_spawn_opts.spawn_buddy_flow.waiting_buddies_dropdown
 
+    local this = MT.get()
+
     -- Just refresh the buddy list dropdown values only.
     if (elemName == 'refresh_buddy_list') then
         waiting_buddies_dropdown.clear_items()
 
-        for _, buddyName in pairs(global.waitingBuddies) do
+        for _, buddyName in pairs(this.waitingBuddies) do
             if (player.name ~= buddyName) then
                 waiting_buddies_dropdown.add_item(buddyName)
             end
@@ -2081,10 +2055,10 @@ function Public.BuddySpawnOptsGuiClick(event)
         Public.DisplaySpawnOptions(player)
 
         -- Remove them from the buddy list when they cancel
-        for i = #global.waitingBuddies, 1, -1 do
-            local name = global.waitingBuddies[i]
+        for i = #this.waitingBuddies, 1, -1 do
+            local name = this.waitingBuddies[i]
             if (name == player.name) then
-                table.remove(global.waitingBuddies, i)
+                table.remove(this.waitingBuddies, i)
             end
         end
     end
@@ -2106,7 +2080,7 @@ function Public.BuddySpawnOptsGuiClick(event)
         end
 
         local buddyIsStillWaiting = false
-        for _, buddyName in pairs(global.waitingBuddies) do
+        for _, buddyName in pairs(this.waitingBuddies) do
             if (buddyChoice == buddyName) then
                 if (game.players[buddyChoice]) then
                     buddyIsStillWaiting = true
@@ -2121,7 +2095,7 @@ function Public.BuddySpawnOptsGuiClick(event)
             return
         end
 
-        if (global.enable_separate_teams) then
+        if (this.enable_separate_teams) then
             joinMainTeamRadio = buddySpawnGui.buddy_spawn_main_team_radio.state
             joinOwnTeamRadio = buddySpawnGui.buddy_spawn_new_team_radio.state
             joinBuddyTeamRadio = buddySpawnGui.buddy_spawn_buddy_team_radio.state
@@ -2130,12 +2104,12 @@ function Public.BuddySpawnOptsGuiClick(event)
             joinOwnTeamRadio = false
             joinBuddyTeamRadio = false
         end
-        --if (global.scenario_config.gen_settings.moat_choice_enabled) then
+        --if (this.scenario_config.gen_settings.moat_choice_enabled) then
         --    moatChoice =  buddySpawnGui.buddy_spawn_moat_option_checkbox.state
         --end
 
         -- Save the chosen spawn options somewhere for later use.
-        global.buddySpawnOptions[player.name] = {
+        this.buddySpawnOptions[player.name] = {
             joinMainTeamRadio = joinMainTeamRadio,
             joinOwnTeamRadio = joinOwnTeamRadio,
             joinBuddyTeamRadio = joinBuddyTeamRadio,
@@ -2155,10 +2129,10 @@ function Public.BuddySpawnOptsGuiClick(event)
         end
 
         -- Remove them from the buddy list while they make up their minds.
-        for i = #global.waitingBuddies, 1, -1 do
-            local name = global.waitingBuddies[i]
+        for i = #this.waitingBuddies, 1, -1 do
+            local name = this.waitingBuddies[i]
             if ((name == player.name) or (name == buddyChoice)) then
-                table.remove(global.waitingBuddies, i)
+                table.remove(this.waitingBuddies, i)
             end
         end
     else
@@ -2207,12 +2181,14 @@ function Public.BuddySpawnWaitMenuClick(event)
         return -- Gui event unrelated to this gui.
     end
 
+    local this = MT.get()
+
     -- Check if player is cancelling the request.
     if (elemName == 'cancel_buddy_wait_menu') then
         player.gui.screen.buddy_wait_menu.destroy()
         Public.DisplaySpawnOptions(player)
 
-        local buddy = game.players[global.buddySpawnOptions[player.name].buddyChoice]
+        local buddy = game.players[this.buddySpawnOptions[player.name].buddyChoice]
 
         if (buddy.gui.screen.buddy_request_menu ~= nil) then
             buddy.gui.screen.buddy_request_menu.destroy()
@@ -2248,24 +2224,26 @@ function Public.DisplayBuddySpawnRequestMenu(player, requestingBuddyName)
     -- Warnings and explanations...
     UtilsGui.AddLabel(sGui, 'warning_lbl1', {'oarc-buddy-requesting-from-you', requestingBuddyName}, UtilsGui.my_warning_style)
 
+    local this = MT.get()
+
     local teamText = 'error!'
-    if (global.buddySpawnOptions[requestingBuddyName].joinMainTeamRadio) then
+    if (this.buddySpawnOptions[requestingBuddyName].joinMainTeamRadio) then
         teamText = {'oarc-buddy-txt-main-team'}
-    elseif (global.buddySpawnOptions[requestingBuddyName].joinOwnTeamRadio) then
+    elseif (this.buddySpawnOptions[requestingBuddyName].joinOwnTeamRadio) then
         teamText = {'oarc-buddy-txt-new-teams'}
-    elseif (global.buddySpawnOptions[requestingBuddyName].joinBuddyTeamRadio) then
+    elseif (this.buddySpawnOptions[requestingBuddyName].joinBuddyTeamRadio) then
         teamText = {'oarc-buddy-txt-buddy-team'}
     end
 
     local moatText = ' '
-    if (global.buddySpawnOptions[requestingBuddyName].moatChoice) then
+    if (this.buddySpawnOptions[requestingBuddyName].moatChoice) then
         moatText = {'oarc-buddy-txt-moat'}
     end
 
     local distText = 'error!'
-    if (global.buddySpawnOptions[requestingBuddyName].distChoice == 'buddy_spawn_request_near') then
+    if (this.buddySpawnOptions[requestingBuddyName].distChoice == 'buddy_spawn_request_near') then
         distText = {'oarc-buddy-txt-near'}
-    elseif (global.buddySpawnOptions[requestingBuddyName].distChoice == 'buddy_spawn_request_far') then
+    elseif (this.buddySpawnOptions[requestingBuddyName].distChoice == 'buddy_spawn_request_far') then
         distText = {'oarc-buddy-txt-far'}
     end
 
@@ -2312,9 +2290,11 @@ function Public.BuddySpawnRequestMenuClick(event)
         return -- Gui event unrelated to this gui.
     end
 
+    local this = MT.get()
+
     -- Check if it's a button press and lookup the matching buddy info
     if ((elemName == 'accept_buddy_request') or (elemName == 'decline_buddy_request')) then
-        for name, opts in pairs(global.buddySpawnOptions) do
+        for name, opts in pairs(this.buddySpawnOptions) do
             if (opts.buddyChoice == player.name) then
                 requesterName = name
                 requesterOptions = opts
@@ -2356,9 +2336,9 @@ function Public.BuddySpawnRequestMenuClick(event)
 
         -- Find coordinates of a good place to spawn
         if (requesterOptions.distChoice == 'buddy_spawn_request_far') then
-            newSpawn = Utils.FindUngeneratedCoordinates(global.far_min_dist, global.far_max_dist, player.surface)
+            newSpawn = Utils.FindUngeneratedCoordinates(this.far_min_dist, this.far_max_dist, player.surface)
         elseif (requesterOptions.distChoice == 'buddy_spawn_request_near') then
-            newSpawn = Utils.FindUngeneratedCoordinates(global.near_min_dist, global.near_max_dist, player.surface)
+            newSpawn = Utils.FindUngeneratedCoordinates(this.near_min_dist, this.near_max_dist, player.surface)
         end
 
         -- If that fails, find a random map edge in a rand direction.
@@ -2368,23 +2348,23 @@ function Public.BuddySpawnRequestMenuClick(event)
         end
 
         -- Create that spawn in the global vars
-        global.buddySpawn = {x = 0, y = 0}
+        this.buddySpawn = {x = 0, y = 0}
         if (requesterOptions.moatChoice) then
-            global.buddySpawn = {
-                x = newSpawn.x + (global.scenario_config.gen_settings.land_area_tiles * 2) + 10,
+            this.buddySpawn = {
+                x = newSpawn.x + (this.scenario_config.gen_settings.land_area_tiles * 2) + 10,
                 y = newSpawn.y
             }
         else
-            global.buddySpawn = {
-                x = newSpawn.x + (global.scenario_config.gen_settings.land_area_tiles * 2),
+            this.buddySpawn = {
+                x = newSpawn.x + (this.scenario_config.gen_settings.land_area_tiles * 2),
                 y = newSpawn.y
             }
         end
         Public.ChangePlayerSpawn(player, newSpawn)
-        Public.ChangePlayerSpawn(game.players[requesterName], global.buddySpawn)
+        Public.ChangePlayerSpawn(game.players[requesterName], this.buddySpawn)
         -- Send the player there
         Public.QueuePlayerForDelayedSpawn(player.name, newSpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true, false)
-        Public.QueuePlayerForDelayedSpawn(requesterName, global.buddySpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true, false)
+        Public.QueuePlayerForDelayedSpawn(requesterName, this.buddySpawn, requesterOptions.layout, requesterOptions.moatChoice, false, false, true, false)
         Utils.SendBroadcastMsg(requesterName .. ' and ' .. player.name .. ' are joining the game together!')
 
         -- Unlock spawn control gui tab

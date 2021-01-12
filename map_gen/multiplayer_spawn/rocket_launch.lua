@@ -1,5 +1,5 @@
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
-local Config = require 'map_gen.multiplayer_spawn.config'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
+local MT = require 'map_gen.multiplayer_spawn.table'
 local Tabs = require 'utils.gui.core'
 
 local Public = {}
@@ -18,9 +18,11 @@ function Public.RocketLaunchEvent(event)
         return
     end
 
+    local this = MT.get()
+
     -- First ever sat launch
-    if not global.satellite_sent then
-        global.satellite_sent = {}
+    if not this.satellite_sent then
+        this.satellite_sent = {}
         Utils.SendBroadcastMsg('Team ' .. event.rocket.force.name .. ' was the first to launch a rocket!')
 
         for _, player in pairs(game.players) do
@@ -29,13 +31,13 @@ function Public.RocketLaunchEvent(event)
     end
 
     -- Track additional satellites launched by this force
-    if global.satellite_sent[force.name] then
+    if this.satellite_sent[force.name] then
         -- First sat launch for this force.
-        global.satellite_sent[force.name] = global.satellite_sent[force.name] + 1
-        Utils.SendBroadcastMsg('Team ' .. event.rocket.force.name .. ' launched another rocket. Total ' .. global.satellite_sent[force.name])
+        this.satellite_sent[force.name] = this.satellite_sent[force.name] + 1
+        Utils.SendBroadcastMsg('Team ' .. event.rocket.force.name .. ' launched another rocket. Total ' .. this.satellite_sent[force.name])
     else
         -- game.set_game_state{game_finished=true, player_won=true, can_continue=true}
-        global.satellite_sent[force.name] = 1
+        this.satellite_sent[force.name] = 1
         Utils.SendBroadcastMsg('Team ' .. event.rocket.force.name .. ' launched their first rocket!')
     end
 end

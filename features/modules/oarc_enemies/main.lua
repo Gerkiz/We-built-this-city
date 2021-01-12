@@ -4,7 +4,7 @@ local Evo = require 'features.modules.oarc_enemies.oarc_enemies_evo'
 local OE = require 'features.modules.oarc_enemies.oarc_enemies'
 --local Gui = require 'features.modules.oarc_enemies.oarc_enemies_gui'
 local Logic = require 'features.modules.oarc_enemies.oarc_enemies_tick_logic'
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
 
 Event.add(
     defines.events.on_player_created,

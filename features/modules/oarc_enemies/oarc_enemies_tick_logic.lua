@@ -3,9 +3,9 @@
 --
 -- Holds all the code related to the the on_tick "state machine"
 -- Where we process on going attacks step by step.
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
+local MPS = require 'map_gen.multiplayer_spawn.table'
 local OE_Table = require 'features.modules.oarc_enemies.table'
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
 local OE = require 'features.modules.oarc_enemies.oarc_enemies'
 local Evo = require 'features.modules.oarc_enemies.oarc_enemies_evo'
 local Surface = require 'utils.surface'

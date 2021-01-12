@@ -162,7 +162,7 @@ function Public.reset_force_with_players(force, killed)
             end
         end
 
-        local sS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
+        local sS = is_loaded('map_gen.multiplayer_spawn.separate_spawns')
         if sS then
             sS.SeparateSpawnsPlayerCreated(player.index)
         end

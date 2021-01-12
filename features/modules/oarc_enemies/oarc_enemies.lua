@@ -23,9 +23,9 @@
 -- }
 
 local Evo = require 'features.modules.oarc_enemies.oarc_enemies_evo'
-local Utils = require 'map_gen.multiplayer_spawn.lib.oarc_utils'
+local Utils = require 'map_gen.multiplayer_spawn.oarc_utils'
 local OE_Table = require 'features.modules.oarc_enemies.table'
-local MPS = require 'map_gen.multiplayer_spawn.lib.table'
+local MPS = require 'map_gen.multiplayer_spawn.table'
 local Surface = require 'utils.surface'
 local validate = require 'utils.validate_player'
 local insert = table.insert

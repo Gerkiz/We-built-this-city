@@ -157,15 +157,19 @@ local function kill(player, source_player)
 end
 
 local function respawn_player(player)
-    local SS = is_loaded('map_gen.multiplayer_spawn.lib.separate_spawns')
+    local SS = is_loaded('map_gen.multiplayer_spawn.separate_spawns')
     local name = Surface.get_surface_name()
     local pos = game.surfaces[name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
+    local force
     if SS then
-        SS.SeparateSpawnsPlayerCreated(player.index)
+        force = SS.SeparateSpawnsPlayerCreated(player.index)
     end
     player.teleport(pos, game.surfaces[name])
 
-    player.force = global.main_force_name
+    if force then
+        player.force = force
+    end
+
     game.print('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.', Color.warning)
     log('[SpawnControl] Resetting and clearing ' .. player.name .. ' base.')
 end
