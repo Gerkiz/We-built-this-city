@@ -131,10 +131,9 @@ Event.add(
 
             Silo.GenerateRocketSiloChunk(event)
 
-            SS.SeparateSpawnsGenerateChunk(event)
-
         --CreateHoldingPen(event.surface, event.area, 16, 32)
         end
+        SS.SeparateSpawnsGenerateChunk(event)
     end
 )
 
