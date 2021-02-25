@@ -451,9 +451,9 @@ local function create_gui_button(player)
             style = Gui.button_style
         }
     )
-
-    Gui.allow_player_to_toggle(b.name)
 end
+
+Gui.allow_player_to_toggle('auto_stash')
 
 local function do_whitelist()
     local resources = game.entity_prototypes

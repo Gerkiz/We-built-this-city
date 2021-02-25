@@ -1080,9 +1080,10 @@ Event.add(
             tooltip = 'Upgrade planner',
             style = Gui.button_style
         }
-        Gui.allow_player_to_toggle(b.name)
     end
 )
+
+Gui.allow_player_to_toggle('upgrade_planner_config_button')
 
 Event.add(defines.events.on_gui_selection_state_changed, on_gui_selection_state_changed)
 Event.add(defines.events.on_gui_elem_changed, on_gui_elem_changed)

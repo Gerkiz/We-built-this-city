@@ -36,8 +36,9 @@ function Public.toggle_button(player)
         tooltip = 'Show Info',
         style = Gui.button_style
     }
-    Gui.allow_player_to_toggle(b.name)
 end
+
+Gui.allow_player_to_toggle('towny_map_intro_button')
 
 function Public.show(player)
     if player.gui.center['towny_map_intro_frame'] then

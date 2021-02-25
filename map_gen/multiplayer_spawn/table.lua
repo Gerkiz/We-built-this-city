@@ -24,7 +24,7 @@ function Public.reset_table()
     this.scenario_info_msg =
         'This scenario gives you and/or your friends your own starting area.\n' ..
         'You can play in the main team or your own. All teams are friendly.\n' ..
-        'If you leave in the first 15 minutes, your base and character will be deleted!\n' .. 'Repeated joining and leaving will result in a temporary ban.'
+            'If you leave in the first 15 minutes, your base and character will be deleted!\n' .. 'Repeated joining and leaving will result in a temporary ban.'
     this.enable_vanilla_spawns = false
     this.enable_default_spawn = true
     this.enable_buddy_spawn = false
@@ -34,7 +34,7 @@ function Public.reset_table()
 
     this.silo_island_mode = false
     this.enable_undecorator = false
-    this.enable_scramble = true
+    this.enable_scramble = false
     this.enable_longreach = false
     this.enable_autofill = false
     this.enable_loaders = true
