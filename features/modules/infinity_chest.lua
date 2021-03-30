@@ -603,15 +603,20 @@ local function update_gui()
 
         ::full::
 
+        local inf_chest = this.inf_chests[unit_number]
         if mode == 3 and not controls.tbl_2 then
             local linker_tooltip = '[color=yellow]Link Info:[/color]\nThis will only work with chests that you have placed.'
-            local chests = get_owner_chests(player, entity)
             local tbl_2 = controls.add {type = 'table', column_count = 3, name = 'tbl_2'}
             local chestId = tbl_2.add({type = 'label', caption = 'Chest ID: ' .. unit_number, tooltip = linker_tooltip})
             chestId.style.font = 'heading-2'
-            if this.inf_chests[unit_number] and this.inf_chests[unit_number].linked_index then
-                local linked = this.inf_chests[unit_number].linked_index
-                if #chests > linked then
+            if inf_chest then
+                if inf_chest and inf_chest.owner ~= player.index then
+                    local private_label = tbl_2.add({type = 'label', caption = '    Not owner of chest. ', tooltip = linker_tooltip})
+                    private_label.style.font = 'heading-2'
+                else
+                    local linked = inf_chest.linked_index
+                    local chests = get_owner_chests(player, entity)
+
                     local private_label = tbl_2.add({type = 'label', caption = '    Link with: ', tooltip = linker_tooltip})
                     private_label.style.font = 'heading-2'
                     local private_checkbox =
@@ -625,23 +630,20 @@ local function update_gui()
                         }
                     )
                     private_checkbox.style.minimal_height = 25
-                else
-                    local private_label = tbl_2.add({type = 'label', caption = '    Not owner of chest. ', tooltip = linker_tooltip})
-                    private_label.style.font = 'heading-2'
                 end
             end
         elseif mode ~= 3 and controls.tbl_2 and controls.tbl_2.valid then
             controls.tbl_2.destroy()
-            if this.inf_chests[unit_number] and this.inf_chests[unit_number].linked_to then
-                local linked = this.inf_chests[unit_number].linked_to
+            if inf_chest and inf_chest.linked_to then
+                local linked = inf_chest.linked_to
                 if linked then
                     linked = tonumber(linked)
                     this.inf_chests[linked].linked_to = nil
                     this.inf_chests[linked].linked_index = nil
                     this.inf_mode[linked] = 1
                 end
-                this.inf_chests[unit_number].linked_to = nil
-                this.inf_chests[unit_number].linked_index = nil
+                inf_chest.linked_to = nil
+                inf_chest.linked_index = nil
             end
         end
 

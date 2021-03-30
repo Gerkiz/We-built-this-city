@@ -1296,6 +1296,4 @@ function Class.send_poll_result_to_discord(id)
     Server.to_discord_embed(message)
 end
 
-Gui.tabs['Polls'] = draw_main_frame
-
 return Class

@@ -1,7 +1,10 @@
 local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui.core'
-local Validate = require 'utils.validate_player'
+local SpamProtection = require 'utils.spam_protection'
+local Token = require 'utils.token'
+
+local module_name = 'Map Info'
 
 local map_info = {
     localised_category = false,
@@ -25,7 +28,8 @@ function Public.Pop_info()
     return map_info
 end
 
-local create_map_intro = (function(player, frame)
+local function create_map_intro(data)
+    local frame = data.frame
     frame.clear()
     frame.style.padding = 4
     frame.style.margin = 0
@@ -89,36 +93,45 @@ local create_map_intro = (function(player, frame)
     b.style.left_margin = 333
     b.style.horizontal_align = 'center'
     b.style.vertical_align = 'center'
-end)
+end
+
+local create_map_intro_token = Token.register(create_map_intro)
 
 local function on_player_joined_game(event)
     local player = game.players[event.player_index]
     if player.online_time == 0 then
-        Gui.panel_call_tab(player, 'Info')
+        Gui.panel_call_tab(player, 'Map Info')
     end
 end
 
 local function on_gui_click(event)
-    local player = game.players[event.player_index]
-    Validate(player)
     if not event then
         return
     end
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then
+        return
+    end
+
     if not event.element then
         return
     end
     if not event.element.valid then
         return
     end
+
     if event.element.name == 'close_map_intro' then
-        local is_spamming = Gui.toggle_visibility(player)
+        local is_spamming = SpamProtection.is_spamming(player, nil, 'Map Info Gui Click')
         if is_spamming then
             return
         end
+        local main_frame = Gui.main_frame_name
+        player.gui.left[main_frame].destroy()
+        return
     end
 end
 
-Gui.tabs['Info'] = create_map_intro
+Gui.add_tab_to_gui({name = module_name, id = create_map_intro_token, admin = false})
 
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
 Event.add(defines.events.on_gui_click, on_gui_click)

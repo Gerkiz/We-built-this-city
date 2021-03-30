@@ -2,8 +2,11 @@ local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui'
 local Color = require 'utils.color_presets'
+local SpamProtection = require 'utils.spam_protection'
+local Token = require 'utils.token'
 
 local disabled_tabs = {}
+local main_gui_tabs = {}
 local ignored_visibility = {}
 local icons = {
     'entity/small-biter',
@@ -22,24 +25,20 @@ local icons = {
     'entity/character',
     'entity/big-biter'
 }
-local this = {}
-
 local main_button_name = Gui.uid_name()
 local main_frame_name = Gui.uid_name()
 
 Global.register(
-    {disabled_tabs = disabled_tabs, icons = icons, this = this},
+    {disabled_tabs = disabled_tabs, icons = icons},
     function(t)
         disabled_tabs = t.disabled_tabs
         icons = t.icons
-        this = t.this
     end
 )
 
 Gui.events = {on_gui_removal = Event.generate_event_name('on_gui_removal')}
 
 Gui.classes = {}
-Gui.tabs = {}
 
 Gui.my_fixed_width_style = {
     minimal_width = 450,
@@ -166,6 +165,16 @@ function Gui.get_table(key)
     return Gui.store_meta
 end
 
+--- Fetches the main gui tabs. You are forbidden to write as this is local.
+---@param key
+function Gui.get(key)
+    if key then
+        return main_gui_tabs[key]
+    else
+        return main_gui_tabs
+    end
+end
+
 function Gui.ignored_visibility(elem)
     if not ignored_visibility[elem] then
         ignored_visibility[elem] = true
@@ -206,10 +215,6 @@ function Gui.set_dropdown_index(dropdown, _item)
     end
     dropdown.selected_index = _index
     return dropdown
-end
-
-function Gui.get_tabs_table()
-    return Gui.tabs
 end
 
 function Gui.apply_direction_button_style(button)
@@ -282,8 +287,26 @@ function Gui.AddSpacerLine(guiIn)
     Gui.ApplyStyle(guiIn.add {type = 'line', direction = 'horizontal'}, Gui.my_spacer_style)
 end
 
-function Gui.get_tabs()
-    return Gui.tabs
+--- This adds the given gui to the main gui.
+---@param tbl
+function Gui.add_tab_to_gui(tbl)
+    if not tbl then
+        return
+    end
+    if not tbl.name then
+        return
+    end
+    if not tbl.id then
+        return
+    end
+    local admin = tbl.admin or false
+    local only_server_sided = tbl.only_server_sided or false
+
+    if not main_gui_tabs[tbl.name] then
+        main_gui_tabs[tbl.name] = {id = tbl.id, admin = admin, only_server_sided = only_server_sided}
+    else
+        error('Given name: ' .. tbl.name .. ' already exists in table.')
+    end
 end
 
 function Gui.get_disabled_tabs()
@@ -361,7 +384,23 @@ function Gui.panel_refresh_active_tab(player)
     if not frame then
         return
     end
-    Gui.tabs[frame.name](player, frame)
+
+    local tab = main_gui_tabs[frame.name]
+    if not tab then
+        return
+    end
+    local id = tab.id
+    if not id then
+        return
+    end
+    local func = Token.get(id)
+
+    local data = {
+        player = player,
+        frame = frame
+    }
+
+    return func(data)
 end
 
 local function top_button(player)
@@ -393,7 +432,7 @@ end
 
 local function main_frame(player)
     local left = player.gui.left
-    local tabs = Gui.tabs
+    local tabs = main_gui_tabs
 
     local frame = left.add {type = 'frame', name = main_frame_name, direction = 'vertical', style = 'changelog_subheader_frame'}
 
@@ -415,10 +454,26 @@ local function main_frame(player)
     local t = inside_frame.add {name = 'tabbed_pane', type = 'tabbed-pane', style = 'tabbed_pane'}
     t.style.top_padding = 8
 
-    for name, _ in pairs(tabs) do
-        if name == 'Admin' then
+    for name, func in pairs(tabs) do
+        if func.only_server_sided then
+            local tab = t.add({type = 'tab', caption = name, name = 'tab_' .. name})
+            if disabled_tabs[player.index] then
+                if disabled_tabs[player.index][name] == false then
+                    tab.enabled = false
+                end
+            end
+            local f1 = t.add({type = 'frame', name = name, direction = 'vertical'})
+            f1.style.left_margin = 10
+            f1.style.right_margin = 10
+            f1.style.top_margin = 4
+            f1.style.bottom_margin = 4
+            f1.style.padding = 5
+            f1.style.horizontally_stretchable = true
+            f1.style.vertically_stretchable = true
+            t.add_tab(tab, f1)
+        elseif func.admin then
             if player.admin then
-                local tab = t.add({type = 'tab', caption = name})
+                local tab = t.add({type = 'tab', caption = name, name = 'tab_' .. name})
                 if disabled_tabs[player.index] then
                     if disabled_tabs[player.index][name] == false then
                         tab.enabled = false
@@ -435,7 +490,7 @@ local function main_frame(player)
                 t.add_tab(tab, f1)
             end
         else
-            local tab = t.add({type = 'tab', caption = name})
+            local tab = t.add({type = 'tab', caption = name, name = 'tab_' .. name})
             if disabled_tabs[player.index] then
                 if disabled_tabs[player.index][name] == false then
                     tab.enabled = false
@@ -452,6 +507,7 @@ local function main_frame(player)
             t.add_tab(tab, f2)
         end
     end
+
     Gui.panel_refresh_active_tab(player)
 end
 
@@ -503,6 +559,7 @@ function Gui.set_tab(player, tab_name, status)
         main_frame(player)
         return
     end
+
     Gui.panel_refresh_active_tab(player)
 end
 
@@ -529,13 +586,21 @@ end
 Gui.allow_player_to_toggle(main_button_name)
 
 local function on_gui_click(event)
-    if not (event and event.element and event.element.valid) then
+    local element = event.element
+    if not element or not element.valid then
         return
     end
-    local name = event.element.name
+
     local player = game.players[event.player_index]
 
+    local name = element.name
+
     if name == main_button_name then
+        local is_spamming = SpamProtection.is_spamming(player, nil, 'Main GUI Click')
+        if is_spamming then
+            return
+        end
+
         Gui.toggle(player)
     end
 
@@ -578,5 +643,8 @@ Event.add(
 Event.add(defines.events.on_player_created, on_player_created)
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)
 Event.add(defines.events.on_gui_click, on_gui_click)
+
+Gui.main_button_name = main_button_name
+Gui.main_frame_name = main_frame_name
 
 return Gui

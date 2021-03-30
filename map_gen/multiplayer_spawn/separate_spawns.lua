@@ -4,6 +4,9 @@ local Silo = require 'map_gen.multiplayer_spawn.frontier_silo'
 local MT = require 'map_gen.multiplayer_spawn.table'
 local Surface = require 'utils.surface'
 local Gui = require 'utils.gui.core'
+local Token = require 'utils.token'
+
+local module_name = 'Spawn Controls'
 
 local Public = {}
 
@@ -22,7 +25,7 @@ function Public.SeparateSpawnsPlayerCreated(player_index)
     local this = MT.get()
 
     -- Make sure spawn control tab is disabled
-    Gui.set_tab(player, 'Spawn Controls', false)
+    Gui.set_tab(player, module_name, false)
 
     -- This checks if they have just joined the server.
     -- No assigned force yet.
@@ -1384,7 +1387,7 @@ function Public.SpawnOptsGuiClick(event)
         end
 
         -- Unlock spawn control gui tab
-        Gui.set_tab(player, 'Spawn Controls', true)
+        Gui.set_tab(player, module_name, true)
     elseif (elemName == 'join_other_spawn') then
         -- Provide a way to refresh the gui to check if people have shared their
         -- bases.
@@ -1503,7 +1506,7 @@ function Public.SharedSpwnOptsGuiClick(event)
                     joiningPlayer.force = game.players[spawnName].force
 
                     -- Unlock spawn control gui tab
-                    Gui.set_tab(joiningPlayer, 'Spawn Controls', true)
+                    Gui.set_tab(joiningPlayer, module_name, true)
                     if joiningPlayer and joiningPlayer.character and joiningPlayer.character.valid then
                         joiningPlayer.character.active = true
                     end
@@ -1634,7 +1637,9 @@ function Public.GetRandomSpawnPoint()
 end
 
 -- This is a toggle function, it either shows or hides the spawn controls
-function Public.CreateSpawnCtrlGuiTab(player, frame)
+local function spawnControlFrame(data)
+    local player = data.player
+    local frame = data.frame
     frame.clear()
     local spwnCtrls =
         frame.add {
@@ -1720,6 +1725,8 @@ function Public.CreateSpawnCtrlGuiTab(player, frame)
         }
     end
 end
+
+local spawnControlFrametoken = Token.register(spawnControlFrame)
 
 function Public.SpawnCtrlGuiOptionsSelect(event)
     if not (event and event.element and event.element.valid) then
@@ -1871,7 +1878,7 @@ function Public.SpawnCtrlGuiClick(event)
                 joiningPlayer.force = game.players[player.name].force
 
                 -- Unlock spawn control gui tab
-                Gui.set_tab(joiningPlayer, 'Spawn Controls', true)
+                Gui.set_tab(joiningPlayer, module_name, true)
 
                 if joiningPlayer and joiningPlayer.character and joiningPlayer.character.valid then
                     joiningPlayer.character.active = true
@@ -2367,8 +2374,8 @@ function Public.BuddySpawnRequestMenuClick(event)
         Utils.SendBroadcastMsg(requesterName .. ' and ' .. player.name .. ' are joining the game together!')
 
         -- Unlock spawn control gui tab
-        Gui.set_tab(player, 'Spawn Controls', true)
-        Gui.set_tab(game.players[requesterName], 'Spawn Controls', true)
+        Gui.set_tab(player, module_name, true)
+        Gui.set_tab(game.players[requesterName], module_name, true)
     --game.permissions.get_group("Default").add_player(player)
     --game.permissions.get_group("Default").add_player(requesterName)
     end
@@ -2411,6 +2418,8 @@ function Public.DisplayPleaseWaitForSpawnDialog(player, delay_seconds)
     UtilsGui.AddLabel(pleaseWaitGui, 'warning_lbl1', wait_warning_text, UtilsGui.my_warning_style)
 end
 
-Gui.tabs['Spawn Controls'] = Public.CreateSpawnCtrlGuiTab
+Public.spawnControlFrame = spawnControlFrame
+
+Gui.add_tab_to_gui({name = module_name, id = spawnControlFrametoken, admin = false})
 
 return Public

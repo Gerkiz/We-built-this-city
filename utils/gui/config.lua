@@ -4,6 +4,9 @@ local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
 local SpamProtection = require 'utils.spam_protection'
 local MT = require 'map_gen.multiplayer_spawn.table'
+local Token = require 'utils.token'
+
+local module_name = 'Config'
 
 local functions = {
     ['panel_spectator_switch'] = function(event)
@@ -98,7 +101,9 @@ local function add_switch(element, switch_state, name, description_main)
     return desc_label
 end
 
-local build_config_gui = (function(player, frame)
+local function build_config_gui(data)
+    local player = data.player
+    local frame = data.frame
     frame.clear()
 
     local line_elements = {}
@@ -158,29 +163,36 @@ local build_config_gui = (function(player, frame)
         add_switch(frame, panel_scrambled_ores_switch, 'panel_scrambled_ores', 'Enable scrambled ores?')
         line_elements[#line_elements + 1] = frame.add({type = 'line'})
     end
-end)
+end
+
+local build_config_gui_token = Token.register(build_config_gui)
 
 local function on_gui_switch_state_changed(event)
     local player = game.players[event.player_index]
     if not (player and player.valid) then
         return
     end
-    if not event.element then
+
+    local element = event.element
+    if not element or not element.valid then
         return
     end
-    if not event.element.valid then
+
+    local name = element.name
+    if not name then
         return
     end
-    if functions[event.element.name] then
-        local is_spamming = SpamProtection.is_spamming(player)
+
+    if functions[name] then
+        local is_spamming = SpamProtection.is_spamming(player, nil, 'Config Functions Elem')
         if is_spamming then
             return
         end
-        functions[event.element.name](event)
+        functions[name](event)
         return
     end
 end
 
-Gui.tabs['Config'] = build_config_gui
+Gui.add_tab_to_gui({name = module_name, id = build_config_gui_token, admin = false})
 
 Event.add(defines.events.on_gui_switch_state_changed, on_gui_switch_state_changed)

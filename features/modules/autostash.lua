@@ -4,7 +4,7 @@
 local Global = require 'utils.global'
 local Event = require 'utils.event'
 local Gui = require 'utils.gui.core'
-local math_floor = math.floor
+local floor = math.floor
 local print_color = {r = 120, g = 255, b = 0}
 
 local this = {
@@ -130,7 +130,7 @@ local function sort_entities_by_distance(position, entities)
 
     for _, entity in pairs(entities) do
         distance = (entity.position.x - position.x) ^ 2 + (entity.position.y - position.y) ^ 2
-        index = math_floor(distance) + 1
+        index = floor(distance) + 1
         if not t[index] then
             t[index] = {}
         end
@@ -151,7 +151,10 @@ local function get_nearby_chests(player, a, furnace, wagon)
     local r_square = r * r
     local chests = {}
     local size_of_chests = 0
-    local area = a or {{player.position.x - r, player.position.y - r}, {player.position.x + r, player.position.y + r}}
+    local area = {{player.position.x - r, player.position.y - r}, {player.position.x + r, player.position.y + r}}
+
+    area = a or area
+
     local container_type = {'container', 'logistic-container'}
     local containers = {}
     local i = 0
@@ -205,8 +208,14 @@ local function insert_item_into_chest(player_inventory, chests, filtered_chests,
         ['container'] = true,
         ['logistic-container'] = true
     }
-    local to_insert = math.floor(count / #chests)
-    local variator = count % #chests
+    local try = 0
+
+    local to_insert = floor(count / #chests)
+    local variate = count % #chests
+    local chests_available = #chests
+    local tries = #chests
+
+    ::retry::
 
     --Attempt to store into furnaces.
     if furnace then -- items
@@ -218,30 +227,61 @@ local function insert_item_into_chest(player_inventory, chests, filtered_chests,
                 chest_inventory = chest.get_inventory(defines.inventory.furnace_source)
             end
             local amount = to_insert
-            if variator > 0 then
+            if variate > 0 then
                 amount = amount + 1
-                variator = variator - 1
+                variate = variate - 1
             end
             if amount <= 0 then
                 return
             end
-            if count > 1 then
-                if chest_inventory and (chest.type == 'furnace' or chest.type == 'assembling-machine') then
-                    if chest_inventory.can_insert({name = name, count = amount}) then
-                        local inserted_count = chest_inventory.insert({name = name, count = amount})
-                        player_inventory.remove({name = name, count = inserted_count})
-                        create_floaty_text(chest.surface, chest.position, name, inserted_count)
+
+            if chest_inventory then
+                if (chest.type == 'furnace' or chest.type == 'assembling-machine') then
+                    if name == 'stone' then
+                        local valid_to_insert = (amount % 2 == 0)
+                        if valid_to_insert then
+                            if chest_inventory.can_insert({name = name, count = amount}) then
+                                local inserted_count = chest_inventory.insert({name = name, count = amount})
+                                player_inventory.remove({name = name, count = inserted_count})
+                                create_floaty_text(chest.surface, chest.position, name, inserted_count)
+                                count = count - inserted_count
+                                if count <= 0 then
+                                    return
+                                end
+                            end
+                        else
+                            try = try + 1
+                            if try <= tries then
+                                chests_available = chests_available - 1
+                                to_insert = floor(count / chests_available)
+                                variate = count % chests_available
+                                goto retry
+                            end
+                        end
+                    else
+                        if chest_inventory.can_insert({name = name, count = amount}) then
+                            local inserted_count = chest_inventory.insert({name = name, count = amount})
+                            player_inventory.remove({name = name, count = inserted_count})
+                            create_floaty_text(chest.surface, chest.position, name, inserted_count)
+                            count = count - inserted_count
+                            if count <= 0 then
+                                return
+                            end
+                        end
                     end
                 end
             end
         end
 
+        to_insert = floor(count / #chests)
+        variate = count % #chests
+
         for _, chest in pairs(chests) do -- fuel
             if chest.type == 'furnace' or chest.type == 'assembling-machine' then
                 local amount = to_insert
-                if variator > 0 then
+                if variate > 0 then
                     amount = amount + 1
-                    variator = variator - 1
+                    variate = variate - 1
                 end
                 if amount <= 0 then
                     return
@@ -251,6 +291,10 @@ local function insert_item_into_chest(player_inventory, chests, filtered_chests,
                     local inserted_count = chest_inventory.insert({name = name, count = amount})
                     player_inventory.remove({name = name, count = inserted_count})
                     create_floaty_text(chest.surface, chest.position, name, inserted_count)
+                    count = count - inserted_count
+                    if count <= 0 then
+                        return
+                    end
                 end
             end
         end
@@ -350,12 +394,32 @@ local function insert_item_into_chest(player_inventory, chests, filtered_chests,
     end
 end
 
-local function shuffle(tbl)
-    local size = #tbl
+local priority = {
+    ['coal'] = 1,
+    ['iron-ore'] = 2,
+    ['copper-ore'] = 3,
+    ['stone'] = 4
+}
+
+local function switch_key_val(tbl)
     local t = {}
-    for i = 1, size do
-        t[i] = tbl[i]
+    for name, count in pairs(tbl) do
+        if priority[name] then
+            t[#t + 1] = {name = name, count = count, priority = priority[name]}
+        else
+            t[#t + 1] = {name = name, count = count}
+        end
     end
+
+    table.sort(
+        t,
+        function(a, b)
+            if a.priority and b.priority then
+                return a.priority > b.priority
+            end
+        end
+    )
+
     return t
 end
 
@@ -416,9 +480,11 @@ local function auto_stash(player, event)
         end
     end
 
-    local pInv = shuffle(inventory.get_contents())
+    local getIndexInventory = switch_key_val(inventory.get_contents())
 
-    for name, count in pairs(pInv) do
+    for i = #getIndexInventory, 1, -1 do
+        local name = getIndexInventory[i].name
+        local count = getIndexInventory[i].count
         local is_resource = this.whitelist[name]
 
         if not inventory.find_item_stack(name).grid and not hotbar_items[name] then
@@ -474,8 +540,7 @@ local function create_gui_button(player)
         tooltip = 'Sort your inventory into nearby chests.\nLMB: Everything, excluding quickbar items.\nRMB: Only ores to nearby chests.'
     end
 
-    local b =
-        Gui.get_button_flow(player).add(
+    Gui.get_button_flow(player).add(
         {
             type = 'sprite-button',
             sprite = 'item/wooden-chest',
@@ -544,12 +609,7 @@ function Public.insert_into_wagon(value)
     end
 end
 
-Event.on_configuration_changed(
-    function()
-        do_whitelist()
-        log('[Autostash] on_configuration_changed was called, rebuilding resource whitelist.')
-    end
-)
+Event.on_configuration_changed(do_whitelist)
 
 Event.on_init(do_whitelist)
 Event.add(defines.events.on_player_joined_game, on_player_joined_game)

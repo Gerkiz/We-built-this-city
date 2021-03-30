@@ -6,6 +6,7 @@ local AntiGrief = require 'features.functions.antigrief'
 local Color = require 'utils.color_presets'
 local Global = require 'utils.global'
 local Roles = require 'utils.role.main'
+local Token = require 'utils.token'
 local SpamProtection = require 'utils.spam_protection'
 
 local this = {}
@@ -18,6 +19,7 @@ Global.register(
 )
 
 local lower = string.lower
+local module_name = 'Admin'
 
 local bring_player_messages = {
     'Come here my friend!',
@@ -378,7 +380,7 @@ local function text_changed(event)
     if not frame then
         return
     end
-    if frame.name ~= 'Admin' then
+    if frame.name ~= module_name then
         return
     end
 
@@ -396,7 +398,10 @@ local function text_changed(event)
     draw_events(data)
 end
 
-local create_admin_panel = (function(player, frame)
+local function create_admin_panel(data)
+    local player = data.player
+    local frame = data.frame
+
     local antigrief = AntiGrief.get()
     frame.clear()
 
@@ -505,9 +510,9 @@ local create_admin_panel = (function(player, frame)
     line.style.bottom_margin = 8
 
     frame.add({type = 'label', caption = 'Global Actions:'})
-    local t = frame.add({type = 'table', column_count = 2})
-    local buttons = {
-        t.add(
+    local actionTable = frame.add({type = 'table', column_count = 2})
+    local bottomButtons = {
+        actionTable.add(
             {
                 type = 'button',
                 caption = 'Destroy global speakers',
@@ -515,7 +520,7 @@ local create_admin_panel = (function(player, frame)
                 tooltip = 'Destroys all speakers that are set to play sounds globally.'
             }
         ),
-        t.add(
+        actionTable.add(
             {
                 type = 'button',
                 caption = 'Delete blueprints',
@@ -525,15 +530,15 @@ local create_admin_panel = (function(player, frame)
         )
         ---	t.add({type = "button", caption = "Cancel all deconstruction orders", name = "remove_all_deconstruction_orders"})
     }
-    for _, button in pairs(buttons) do
+    for _, button in pairs(bottomButtons) do
         button.style.font = 'default-bold'
         button.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
         button.style.minimal_width = 80
     end
 
-    local line = frame.add {type = 'line'}
-    line.style.top_margin = 8
-    line.style.bottom_margin = 8
+    local bottomLine = frame.add {type = 'line'}
+    bottomLine.style.top_margin = 8
+    bottomLine.style.bottom_margin = 8
 
     local histories = {}
     if antigrief.capsule_history then
@@ -564,9 +569,9 @@ local create_admin_panel = (function(player, frame)
     local search_text = search_table.add({type = 'textfield'})
     search_text.style.width = 140
 
-    local l = frame.add({type = 'label', caption = '----------------------------------------------'})
-    l.style.font = 'default-listbox'
-    l.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
+    local bottomLine2 = frame.add({type = 'label', caption = '----------------------------------------------'})
+    bottomLine2.style.font = 'default-listbox'
+    bottomLine2.style.font_color = {r = 0.98, g = 0.66, b = 0.22}
 
     local selected_index_2 = 1
     if global.admin_panel_selected_history_index then
@@ -579,13 +584,15 @@ local create_admin_panel = (function(player, frame)
     drop_down_2.style.right_padding = 12
     drop_down_2.style.left_padding = 12
 
-    local data = {
+    local datas = {
         frame = frame,
         antigrief = antigrief
     }
 
-    draw_events(data)
-end)
+    draw_events(datas)
+end
+
+local create_admin_panel_token = Token.register(create_admin_panel)
 
 local admin_functions = {
     ['jail'] = jail,
@@ -627,13 +634,9 @@ local function get_position_from_string(str)
     if not str then
         return
     end
-    if not type(str) == 'string' then
-        return
-    end
     if str == '' then
         return
     end
-
     str = string.lower(str)
     local x_pos = string.find(str, 'x:')
     local y_pos = string.find(str, 'y:')
@@ -659,7 +662,7 @@ local function get_position_from_string(str)
     end
     local x = string.sub(str, x_pos, x_pos + a)
 
-    local a = 1
+    local a1 = 1
     for i = 1, string.len(str), 1 do
         local s = string.sub(str, y_pos + i, y_pos + i)
         if not s then
@@ -668,10 +671,10 @@ local function get_position_from_string(str)
         if string.byte(s) == 32 then
             break
         end
-        a = a + 1
+        a1 = a1 + 1
     end
 
-    local y = string.sub(str, y_pos, y_pos + a)
+    local y = string.sub(str, y_pos, y_pos + a1)
     x = tonumber(x)
     y = tonumber(y)
     local position = {x = x, y = y}
@@ -689,7 +692,21 @@ local valid_gui = {
 }
 
 local function on_gui_click(event)
-    local player = game.players[event.player_index]
+    local element = event.element
+    if not element or not element.valid then
+        return
+    end
+    local player = game.get_player(event.player_index)
+
+    local name = event.element.name
+
+    if name == 'tab_Admin' then
+        local is_spamming = SpamProtection.is_spamming(player, nil, 'Admin tab_Admin')
+        if is_spamming then
+            return
+        end
+    end
+
     local frame = Gui.panel_get_active_frame(player)
     if not frame then
         return
@@ -702,8 +719,6 @@ local function on_gui_click(event)
     if not valid_gui[frame.name] then
         return
     end
-
-    local name = event.element.name
 
     if name == 'mini_camera' or name == 'mini_cam_element' then
         player.gui.center['mini_camera'].destroy()
@@ -743,7 +758,7 @@ local function on_gui_click(event)
         return
     end
 
-    if frame.name == 'Admin' then
+    if frame.name == module_name then
         local position = get_position_from_string(event.element.caption)
         if not position then
             return
@@ -778,7 +793,7 @@ local function on_gui_selection_state_changed(event)
         if not frame then
             return
         end
-        if frame.name ~= 'Admin' then
+        if frame.name ~= module_name then
             return
         end
 
@@ -787,7 +802,8 @@ local function on_gui_selection_state_changed(event)
             return
         end
 
-        create_admin_panel(player, frame)
+        local data = {player = player, frame = frame}
+        create_admin_panel(data)
     end
     if name == 'admin_player_select' then
         if not global.admin_panel_selected_player_index then
@@ -799,7 +815,7 @@ local function on_gui_selection_state_changed(event)
         if not frame then
             return
         end
-        if frame.name ~= 'Admin' then
+        if frame.name ~= module_name then
             return
         end
 
@@ -808,11 +824,12 @@ local function on_gui_selection_state_changed(event)
             return
         end
 
-        create_admin_panel(player, frame)
+        local data = {player = player, frame = frame}
+        create_admin_panel(data)
     end
 end
 
-Gui.tabs['Admin'] = create_admin_panel
+Gui.add_tab_to_gui({name = module_name, id = create_admin_panel_token, admin = true})
 
 Event.add(defines.events.on_gui_text_changed, text_changed)
 Event.add(defines.events.on_gui_click, on_gui_click)
