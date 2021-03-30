@@ -595,7 +595,7 @@ Event.add(
                 name = main_button_name,
                 sprite = 'utility/preset',
                 style = Gui.button_style,
-                tooltip = 'Click to toggle hide top buttons!'
+                tooltip = 'Click to hide top buttons!'
             }
         )
         b.style.padding = 2
@@ -624,8 +624,13 @@ Gui.on_click(
                 end
             end
 
+            local frame_name = Gui.main_frame_name
+            if player.gui.left[frame_name] then
+                player.gui.left[frame_name].destroy()
+            end
+
             button.sprite = 'utility/expand_dots_white'
-            button.tooltip = 'Click to toggle show top buttons!'
+            button.tooltip = 'Click to show top buttons!'
         else
             for i = 1, #top_elements do
                 local name = top_elements[i]
@@ -639,7 +644,7 @@ Gui.on_click(
             end
 
             button.sprite = 'utility/preset'
-            button.tooltip = 'Click to toggle show top buttons!'
+            button.tooltip = 'Click to hide top buttons!'
         end
     end
 )

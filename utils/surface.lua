@@ -42,7 +42,7 @@ function Public.create_surface()
         map_gen_settings = {
             ['seed'] = math.random(10000, 99999),
             ['water'] = 0.001,
-            ['starting_area'] = 2,
+            ['starting_area'] = 4,
             ['cliff_settings'] = {cliff_elevation_interval = 0, cliff_elevation_0 = 0},
             ['default_enable_all_autoplace_controls'] = true,
             ['autoplace_settings'] = {
@@ -103,18 +103,18 @@ function Public.create_surface()
         --surface.daytime = 0.7
         map_gen_settings = {}
         map_gen_settings.water = global_data.water
-        map_gen_settings.starting_area = 2
+        map_gen_settings.starting_area = 4
         map_gen_settings.seed = math.random(10000, 99999)
         --map_gen_settings.width = 128
         --map_gen_settings.height = 128
         map_gen_settings.cliff_settings = {cliff_elevation_interval = 35, cliff_elevation_0 = 35}
         map_gen_settings.autoplace_controls = {
-            ['coal'] = {frequency = 1, size = 2, richness = 2},
-            ['stone'] = {frequency = 1, size = 2, richness = 2},
-            ['copper-ore'] = {frequency = 1, size = 2, richness = 2},
-            ['iron-ore'] = {frequency = 1, size = 2, richness = 2},
-            ['crude-oil'] = {frequency = 1, size = 2, richness = 2},
-            ['uranium-ore'] = {frequency = 1, size = 2, richness = 2},
+            ['coal'] = {frequency = 1, size = 3, richness = 2},
+            ['stone'] = {frequency = 1, size = 3, richness = 2},
+            ['copper-ore'] = {frequency = 1, size = 3, richness = 2},
+            ['iron-ore'] = {frequency = 1, size = 3, richness = 2},
+            ['crude-oil'] = {frequency = 1, size = 3, richness = 2},
+            ['uranium-ore'] = {frequency = 1, size = 3, richness = 2},
             ['trees'] = {frequency = 0.88, size = 0.64, richness = 1},
             ['enemy-base'] = {frequency = 1, size = 1, richness = 1}
         }
