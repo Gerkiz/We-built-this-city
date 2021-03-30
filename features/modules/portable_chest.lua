@@ -91,7 +91,7 @@ local function validate_player(player)
     return true
 end
 
-local function item(item_name, item_count, player, storage)
+local function item(item_name, item_count, inv, storage, player)
     local stack_size = this.stack_size[player.index]
     local item_stack
     if stack_size then
@@ -103,7 +103,7 @@ local function item(item_name, item_count, player, storage)
     local diff = item_count - item_stack
 
     if diff > 0 then
-        local count = player.remove({name = item_name, count = diff})
+        local count = inv.remove({name = item_name, count = diff})
         if not storage[item_name] then
             storage[item_name] = count
         else
@@ -114,10 +114,10 @@ local function item(item_name, item_count, player, storage)
             goto continue
         end
         if storage[item_name] > (diff * -1) then
-            local inserted = player.insert({name = item_name, count = (diff * -1)})
+            local inserted = inv.insert({name = item_name, count = (diff * -1)})
             storage[item_name] = storage[item_name] - inserted
         else
-            player.insert({name = item_name, count = storage[item_name]})
+            inv.insert({name = item_name, count = storage[item_name]})
             storage[item_name] = 0
         end
     end
@@ -143,13 +143,13 @@ local function update_chest()
 
         for item_name, item_count in pairs(content) do
             if storage[item_name] then
-                item(item_name, item_count, inv, storage)
+                item(item_name, item_count, inv, storage, player)
             end
         end
 
         for item_name, _ in pairs(storage) do
             if not content[item_name] then
-                item(item_name, 0, inv, storage)
+                item(item_name, 0, inv, storage, player)
             end
         end
 

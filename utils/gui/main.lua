@@ -2,7 +2,6 @@ local Event = require 'utils.event'
 local Global = require 'utils.global'
 local Gui = require 'utils.gui'
 local Color = require 'utils.color_presets'
-local SpamProtection = require 'utils.spam_protection'
 
 local disabled_tabs = {}
 local ignored_visibility = {}
@@ -296,7 +295,7 @@ function Gui.toggle_visibility(player, state)
     local screen = player.gui.screen
 
     for _, child in pairs(left.children) do
-        if child.valid then
+        if child.valid and string.sub(child.name, 0, 4) ~= 'fnei' then
             child.destroy()
         end
     end
@@ -520,15 +519,9 @@ function Gui.toggle(player)
     local frame = left[main_frame_name]
 
     if frame then
-        local is_spamming = Gui.toggle_visibility(player)
-        if is_spamming then
-            return
-        end
+        Gui.toggle_visibility(player)
     else
-        local is_spamming = Gui.toggle_visibility(player)
-        if is_spamming then
-            return
-        end
+        Gui.toggle_visibility(player)
         main_frame(player)
     end
 end

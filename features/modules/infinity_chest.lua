@@ -605,24 +605,31 @@ local function update_gui()
 
         if mode == 3 and not controls.tbl_2 then
             local linker_tooltip = '[color=yellow]Link Info:[/color]\nThis will only work with chests that you have placed.'
-
+            local chests = get_owner_chests(player, entity)
             local tbl_2 = controls.add {type = 'table', column_count = 3, name = 'tbl_2'}
             local chestId = tbl_2.add({type = 'label', caption = 'Chest ID: ' .. unit_number, tooltip = linker_tooltip})
             chestId.style.font = 'heading-2'
-            local chests = get_owner_chests(player, entity)
-            local private_label = tbl_2.add({type = 'label', caption = '    Link with: ', tooltip = linker_tooltip})
-            private_label.style.font = 'heading-2'
-            local private_checkbox =
-                tbl_2.add(
-                {
-                    type = 'drop-down',
-                    items = chests,
-                    selected_index = this.inf_chests[unit_number] and this.inf_chests[unit_number].linked_index or 1,
-                    name = 'linker',
-                    tooltip = linker_tooltip
-                }
-            )
-            private_checkbox.style.minimal_height = 25
+            if this.inf_chests[unit_number] and this.inf_chests[unit_number].linked_index then
+                local linked = this.inf_chests[unit_number].linked_index
+                if #chests > linked then
+                    local private_label = tbl_2.add({type = 'label', caption = '    Link with: ', tooltip = linker_tooltip})
+                    private_label.style.font = 'heading-2'
+                    local private_checkbox =
+                        tbl_2.add(
+                        {
+                            type = 'drop-down',
+                            items = chests,
+                            selected_index = linked or 1,
+                            name = 'linker',
+                            tooltip = linker_tooltip
+                        }
+                    )
+                    private_checkbox.style.minimal_height = 25
+                else
+                    local private_label = tbl_2.add({type = 'label', caption = '    Not owner of chest. ', tooltip = linker_tooltip})
+                    private_label.style.font = 'heading-2'
+                end
+            end
         elseif mode ~= 3 and controls.tbl_2 and controls.tbl_2.valid then
             controls.tbl_2.destroy()
             if this.inf_chests[unit_number] and this.inf_chests[unit_number].linked_to then

@@ -10,7 +10,7 @@ _STAGE = {
     control = 4,
     init = 5,
     load = 6,
-    --config_change = 7,
+    config_change = 7,
     runtime = 8
 }
 
@@ -28,6 +28,30 @@ function is_loaded(module)
     local res = package.loaded[module]
     if res then
         return res
+    else
+        return false
+    end
+end
+
+function is_game_modded()
+    local i = 0
+    for k, _ in pairs(game.active_mods) do
+        i = i + 1
+        if i > 1 then
+            return true
+        end
+    end
+    return false
+end
+
+function is_mod_loaded(module)
+    if not module then
+        return false
+    end
+
+    local res = script.active_mods[module]
+    if res then
+        return true
     else
         return false
     end
