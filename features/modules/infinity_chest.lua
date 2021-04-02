@@ -159,11 +159,9 @@ local function item(item_name, item_count, inv, unit_number)
             local count = inv.remove({name = item_name, count = diff})
             this.inf_storage[unit_number][item_name] = count
         else
-            if this.limits[unit_number] and this.limits[unit_number].state and this.inf_storage[unit_number][item_name] >= this.limits[unit_number].number then
+            if this.limits[unit_number] and this.limits[unit_number].state and inv.get_item_count() >= this.limits[unit_number].number then
                 Public.err_msg('Limit for entity: ' .. unit_number .. 'and item: ' .. item_name .. ' is limited. ')
-                if mode == 1 then
-                    this.inf_mode[unit_number] = 4
-                end
+                inv.set_bar(1)
                 if inv.can_insert({name = item_name, count = item_stack}) then
                     local count = inv.insert({name = item_name, count = item_stack})
                     this.inf_storage[unit_number][item_name] = storage[item_name] - count
@@ -187,23 +185,27 @@ local function item(item_name, item_count, inv, unit_number)
     end
 end
 
-local function balance_items(inv, chest2, content)
+local function balance_items(inv, chest2, content, unit_number)
     local storage2_inv = chest2.content
     local content2 = storage2_inv.get_contents()
     for item_name, count in pairs(content) do
         local count2 = content2[item_name] or 0
         local diff = count - count2
+        if this.limits[unit_number] and this.limits[unit_number].state and inv.get_item_count() >= this.limits[unit_number].number then
+            Public.err_msg('Limit for entity: ' .. unit_number .. 'and item: ' .. item_name .. ' is limited. ')
+            inv.set_bar(1)
+        end
         if diff == 1 then
             return
         elseif diff > 1 then
-            local count2 = storage2_inv.insert {name = item_name, count = math.floor(diff / 2)}
-            if count2 > 0 then
-                inv.remove {name = item_name, count = count2}
+            local count3 = storage2_inv.insert {name = item_name, count = math.floor(diff / 2)}
+            if count3 > 0 then
+                inv.remove {name = item_name, count = count3}
             end
         elseif diff < -1 then
-            local count2 = inv.insert {name = item_name, count = math.floor(-diff / 2)}
-            if count2 > 0 then
-                storage2_inv.remove {name = item_name, count = count2}
+            local count4 = inv.insert {name = item_name, count = math.floor(-diff / 2)}
+            if count4 > 0 then
+                storage2_inv.remove {name = item_name, count = count4}
             end
         end
     end
@@ -313,19 +315,28 @@ local function update_chest()
                 inv.set_bar()
                 chest.destructible = false
                 chest.minable = false
+                if data.wants_to_link then
+                    data.wants_to_link = nil
+                end
             elseif mode == 2 then
                 inv.set_bar(1)
                 chest.destructible = true
                 chest.minable = true
+                if data.wants_to_link then
+                    data.wants_to_link = nil
+                end
             elseif mode == 3 then
                 inv.set_bar()
                 chest.destructible = false
                 chest.minable = false
-            elseif mode == 4 then
-                inv.set_bar(2)
-                chest.destructible = false
-                chest.minable = false
+                if not data.linked_index then
+                    data.wants_to_link = true
+                end
             end
+        end
+
+        if this.limits[unit_number] and inv.get_item_count() <= this.limits[unit_number].number then
+            inv.set_bar()
         end
 
         if linked_to then
@@ -339,7 +350,11 @@ local function update_chest()
                 goto continue
             end
 
-            balance_items(inv, chest2, content, unit_number, linked_to)
+            if this.inf_storage[unit_number] then
+                this.inf_storage[unit_number] = nil
+            end
+
+            balance_items(inv, chest2, content, unit_number)
 
             goto continue
         end
@@ -353,9 +368,6 @@ local function update_chest()
             goto continue
         end
         for item_name, _ in pairs(storage) do
-            if this.limits[unit_number] and storage[item_name] <= this.limits[unit_number].number and mode == 4 then
-                this.inf_mode[unit_number] = 1
-            end
             if not content[item_name] then
                 item(item_name, 0, inv, unit_number)
             end
@@ -447,16 +459,16 @@ local function gui_opened(event)
     local selected = mode and mode or 1
     local tbl = controls.add {type = 'table', column_count = 1}
 
-    local limit_tooltip = '[color=yellow]Limit Info:[/color]\nThis is only usable if you intend to use this chest for one item.'
+    local limit_tooltip = '[color=yellow]Limit Info:[/color]\nThis will stop the input after the limit is reached.'
     local private_tooltip = '[color=yellow]Private Info:[/color]\nThis will make it so no one else other than you can open this chest.'
 
     local mode_tooltip =
-        '[color=yellow]Mode Info:[/color]\nEnabled: will active the chest and allow for insertions.\nDisabled: will deactivate the chest and let´s the player utilize the GUI to retrieve items.\nLink: Link a chest with another chest. Content is divided between them.\nLimited: can´t be selected and will deactivate the chest as per limit.'
+        '[color=yellow]Mode Info:[/color]\nEnabled: will active the chest and allow for insertions.\nDisabled: will deactivate the chest and let´s the player utilize the GUI to retrieve items.\nLink: Link a chest with another chest. Content is divided between them.'
 
     local btn =
         tbl.add {
         type = 'sprite-button',
-        tooltip = '[color=blue]Info![/color]\nThis chest stores unlimited quantity of items (up to 48 different item types).\nThe chest is best used with an inserter to add / remove items.\nThe chest is mineable if state is disabled.\nContent is kept when mined.\n[color=yellow]Limit:[/color]\nThis is only usable if you intend to use this chest for one item.',
+        tooltip = '[color=blue]Info![/color]\nThis chest stores unlimited quantity of items (up to 48 different item types).\nThe chest is best used with an inserter to add / remove items.\nThe chest is mineable if state is disabled.\nContent is kept when mined.\n[color=yellow]Limit:[/color]\nThis will stop the input after the limit is reached.',
         sprite = 'utility/questionmark'
     }
     btn.style.height = 20
@@ -471,9 +483,9 @@ local function gui_opened(event)
     local drop_down_items
 
     if player.admin and this.editor[player.name] then
-        drop_down_items = {'Enabled', 'Disabled', 'Link', 'Limited', 'Editor'}
+        drop_down_items = {'Enabled', 'Disabled', 'Link', 'Editor'}
     else
-        drop_down_items = {'Enabled', 'Disabled', 'Link', 'Limited'}
+        drop_down_items = {'Enabled', 'Disabled', 'Link'}
     end
 
     local drop_down =
@@ -528,7 +540,7 @@ local function get_owner_chests(player, entity)
     local t = {'Select Chest'}
     for _, data in pairs(this.inf_chests) do
         if data.owner == player.index then
-            if data.chest.unit_number ~= entity.unit_number then
+            if data.chest.unit_number ~= entity.unit_number and data.wants_to_link then
                 insert(t, data.chest.unit_number)
             end
         end
@@ -560,7 +572,7 @@ local function update_gui()
         local controls = chest_gui_data.controls
 
         local mode = this.inf_mode[unit_number]
-        if (mode == 2 or mode == 4 or mode == 5) and this.inf_gui[player.name].updated then
+        if (mode == 2 or mode == 4) and this.inf_gui[player.name].updated then
             goto continue
         end
         frame.clear()
@@ -618,18 +630,23 @@ local function update_gui()
                     local chests = get_owner_chests(player, entity)
 
                     local private_label = tbl_2.add({type = 'label', caption = '    Link with: ', tooltip = linker_tooltip})
-                    private_label.style.font = 'heading-2'
-                    local private_checkbox =
-                        tbl_2.add(
-                        {
-                            type = 'drop-down',
-                            items = chests,
-                            selected_index = linked or 1,
-                            name = 'linker',
-                            tooltip = linker_tooltip
-                        }
-                    )
-                    private_checkbox.style.minimal_height = 25
+                    if inf_chest.linked_index then
+                        private_label = tbl_2.add({type = 'label', caption = '    Linked with: ' .. inf_chest.linked_to, tooltip = linker_tooltip})
+                        private_label.style.font = 'heading-2'
+                    else
+                        private_label.style.font = 'heading-2'
+                        local private_checkbox =
+                            tbl_2.add(
+                            {
+                                type = 'drop-down',
+                                items = chests,
+                                selected_index = linked or 1,
+                                name = 'linker',
+                                tooltip = linker_tooltip
+                            }
+                        )
+                        private_checkbox.style.minimal_height = 25
+                    end
                 end
             end
         elseif mode ~= 3 and controls.tbl_2 and controls.tbl_2.valid then
@@ -649,7 +666,7 @@ local function update_gui()
 
         local btn
         for item_name, item_count in pairs(items) do
-            if mode == 1 or mode == 3 or mode == 4 then
+            if mode == 1 or mode == 3 then
                 btn =
                     tbl.add {
                     type = 'sprite-button',
@@ -660,7 +677,7 @@ local function update_gui()
                     tooltip = 'Withdrawal is possible when state is disabled!'
                 }
                 btn.enabled = false
-            elseif mode == 2 or mode == 5 then
+            elseif mode == 2 or mode == 4 then
                 btn =
                     tbl.add {
                     type = 'sprite-button',
@@ -675,10 +692,10 @@ local function update_gui()
 
         while total < 48 do
             local btns
-            if mode == 1 or mode == 2 or mode == 4 then
+            if mode == 1 or mode == 2 then
                 btns = tbl.add {type = 'sprite-button', style = 'slot_button'}
                 btns.enabled = false
-            elseif mode == 5 then
+            elseif mode == 4 then
                 btns = tbl.add {type = 'choose-elem-button', style = 'slot_button', elem_type = 'item'}
                 btns.enabled = true
             end
@@ -732,16 +749,33 @@ local function state_changed(event)
         if element.selected_index == 1 then
             return
         end
+        selected = tonumber(selected)
         local unit_number = this.inf_gui[player.name] and this.inf_gui[player.name].entity and this.inf_gui[player.name].entity.unit_number
-        if this.inf_chests[unit_number] then
-            if this.inf_chests[tonumber(selected)] and this.inf_chests[tonumber(selected)].linked_to and tonumber(this.inf_chests[tonumber(selected)].linked_to) ~= unit_number then
-                this.inf_chests[unit_number].linked_to = nil
-                this.inf_chests[unit_number].linked_index = nil
+        local inf_chest = this.inf_chests[unit_number]
+        local inf_dest_chest = this.inf_chests[selected]
+        if inf_chest then
+            if inf_dest_chest and inf_dest_chest.linked_to and tonumber(inf_dest_chest.linked_to) ~= unit_number then
+                inf_chest.linked_to = nil
+                inf_chest.linked_index = nil
                 return player.print('[Inf Chests] Target chest is already linked.', Color.warning)
             end
 
-            this.inf_chests[unit_number].linked_to = selected
-            this.inf_chests[unit_number].linked_index = element.selected_index
+            inf_chest.linked_to = selected
+            inf_chest.linked_index = element.selected_index
+            inf_chest.wants_to_link = nil
+            inf_dest_chest.linked_to = unit_number
+            inf_dest_chest.linked_index = element.selected_index
+            inf_dest_chest.wants_to_link = nil
+            this.limits[selected].number = this.limits[unit_number].number
+            local chest_gui_data = this.inf_gui[player.name]
+            if chest_gui_data then
+                local controls = chest_gui_data.controls
+                if controls then
+                    controls.tbl_2.destroy()
+                end
+            end
+            this.inf_gui[player.name].updated = false
+            return
         end
     end
 
@@ -752,6 +786,7 @@ local function state_changed(event)
         end
         this.inf_mode[unit_number] = element.selected_index
         local mode = this.inf_mode[unit_number]
+
         if mode >= 2 then
             this.inf_gui[player.name].updated = false
             return

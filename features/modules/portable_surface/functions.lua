@@ -1161,6 +1161,11 @@ function Public.create_car_room(ic, car)
 
     construct_doors(ic, car)
 
+    local mgs = surface.map_gen_settings
+    mgs.width = area.right_bottom.x * 2
+    mgs.height = area.right_bottom.y * 2
+    surface.map_gen_settings = mgs
+
     construct_belts(car)
 
     local lx, ly, rx, ry = 4, 1, 5, 1

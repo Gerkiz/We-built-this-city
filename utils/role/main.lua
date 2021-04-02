@@ -182,6 +182,14 @@ function Roles.standard_roles(tbl)
     end
 end
 
+function Roles.get_group(name)
+    for _, group in pairs(Roles.config.group) do
+        if group.name == name then
+            return group
+        end
+    end
+end
+
 function Roles.get_role(player)
     if not player then
         return false
