@@ -163,6 +163,7 @@ local function restore_chest(entity, player)
         this.private[entity.unit_number] = private
         this.storage[player.index].limits[index] = nil
         this.storage[player.index].private[index] = nil
+        this.storage[player.index].shares[index] = nil
     end
     ::continue::
 end
@@ -268,6 +269,10 @@ local function balance_items(inv, chest2, content)
 end
 
 local function remove_link(unit_number)
+    if not this.inf_chests[unit_number] then
+        return
+    end
+
     local links = this.inf_chests[unit_number].links
     this.shares[unit_number].name = default_share_name
     this.shares[unit_number].state = false
