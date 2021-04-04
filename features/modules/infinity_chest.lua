@@ -81,27 +81,23 @@ local function validate_player(player)
     return true
 end
 
-local function item_counter(unit_number, count, state)
+local function item_counter(unit_number)
+    local count = 0
+
     local storage = this.inf_storage[unit_number]
     if not storage then
-        return
+        return count
     end
 
-    if not count then
-        return storage['count']
+    if storage.count then
+        storage.count = nil
     end
 
-    if not storage['count'] then
-        storage['count'] = 0
+    for _, item_count in pairs(storage) do
+        count = count + item_count
     end
-    if state == 'inc' then
-        storage['count'] = storage['count'] + count
-    elseif state == 'dec' then
-        storage['count'] = storage['count'] - count
-    end
-    if storage['count'] <= 0 then
-        storage['count'] = 0
-    end
+
+    return count
 end
 
 local function create_chest(entity, player)
@@ -218,11 +214,9 @@ local function item(item_name, item_count, inv, unit_number)
         if not storage[item_name] then
             local count = inv.remove({name = item_name, count = diff})
             storage[item_name] = count
-            item_counter(unit_number, count, 'inc')
         else
             local count = inv.remove({name = item_name, count = diff})
             storage[item_name] = storage[item_name] + count
-            item_counter(unit_number, count, 'inc')
         end
     elseif diff < 0 then
         if not storage[item_name] then
@@ -235,11 +229,9 @@ local function item(item_name, item_count, inv, unit_number)
             end
             local inserted = inv.insert({name = item_name, count = (diff * -1)})
             storage[item_name] = storage[item_name] - inserted
-            item_counter(unit_number, inserted, 'dec')
         else -- less items in central storage - remove central storage after ins
             inv.insert({name = item_name, count = storage[item_name]})
             storage[item_name] = nil
-            item_counter(unit_number, storage[item_name], 'dec')
         end
     end
 end
@@ -378,9 +370,11 @@ local function update_chest()
         local linked_to = data.linked_to
         local storage = this.inf_storage[unit_number]
 
+        local count = item_counter(unit_number)
+
         local mode = this.inf_mode[chest.unit_number]
         if mode then
-            if this.limits[unit_number] and this.limits[unit_number].state and storage and storage.count and storage.count >= this.limits[unit_number].number then
+            if this.limits[unit_number] and this.limits[unit_number].state and storage and count >= this.limits[unit_number].number then
                 inv.set_bar(1)
             else
                 if mode == 1 then
@@ -950,11 +944,9 @@ local function gui_click(event)
 
             if ctrl then
                 storage[name] = storage[name] + 5000000
-                item_counter(unit_number, 5000000, 'inc')
                 goto update
             elseif shift then
                 storage[name] = storage[name] - 5000000
-                item_counter(unit_number, 5000000, 'dec')
                 if storage[name] <= 0 then
                     storage[name] = nil
                 end
@@ -979,10 +971,8 @@ local function gui_click(event)
 
         if inserted == count then
             storage[name] = nil
-            item_counter(unit_number, inserted, 'dec')
         else
             storage[name] = storage[name] - inserted
-            item_counter(unit_number, inserted, 'dec')
         end
     elseif shift then
         local count = storage[name]
@@ -996,11 +986,9 @@ local function gui_click(event)
         if count > stack then
             local inserted = player.insert {name = name, count = stack}
             storage[name] = storage[name] - inserted
-            item_counter(unit_number, inserted, 'dec')
         else
-            local inserted = player.insert {name = name, count = count}
+            player.insert {name = name, count = count}
             storage[name] = nil
-            item_counter(unit_number, inserted, 'dec')
         end
     else
         if not storage[name] then
@@ -1011,7 +999,6 @@ local function gui_click(event)
         if storage[name] <= 0 then
             storage[name] = nil
         end
-        item_counter(unit_number, 1, 'dec')
     end
 
     ::update::
@@ -1061,7 +1048,6 @@ local function on_gui_elem_changed(event)
         return
     end
     storage[name] = 5000000
-    item_counter(unit_number, 5000000, 'inc')
 
     if this.inf_gui[player.name] then
         this.inf_gui[player.name].updated = false
