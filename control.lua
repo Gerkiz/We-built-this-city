@@ -83,28 +83,6 @@ require 'features.modules.bp'
 require 'map_loader'
 --require 'map_builder'
 
-local function is_game_modded()
-    local i = 0
-    for k, _ in pairs(game.active_mods) do
-        i = i + 1
-        if i > 1 then
-            return true
-        end
-    end
-    return false
-end
-
--- Event.add(
---     defines.events.on_player_joined_game,
---     function(e)
---         local player = game.get_player(e.player_index)
---         player.insert({name = 'car'})
---         player.insert({name = 'express-transport-belt', count = 100})
---         player.insert({name = 'coin', count = 100000})
---         player.insert({name = 'infinity-chest', count = 10})
---     end
--- )
-
 Event.on_init(
     function()
         local is_modded = is_game_modded()
@@ -130,6 +108,5 @@ Event.on_init(
 --! DEBUG SETTINGS
 if _DUMP_ENV then
     require 'utils.dump_env'
+    require 'utils.profiler'
 end
-
-require 'utils.profiler'

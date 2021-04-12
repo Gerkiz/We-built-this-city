@@ -1,5 +1,5 @@
 require 'utils.gui.core'
-require 'features.modules.launch_fish_to_win'
+-- require 'features.modules.launch_fish_to_win'
 require 'features.modules.biters_yield_coins'
 require 'features.modules.dangerous_goods'
 require 'features.modules.biter_pets'

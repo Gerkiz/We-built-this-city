@@ -615,15 +615,6 @@ local function on_gui_click(event)
 end
 
 Event.add(
-    defines.events.on_tick,
-    function(event)
-        if Gui.left and ((event.tick + 10) / (3600 * game.speed)) % 15 == 0 then
-            Gui.left.update()
-        end
-    end
-)
-
-Event.add(
     Gui.events.on_gui_removal,
     function(player)
         local b =

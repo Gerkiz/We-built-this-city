@@ -235,6 +235,24 @@ function Gui.clear(element)
     element.clear()
 end
 
+function Gui.clear_invalid_data()
+    for key, data in pairs(element_data) do
+        if type(data) == 'table' then
+            for _, frames in pairs(data) do
+                if type(frames) == 'table' then
+                    for id, elem in pairs(frames) do
+                        if type(elem) == 'table' then
+                            if not elem.valid then
+                                frames[id] = nil
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function Gui.get_player_from_element(element)
     if not element or not element.valid then
         return
@@ -578,6 +596,9 @@ Event.on_init(
         end
     end
 )
+local clear_invalid_data = Gui.clear_invalid_data
+
+Event.on_nth_tick(10800, clear_invalid_data)
 
 Event.add(
     defines.events.on_player_created,
