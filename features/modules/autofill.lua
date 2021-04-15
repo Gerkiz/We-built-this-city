@@ -30,6 +30,7 @@ Global.register(
 
 local Public = {}
 local insert = table.insert
+local unpack = table.unpack
 local round = math.round
 local container_frame_autofill = Gui.uid_name()
 local player_toggled_autofill_on_container_gui_click = Gui.uid_name()
@@ -53,6 +54,15 @@ local function fast_remove(tbl, index)
     end
 
     tbl[count] = nil
+end
+
+local function contains(tbl, value)
+    for _, v in pairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
 end
 
 local function contains_chest(tbl, entity, rtn, remove)
@@ -101,53 +111,6 @@ local function contains_turret(tbl, entity, rtn, remove)
         end
     end
     return false
-end
-
-local function get_damage(action)
-    local dmg = 0
-    local list = game.entity_prototypes
-    local get_damage_from_entity = function(entity_name)
-        local ent = list[entity_name]
-        if ent then
-            if ent.attack_result then
-                dmg = dmg + Public.actions(ent.attack_result)
-            end
-            if ent.final_attack_result then
-                dmg = dmg + Public.actions(ent.final_attack_result)
-            end
-        end
-        return dmg
-    end
-    if action.type == 'instant' then
-        if action.target_effects then
-            for _, te in pairs(action.target_effects) do
-                if te.action then
-                    dmg = dmg + Public.actions(te.action)
-                end
-                if te.type == 'damage' then
-                    dmg = dmg + te.damage.amount
-                end
-                if te.type == 'create-entity' and te.entity_name then
-                    dmg = dmg + get_damage_from_entity(te.entity_name)
-                end
-            end
-        end
-    elseif action.stream then
-        dmg = dmg + get_damage_from_entity(action.stream)
-    elseif action.projectile then
-        dmg = dmg + get_damage_from_entity(action.projectile)
-    end
-    return dmg
-end
-
-local result = function(action)
-    local dmg = 0
-    if action.action_delivery then
-        for _, action_delivery in pairs(action.action_delivery) do
-            dmg = dmg + get_damage(action_delivery)
-        end
-    end
-    return dmg
 end
 
 local function get_highest(chest, tbl, turret_name, turret_ammo)
@@ -288,12 +251,28 @@ local function remove_ammo(chest, turret)
     end
 end
 
+local function check_count(chest_item_name, chest_item_count)
+    if this.valid_ammo[chest_item_name] and this.valid_ammo[chest_item_name].valid and chest_item_count >= 1 then
+        return true
+    else
+        return false
+    end
+end
+
+local function check_tier(turret_ammo_name, chest_item_name)
+    if turret_ammo_name and round(this.valid_ammo[chest_item_name].priority) > round(this.valid_ammo[turret_ammo_name].priority) then
+        return true
+    else
+        return false
+    end
+end
+
 local function refill(turret, chest, data)
     local turret_ammo_name, turret_ammo_count = get_ammo(turret)
     local chest_item_name, chest_item_count = get_items(chest, data.name, turret_ammo_name)
 
     if turret_ammo_count and turret_ammo_count >= 10 then
-        if turret_ammo_count >= 20 then
+        if turret_ammo_count >= 20 or check_tier(turret_ammo_name, chest_item_name) then
             remove_ammo(chest, turret)
         end
         goto final
@@ -303,8 +282,8 @@ local function refill(turret, chest, data)
         goto final
     end
 
-    if this.valid_ammo[chest_item_name] and this.valid_ammo[chest_item_name].valid and chest_item_count >= 1 then
-        if turret_ammo_name and round(this.valid_ammo[chest_item_name].priority) > round(this.valid_ammo[turret_ammo_name].priority) then
+    if check_count(chest_item_name, chest_item_count) then
+        if check_tier(turret_ammo_name, chest_item_name) then
             remove_ammo(chest, turret)
             goto continue
         end
@@ -553,10 +532,73 @@ local function get_valid_turrets()
     end
 end
 
-Public.actions = function(tbl)
+local function get_damage_from_entity(entity_name, validator)
+    if contains(validator, entity_name) then
+        return 0
+    end
+    insert(validator, entity_name)
+
+    local list = game.entity_prototypes
+    local dmg = 0
+    local ent = list[entity_name]
+    if ent then
+        if ent.attack_result then
+            dmg = dmg + Public.actions(ent.attack_result, {unpack(validator)})
+        end
+        if ent.final_attack_result then
+            dmg = dmg + Public.actions(ent.final_attack_result, {unpack(validator)})
+        end
+    end
+    return dmg
+end
+
+local function get_damage(ad, validator)
+    local dmg = 0
+    if ad.type == 'instant' then
+        if ad.target_effects then
+            for _, te in pairs(ad.target_effects) do
+                if te.action then
+                    dmg = dmg + Public.actions(te.action, validator)
+                end
+                if te.type == 'damage' then
+                    dmg = dmg + te.damage.amount
+                end
+                if te.type == 'create-entity' and te.entity_name then
+                    dmg = dmg + get_damage_from_entity(te.entity_name, validator)
+                end
+            end
+        end
+    elseif ad.projectile then
+        dmg = dmg + get_damage_from_entity(ad.projectile, validator)
+    elseif ad.stream then
+        dmg = dmg + get_damage_from_entity(ad.stream, validator)
+    end
+    return dmg
+end
+
+local function result(action, validator)
+    local dmg = 0
+    local function calc_radius()
+        local r
+        r = action.radius * action.radius * math.pi
+        return r
+    end
+    if action.action_delivery then
+        for _, ad in pairs(action.action_delivery) do
+            local radius = 1
+            if action.radius then
+                radius = calc_radius(radius)
+            end
+            dmg = dmg + get_damage(ad, validator) * radius
+        end
+    end
+    return dmg
+end
+
+function Public.actions(action_tbl, validator)
     local priority = 0
-    for _, act in pairs(tbl) do
-        priority = priority + result(act) * act.repeat_count
+    for _, act in pairs(action_tbl) do
+        priority = priority + result(act, validator) * act.repeat_count
     end
     return priority
 end
@@ -564,8 +606,8 @@ end
 Public.get_priorities = function()
     for _, prototype in pairs(game.item_prototypes) do
         local ammo_type = prototype.get_ammo_type()
-        if ammo_type then
-            local priority = Public.actions(prototype.get_ammo_type().action)
+        if ammo_type and ammo_type.action then
+            local priority = Public.actions(ammo_type.action, {})
             this.valid_ammo[prototype.name] = {
                 valid = true,
                 priority = round(priority),

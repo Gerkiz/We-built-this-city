@@ -190,10 +190,7 @@ local teleport_player_to_gulag = function(player, action)
 
     local gulag_tp = function(surface)
         get_player_data(player, true)
-        player.teleport(
-            surface.find_non_colliding_position('character', game.forces.player.get_spawn_position(surface), 128, 1),
-            surface.name
-        )
+        player.teleport(surface.find_non_colliding_position('character', game.forces.player.get_spawn_position(surface), 128, 1), surface.name)
     end
 
     if action == 'jail' then
@@ -313,11 +310,7 @@ local vote_to_jail = function(player, griefer, msg)
         votejail[griefer][player.name] = true
         votejail[griefer].index = votejail[griefer].index + 1
         Utils.print_to(player, 'You have voted to jail player ' .. griefer .. '.')
-        if
-            votejail[griefer].index >= settings.votejail_count or
-                (votejail[griefer].index == #game.connected_players - 1 and
-                    #game.connected_players > votejail[griefer].index)
-         then
+        if votejail[griefer].index >= settings.votejail_count or (votejail[griefer].index == #game.connected_players - 1 and #game.connected_players > votejail[griefer].index) then
             Public.try_ul_data(griefer, true, votejail[griefer].actor, msg)
         end
     else
@@ -336,11 +329,7 @@ local vote_to_free = function(player, griefer)
         votefree[griefer].index = votefree[griefer].index + 1
 
         Utils.print_to(player, 'You have voted to free player ' .. griefer .. '.')
-        if
-            votefree[griefer].index >= settings.votejail_count or
-                (votefree[griefer].index == #game.connected_players - 1 and
-                    #game.connected_players > votefree[griefer].index)
-         then
+        if votefree[griefer].index >= settings.votejail_count or (votefree[griefer].index == #game.connected_players - 1 and #game.connected_players > votefree[griefer].index) then
             Public.try_ul_data(griefer, false, votefree[griefer].actor)
             votejail[griefer] = nil
             votefree[griefer] = nil
@@ -374,10 +363,7 @@ local jail = function(player, griefer, msg)
     end
     local message = griefer .. ' has been jailed by ' .. player .. '. Cause: ' .. msg
 
-    if
-        game.players[griefer].character and game.players[griefer].character.valid and
-            game.players[griefer].character.driving
-     then
+    if game.players[griefer].character and game.players[griefer].character.valid and game.players[griefer].character.driving then
         game.players[griefer].character.driving = false
     end
 
@@ -571,10 +557,7 @@ Event.add(
                 griefer = game.players[griefer].name
             end
 
-            if
-                trusted and playtime >= settings.playtime_for_vote and playtime < settings.playtime_for_instant_jail and
-                    not player.admin
-             then
+            if trusted and playtime >= settings.playtime_for_vote and playtime < settings.playtime_for_instant_jail and not player.admin then
                 if cmd == 'jail' then
                     vote_to_jail(player, griefer, message)
                     return
@@ -587,10 +570,7 @@ Event.add(
             if player.admin or playtime >= settings.playtime_for_instant_jail then
                 if cmd == 'jail' then
                     if player.admin then
-                        Utils.warning(
-                            player,
-                            'Abusing the jail command will lead to revoked permissions. Jailing someone in case of disagreement is not OK!'
-                        )
+                        Utils.warning(player, 'Abusing the jail command will lead to revoked permissions. Jailing someone in case of disagreement is not OK!')
                     end
                     Public.try_ul_data(griefer, true, player.name, message)
                     return

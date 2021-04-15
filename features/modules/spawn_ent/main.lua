@@ -5,8 +5,20 @@ local Fort = require 'features.modules.spawn_ent.fort'
 --local StorageLoot = require 'features.modules.spawn_ent.storage'
 local Turret = require 'features.modules.spawn_ent.turrets'
 local m_random = math.random
+local Global = require 'utils.global'
 
 local Public = {}
+
+local this = {
+    modded = false
+}
+
+Global.register(
+    this,
+    function(tbl)
+        this = tbl
+    end
+)
 
 Public.debug = false
 
@@ -126,6 +138,16 @@ local function ticker(e)
     if e.surface.name == 'nauvis' then
         return
     end
+
+    if this.modded then
+        return
+    end
+
+    if is_game_modded() then
+        this.modded = true
+        return
+    end
+
     local center = {x = (e.area.left_top.x + e.area.right_bottom.x) / 2, y = (e.area.left_top.y + e.area.right_bottom.y) / 2}
     if math.abs(center.x) < 200 and math.abs(center.y) < 200 then
         return

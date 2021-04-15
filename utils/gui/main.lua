@@ -319,7 +319,11 @@ function Gui.toggle_visibility(player, state)
 
     for _, child in pairs(left.children) do
         if child.valid and string.sub(child.name, 0, 4) ~= 'fnei' then
-            child.destroy()
+            if child.visible then
+                child.visible = false
+            else
+                child.visible = true
+            end
         end
     end
 
@@ -329,8 +333,10 @@ function Gui.toggle_visibility(player, state)
 
     for _, child in pairs(screen.children) do
         if not ignored_visibility[child.name] then
-            if child.valid then
-                child.destroy()
+            if child.visible then
+                child.visible = false
+            else
+                child.visible = true
             end
         end
     end
