@@ -260,7 +260,7 @@ local function check_count(chest_item_name, chest_item_count)
 end
 
 local function check_tier(turret_ammo_name, chest_item_name)
-    if turret_ammo_name and round(this.valid_ammo[chest_item_name].priority) > round(this.valid_ammo[turret_ammo_name].priority) then
+    if turret_ammo_name and this.valid_ammo[chest_item_name] and round(this.valid_ammo[chest_item_name].priority) > round(this.valid_ammo[turret_ammo_name].priority) then
         return true
     else
         return false

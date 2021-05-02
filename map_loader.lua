@@ -1,5 +1,5 @@
 -- require each map here
--- require 'map_gen.custom_maps.main'
+require 'map_gen.custom_maps.main'
 -- require 'map_gen.shapes.main'
 require 'map_gen.multiplayer_spawn.main'
 -- require 'map_gen.ruins.main'

@@ -28,6 +28,7 @@ require 'utils.server_commands'
 require 'utils.utils'
 require 'utils.debug.command'
 require 'utils.table'
+require 'utils.freeplay'
 require 'utils.spam_protection'
 local Surface = require 'utils.surface'
 Surface.bypass(false)
