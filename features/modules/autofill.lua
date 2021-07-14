@@ -18,7 +18,8 @@ local this = {
     autofill_on_placement_amount = 10,
     fill_amount_on_turrets = 1,
     force_only = true,
-    stop = false
+    stop = false,
+    turret_limit = 50
 }
 
 Global.register(
@@ -444,9 +445,13 @@ local function draw_container_frame(parent, entity, player)
         if isMember then
             placeholder = 'Chest ID: ' .. id
         end
+        local hasTurrets = ''
+        if force.refill_turrets then
+            hasTurrets = 'Turret amount: ' .. #force.refill_turrets .. '/' .. this.turret_limit
+        end
         tooltip =
             '[color=blue]Info![/color]\nYou can easily toggle this chest autofill status.\n\nAmmo in this chest will inserted automatically onto turrets that are owned by your force.\nYou currently have: ' ..
-            force.refill_chests_placed .. '/' .. limit .. ' autofill ' .. entity.name .. '.\n' .. placeholder
+            force.refill_chests_placed .. '/' .. limit .. ' autofill ' .. entity.name .. '.\n' .. placeholder .. '\n' .. hasTurrets
     else
         tooltip =
             '[color=blue]Info![/color]\nYou can easily toggle this chest autofill status.\n\nAmmo in this chest will inserted automatically onto turrets that are owned by your force.\n'
@@ -718,6 +723,10 @@ Public.add_turret_to_force = function(player, entity)
             return
         end
         local refill_turrets = force.refill_turrets
+        if #refill_turrets > 50 then
+            return
+        end
+
         local turret_inv = entity.get_inventory(defines.inventory.turret_ammo)
 
         refill_turrets[#refill_turrets + 1] = {

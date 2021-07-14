@@ -67,6 +67,8 @@ Roles.edit(
     'allow',
     false,
     {
+        ['trust'] = true,
+        ['untrust'] = true,
         ['bonus'] = true,
         ['bonus-respawn'] = true,
         ['clear_corpses'] = true
@@ -78,8 +80,6 @@ Roles.edit(
     'allow',
     false,
     {
-        ['trust'] = true,
-        ['untrust'] = true,
         ['show-warp'] = true
     }
 )

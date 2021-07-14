@@ -66,8 +66,8 @@ function Public.reset_table()
 
     this.near_min_dist = 0
     this.near_max_dist = 50
-    this.far_min_dist = 150
-    this.far_max_dist = 250
+    this.far_min_dist = 60
+    this.far_max_dist = 120
 
     this.vanilla_spawn_count = 60
 

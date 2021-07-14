@@ -56,9 +56,9 @@ local function decompress_map_data()
         decompressed[y] = {}
         --debug info
         local work = math.floor(y * 100 / height)
-        if work ~= last then --so it doesn't --print the same percent over and over.
-        --print("... ", work, "%")
-        end
+        -- if work ~= last then --so it doesn't --print the same percent over and over.
+        -- --print("... ", work, "%")
+        -- end
         last = work
         --do decompression of this line
         local total_count = 0

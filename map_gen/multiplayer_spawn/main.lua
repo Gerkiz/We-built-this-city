@@ -17,7 +17,6 @@ require 'features.modules.spawn_area'
 --require 'features.modules.oarc_enemies.main'
 
 local Event = require 'utils.event'
-local market_items = require 'features.modules.map_market_items'
 local Ores = require 'features.modules.scramble'
 local Autostash = require 'features.modules.autostash'
 local Map = require 'features.modules.map_info'
@@ -130,8 +129,6 @@ Event.add(
             end
 
             Silo.GenerateRocketSiloChunk(event)
-
-        --CreateHoldingPen(event.surface, event.area, 16, 32)
         end
         SS.SeparateSpawnsGenerateChunk(event)
     end
@@ -172,35 +169,6 @@ Event.add(
         local player = game.players[event.player_index]
         local surface_name = Surface.get_surface_name()
 
-        if event.player_index == 1 then
-            local enable_market = MT.get('enable_market')
-
-            if enable_market then
-                local this = MT.get()
-                local surface = game.surfaces[surface_name]
-                local pos = {{x = -10, y = -10}, {x = 10, y = 10}, {x = -10, y = -10}, {x = 10, y = -10}}
-                local _pos = Utils.shuffle(pos)
-                local p = game.surfaces[surface_name].find_non_colliding_position('market', {_pos[1].x, _pos[1].y}, 60, 2)
-
-                this.market = surface.create_entity {name = 'market', position = p, force = this.main_force_name}
-
-                rendering.draw_text {
-                    text = 'Spawn Market',
-                    surface = surface,
-                    target = this.market,
-                    target_offset = {0, 2},
-                    color = {r = 0.98, g = 0.66, b = 0.22},
-                    alignment = 'center'
-                }
-
-                this.market.destructible = false
-
-                for _, item in pairs(market_items.spawn) do
-                    this.market.add_market_item(item)
-                end
-            end
-        end
-
         -- Move the player to the game surface immediately.
         local pos = game.surfaces[surface_name].find_non_colliding_position('character', {x = 0, y = 0}, 3, 0, 5)
         player.teleport(pos, surface_name)
@@ -235,7 +203,8 @@ Event.add(
 Event.add(
     defines.events.on_player_left_game,
     function(event)
-        SS.FindUnusedSpawns(game.players[event.player_index], true)
+        local player = game.get_player(event.player_index)
+        SS.FindUnusedSpawns(player, true)
     end
 )
 
